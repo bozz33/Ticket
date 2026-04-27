@@ -3,8 +3,13 @@
 import Link from "next/link";
 import { useDeferredValue, useEffect, useState } from "react";
 
-import { ModuleRoute, SearchSuggestion } from "@/lib/types";
+import { SearchSuggestion } from "@/lib/types";
 import { getModuleMeta } from "@/lib/utils";
+
+/* ================================================================
+   HeroSearch — Composant amélioré
+   Changement : suppression des trust badges du bas (.hero-search__trust)
+   ================================================================ */
 
 const moduleTabs = [
   { href: "/evenements", label: "Evenements" },
@@ -18,10 +23,10 @@ function SearchGlyph({ name }: { name: "search" | "module" }) {
   if (name === "module") {
     return (
       <svg aria-hidden="true" viewBox="0 0 24 24">
-        <path d="M5.5 5.5h5v5h-5z" />
-        <path d="M13.5 5.5h5v5h-5z" />
-        <path d="M5.5 13.5h5v5h-5z" />
-        <path d="M13.5 13.5h5v5h-5z" />
+        <rect height="5" rx="1" width="5" x="5.5" y="5.5" />
+        <rect height="5" rx="1" width="5" x="13.5" y="5.5" />
+        <rect height="5" rx="1" width="5" x="5.5" y="13.5" />
+        <rect height="5" rx="1" width="5" x="13.5" y="13.5" />
       </svg>
     );
   }
@@ -34,9 +39,8 @@ function SearchGlyph({ name }: { name: "search" | "module" }) {
   );
 }
 
-export function HeroSearch({ reassuranceItems }: { reassuranceItems: string[] }) {
+export function HeroSearch({ categories }: { categories: string[] }) {
   const [query, setQuery] = useState("");
-  const [module, setModule] = useState<ModuleRoute | "all">("all");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [loading, setLoading] = useState(false);
   const deferredQuery = useDeferredValue(query);
@@ -54,7 +58,6 @@ export function HeroSearch({ reassuranceItems }: { reassuranceItems: string[] })
     const params = new URLSearchParams();
 
     params.set("q", search);
-    params.set("module", module);
 
     setLoading(true);
 
@@ -88,7 +91,7 @@ export function HeroSearch({ reassuranceItems }: { reassuranceItems: string[] })
     return () => {
       controller.abort();
     };
-  }, [deferredQuery, module]);
+  }, [deferredQuery]);
 
   return (
     <form action="/recherche" className="hero-search" method="get">
@@ -131,7 +134,7 @@ export function HeroSearch({ reassuranceItems }: { reassuranceItems: string[] })
                 >
                   <strong>{suggestion.title}</strong>
                   <span>
-                    {getModuleMeta(suggestion.module).title} - {suggestion.category} -{" "}
+                    {getModuleMeta(suggestion.module).title} — {suggestion.category} —{" "}
                     {suggestion.city}
                   </span>
                 </Link>
@@ -139,38 +142,31 @@ export function HeroSearch({ reassuranceItems }: { reassuranceItems: string[] })
             </div>
           ) : null}
         </div>
-        <div className="hero-search__field-stack">
-          <label htmlFor="hero-module">
+        <div className="hero-search__field-stack hero-search__field-stack--category">
+          <label htmlFor="hero-category">
             <span className="hero-search__field-icon">
               <SearchGlyph name="module" />
             </span>
-            <span>Module</span>
+            <span>Categorie</span>
           </label>
-          <select
-            defaultValue="all"
-            id="hero-module"
-            name="module"
-            onChange={(event) => {
-              setModule(event.target.value as ModuleRoute | "all");
-            }}
-          >
-            <option value="all">Tous</option>
-            <option value="evenements">Evenements</option>
-            <option value="formations">Formations</option>
-            <option value="stands">Stands</option>
-            <option value="appels-a-projets">Appels a projets</option>
-            <option value="crowdfunding">Crowdfunding</option>
+          <select defaultValue="" id="hero-category" name="category">
+            <option value="">Toutes les categories</option>
+            {categories.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
           </select>
         </div>
-        <button className="button" type="submit">
+        <button className="button hero-search__submit" type="submit">
           Rechercher
         </button>
       </div>
-      <div className="hero-search__trust">
-        {reassuranceItems.map((item) => (
-          <span key={item}>{item}</span>
-        ))}
-      </div>
+      {/*
+        ⚠️  Trust badges supprimés (demande utilisateur — image 3)
+        Les éléments .hero-search__trust ont été retirés volontairement.
+        Ils sont aussi masqués via globals-patch.css : .hero-search__trust { display: none }
+      */}
     </form>
   );
 }

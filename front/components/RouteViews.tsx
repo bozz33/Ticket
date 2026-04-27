@@ -5,9 +5,22 @@ import type { ReactNode } from "react";
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { ContentCard } from "@/components/ContentCard";
 import { HeroSearch } from "@/components/HeroSearch";
+import { PrintButton } from "@/components/PrintButton";
+import { QuantityStepper } from "@/components/QuantityStepper";
 import { findOrganizerProfile } from "@/lib/data/catalog";
 import { PlatformConfiguration, PublicContent, SearchFilters } from "@/lib/types";
-import { buildPublicUrl, buildSearchQuery, formatDateRange, formatMoney, getModuleMeta } from "@/lib/utils";
+import {
+  buildPublicUrl,
+  buildSearchQuery,
+  formatDateLabel,
+  formatDateRange,
+  formatMoney,
+  getModuleMeta,
+} from "@/lib/utils";
+
+/* ================================================================
+   HELPERS — Composants internes réutilisables
+   ================================================================ */
 
 function SectionHeader({
   eyebrow,
@@ -65,11 +78,177 @@ function StatIcon({ index }: { index: number }) {
   );
 }
 
+/* ── Pagination ──────────────────────────────────────────────── */
+function Pagination({
+  basePath,
+  currentPage,
+  filters,
+  totalPages,
+}: {
+  basePath: string;
+  currentPage: number;
+  filters: SearchFilters;
+  totalPages: number;
+}) {
+  if (totalPages <= 1) return null;
+
+  const windowStart = Math.max(1, currentPage - 1);
+  const windowEnd = Math.min(totalPages, windowStart + 3);
+  const firstPage = Math.max(1, windowEnd - 3);
+  const pageNumbers = Array.from(
+    { length: windowEnd - firstPage + 1 },
+    (_, index) => firstPage + index,
+  );
+
+  const buildHref = (page: number) =>
+    `${basePath}${buildSearchQuery({
+      ...filters,
+      page,
+    })}`;
+
+  return (
+    <nav aria-label="Navigation pages" className="pagination">
+      {currentPage > 1 ? (
+        <Link className="pagination__btn" href={buildHref(currentPage - 1)}>
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Precedent
+        </Link>
+      ) : (
+        <span className="pagination__btn is-disabled">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M15 18l-6-6 6-6" />
+          </svg>
+          Precedent
+        </span>
+      )}
+
+      {firstPage > 1 ? (
+        <>
+          <Link className="pagination__btn" href={buildHref(1)}>
+            1
+          </Link>
+          <span className="pagination__ellipsis">…</span>
+        </>
+      ) : null}
+
+      {pageNumbers.map((page) => (
+        <Link
+          className={`pagination__btn${page === currentPage ? " active" : ""}`}
+          href={buildHref(page)}
+          key={page}
+        >
+          {page}
+        </Link>
+      ))}
+
+      {windowEnd < totalPages ? (
+        <>
+          <span className="pagination__ellipsis">…</span>
+          <Link className="pagination__btn" href={buildHref(totalPages)}>
+            {totalPages}
+          </Link>
+        </>
+      ) : null}
+
+      {currentPage < totalPages ? (
+        <Link className="pagination__btn" href={buildHref(currentPage + 1)}>
+          Suivant
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </Link>
+      ) : (
+        <span className="pagination__btn is-disabled">
+          Suivant
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </span>
+      )}
+    </nav>
+  );
+}
+
+/* ── Icône cadenas pour booking summary ─────────────────────── */
+function LockIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <rect height="11" rx="2" width="14" x="5" y="11" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </svg>
+  );
+}
+
+const DEFAULT_SERVICE_FEE = 1000;
+
+function getCheckoutAmounts(
+  item: PublicContent,
+  selectedOffer: PublicContent["tiers"][number] | null,
+) {
+  const subtotal = selectedOffer?.price ?? item.priceFrom;
+  const serviceFee = item.isFree ? 0 : DEFAULT_SERVICE_FEE;
+
+  return {
+    subtotal,
+    serviceFee,
+    total: item.isFree ? 0 : subtotal + serviceFee,
+  };
+}
+
+function buildPaymentReference(
+  item: PublicContent,
+  selectedOffer: PublicContent["tiers"][number] | null,
+  providedReference?: string,
+) {
+  if (providedReference?.trim()) {
+    return providedReference.trim();
+  }
+
+  const safeItem = item.id.replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 6) || "ORDER";
+  const safeOffer =
+    (selectedOffer?.id ?? "BASE").replace(/[^a-z0-9]/gi, "").toUpperCase().slice(0, 4) || "BASE";
+
+  return `PAY-${safeItem}-${safeOffer}`;
+}
+
+function normalizePaidAt(value?: string) {
+  if (!value) {
+    return new Date().toISOString();
+  }
+
+  const parsed = new Date(value);
+
+  return Number.isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+}
+
+function buildPaymentQuery(
+  selectedOffer: PublicContent["tiers"][number] | null,
+  paymentReference: string,
+  paidAt: string,
+) {
+  const params = new URLSearchParams();
+
+  if (selectedOffer?.id) {
+    params.set("offer", selectedOffer.id);
+  }
+
+  params.set("tx", paymentReference);
+  params.set("paidAt", paidAt);
+
+  return `?${params.toString()}`;
+}
+
+/* ================================================================
+   HOME VIEW
+   ================================================================ */
 export function HomeView({
   platform,
   featured,
   popular,
   organizers,
+  categories,
   stats,
 }: {
   platform: PlatformConfiguration;
@@ -88,6 +267,7 @@ export function HomeView({
     };
     items: PublicContent[];
   }>;
+  categories: string[];
   stats: Array<{ label: string; value: string }>;
 }) {
   return (
@@ -117,7 +297,7 @@ export function HomeView({
             </div>
           </div>
 
-          <HeroSearch reassuranceItems={platform.reassuranceItems} />
+          <HeroSearch categories={categories} />
         </div>
       </section>
 
@@ -214,6 +394,12 @@ export function HomeView({
   );
 }
 
+/* ================================================================
+   MODULE LISTING VIEW — REFONTE BOLETO
+   - Filter bar horizontal (style Boleto) en remplacement de la sidebar
+   - Grille 3 colonnes plein largeur
+   - Pagination
+   ================================================================ */
 export function ModuleListingView({
   module,
   title,
@@ -221,6 +407,9 @@ export function ModuleListingView({
   heroImageUrl,
   items,
   filters,
+  currentPage,
+  totalItems,
+  totalPages,
   categories,
   cities,
 }: {
@@ -230,6 +419,9 @@ export function ModuleListingView({
   heroImageUrl: string;
   items: PublicContent[];
   filters: SearchFilters;
+  currentPage: number;
+  totalItems: number;
+  totalPages: number;
   categories: string[];
   cities: string[];
 }) {
@@ -238,6 +430,7 @@ export function ModuleListingView({
 
   return (
     <>
+      {/* Hero section */}
       <section className="page-hero">
         <img alt={title} className="page-hero__image" src={heroImageUrl} />
         <div className="shell page-hero__content">
@@ -245,56 +438,68 @@ export function ModuleListingView({
           <h1>{title}</h1>
           <p>{description}</p>
           <div className="page-hero__pills">
-            <span>{items.length} contenus visibles</span>
+            <span>{totalItems} contenus</span>
             <span>{categories.length} categories</span>
             <span>{highlightedCities || "Plusieurs villes"}</span>
           </div>
         </div>
       </section>
 
-      <section className="section">
-        <div className="shell listing-layout">
-          <aside>
-            <CatalogFilters
-              action={`/${module}`}
-              categories={categories}
-              cities={cities}
-              filters={filters}
-            />
-          </aside>
-          <div>
-            <div className="listing-header">
-              <div>
-                <h2>{items.length} resultats</h2>
-                <p>Des pages detail denses avec prix, lieu, date et CTA directement visibles.</p>
-              </div>
-              <Link className="button button--ghost" href={`/recherche${buildSearchQuery(filters)}`}>
-                Ouvrir en recherche globale
-              </Link>
-            </div>
+      {/* ── Barre de filtre horizontale Boleto ───────────────── */}
+      <CatalogFilters
+        action={`/${module}`}
+        categories={categories}
+        cities={cities}
+        filters={filters}
+      />
 
-            {items.length > 0 ? (
+      {/* ── Grille de contenus plein largeur ─────────────────── */}
+      <section className="listing-section">
+        <div className="shell">
+          <div className="listing-top-bar">
+            <p className="listing-count">
+              <strong>{totalItems}</strong> resultats
+            </p>
+            <Link
+              className="button button--ghost button--small"
+              href={`/recherche${buildSearchQuery({ ...filters, page: 1 })}`}
+            >
+              Recherche globale
+            </Link>
+          </div>
+
+          {items.length > 0 ? (
+            <>
               <div className="card-grid card-grid--three">
                 {items.map((item) => (
                   <ContentCard item={item} key={item.id} />
                 ))}
               </div>
-            ) : (
-              <div className="empty-state">
-                <h3>Aucun {meta.singular} ne correspond a ces filtres.</h3>
-                <p>Elargissez la recherche ou revenez au catalogue complet.</p>
-                <Link className="button" href={`/${module}`}>
-                  Reinitialiser
-                </Link>
-              </div>
-            )}
-          </div>
+              <Pagination
+                basePath={`/${module}`}
+                currentPage={currentPage}
+                filters={filters}
+                totalPages={totalPages}
+              />
+            </>
+          ) : (
+            <div className="empty-state">
+              <h3>Aucun {meta.singular} ne correspond a ces filtres.</h3>
+              <p>Elargissez la recherche ou revenez au catalogue complet.</p>
+              <Link className="button" href={`/${module}`}>
+                Reinitialiser les filtres
+              </Link>
+            </div>
+          )}
         </div>
       </section>
     </>
   );
 }
 
+/* ================================================================
+   DETAIL — SHARE LINKS
+   ================================================================ */
 function ShareLinks({ item }: { item: PublicContent }) {
   const publicUrl = encodeURIComponent(buildPublicUrl(`/${item.module}/${item.slug}`));
   const encodedTitle = encodeURIComponent(item.title);
@@ -318,6 +523,7 @@ function ShareLinks({ item }: { item: PublicContent }) {
   );
 }
 
+/* ── Panneau sticky résumé (page détail) ────────────────────── */
 function StickySummary({ item }: { item: PublicContent }) {
   const organizer = findOrganizerProfile(item.organizerSlug);
   const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
@@ -372,6 +578,7 @@ function StickySummary({ item }: { item: PublicContent }) {
   );
 }
 
+/* ── Blocs de détail (description, offres, speakers, FAQ...) ── */
 function DetailBlocks({ item }: { item: PublicContent }) {
   return (
     <>
@@ -406,7 +613,10 @@ function DetailBlocks({ item }: { item: PublicContent }) {
                   <li key={perk}>{perk}</li>
                 ))}
               </ul>
-              <Link className="button button--full" href={`/checkout/${item.module}/${item.slug}?offer=${tier.id}`}>
+              <Link
+                className="button button--full"
+                href={`/checkout/${item.module}/${item.slug}?offer=${tier.id}`}
+              >
                 {tier.ctaLabel}
               </Link>
             </article>
@@ -415,7 +625,7 @@ function DetailBlocks({ item }: { item: PublicContent }) {
       </section>
 
       {item.speakers.length > 0 ? (
-        <section className="detail-block">
+        <section className="detail-block detail-block--speakers">
           <SectionHeader eyebrow="Equipe" title="Intervenants et profils clefs" />
           <div className="people-grid">
             {item.speakers.map((speaker) => (
@@ -486,6 +696,9 @@ function DetailBlocks({ item }: { item: PublicContent }) {
   );
 }
 
+/* ================================================================
+   MODULE DETAIL VIEW — Suppression section stats sombre
+   ================================================================ */
 export function ModuleDetailView({
   item,
   related,
@@ -504,6 +717,7 @@ export function ModuleDetailView({
 
   return (
     <>
+      {/* Hero détail */}
       <section className="detail-hero">
         <img alt={item.title} className="detail-hero__image" src={item.coverImageUrl} />
         <div className="shell detail-hero__content">
@@ -525,7 +739,10 @@ export function ModuleDetailView({
                 {item.city}, {item.country}
               </span>
             </div>
-            <Link className="publisher-pill publisher-pill--dark" href={`/organisateurs/${item.organizerSlug}`}>
+            <Link
+              className="publisher-pill publisher-pill--dark"
+              href={`/organisateurs/${item.organizerSlug}`}
+            >
               <img alt={organizerName} src={organizerImage} />
               <span>
                 <small>Organisateur</small>
@@ -536,22 +753,13 @@ export function ModuleDetailView({
         </div>
       </section>
 
-      <section className="stats-strip stats-strip--detail">
-        <div className="shell stats-strip__grid">
-          {item.stats.map((stat, index) => (
-            <article className="stat-tile" key={stat.label}>
-              <span className="stat-tile__icon">
-                <StatIcon index={index} />
-              </span>
-              <span className="stat-tile__copy">
-                <strong>{stat.value}</strong>
-                <span>{stat.label}</span>
-              </span>
-            </article>
-          ))}
-        </div>
-      </section>
+      {/*
+        ⚠️  Section stats sombre supprimée (demande utilisateur — image 5)
+        L'ancien bloc .stats-strip--detail a été retiré ici.
+        Il est aussi masqué via CSS : .stats-strip--detail { display: none }
+      */}
 
+      {/* Galerie (si disponible) */}
       {item.gallery.length > 0 ? (
         <section className="section section--light section--tight">
           <div className="shell gallery-strip">
@@ -564,6 +772,7 @@ export function ModuleDetailView({
         </section>
       ) : null}
 
+      {/* Corps de la page (blocs + panneau sticky) */}
       <section className="section">
         <div className="shell detail-layout">
           <div>
@@ -573,6 +782,7 @@ export function ModuleDetailView({
         </div>
       </section>
 
+      {/* Contenus similaires */}
       <section className="section section--light">
         <div className="shell">
           <SectionHeader
@@ -595,6 +805,9 @@ export function ModuleDetailView({
   );
 }
 
+/* ================================================================
+   ORGANIZER VIEW
+   ================================================================ */
 export function OrganizerView({
   organizer,
   items,
@@ -673,7 +886,11 @@ export function OrganizerView({
             </div>
             <div className="sticky-panel__cta-list">
               {organizer.socialLinks.map((social) => (
-                <a className="button button--full button--ghost" href={social.url} key={social.label}>
+                <a
+                  className="button button--full button--ghost"
+                  href={social.url}
+                  key={social.label}
+                >
                   {social.label}
                 </a>
               ))}
@@ -696,19 +913,32 @@ export function OrganizerView({
   );
 }
 
+/* ================================================================
+   SEARCH RESULTS VIEW — REFONTE BOLETO
+   - Filter bar avec onglets de module
+   - Grille plein largeur 3 colonnes
+   - Pagination
+   ================================================================ */
 export function SearchResultsView({
   items,
   filters,
+  currentPage,
+  totalItems,
+  totalPages,
   categories,
   cities,
 }: {
   items: PublicContent[];
   filters: SearchFilters;
+  currentPage: number;
+  totalItems: number;
+  totalPages: number;
   categories: string[];
   cities: string[];
 }) {
   return (
     <>
+      {/* Hero compact */}
       <section className="page-hero page-hero--compact">
         <div className="shell page-hero__content">
           <p className="eyebrow">Recherche globale</p>
@@ -717,36 +947,59 @@ export function SearchResultsView({
         </div>
       </section>
 
-      <section className="section">
-        <div className="shell listing-layout">
-          <aside>
-            <CatalogFilters
-              action="/recherche"
-              categories={categories}
-              cities={cities}
-              filters={filters}
-              includeModule
-            />
-          </aside>
-          <div>
-            <div className="listing-header">
-              <div>
-                <h2>{items.length} resultats</h2>
-                <p>Resultats unifies, filtres visibles et navigation rapide vers chaque detail.</p>
-              </div>
-            </div>
-            <div className="card-grid card-grid--three">
-              {items.map((item) => (
-                <ContentCard item={item} key={item.id} />
-              ))}
-            </div>
+      {/* ── Barre de filtre horizontale avec onglets module ──── */}
+        <CatalogFilters
+          action="/recherche"
+          categories={categories}
+          cities={cities}
+          filters={filters}
+          includeModule
+          layout="wide"
+        />
+
+      {/* ── Grille de contenus plein largeur ─────────────────── */}
+      <section className="listing-section">
+        <div className="shell">
+          <div className="listing-top-bar">
+            <p className="listing-count">
+              <strong>{totalItems}</strong> resultats
+            </p>
           </div>
+
+          {items.length > 0 ? (
+            <>
+              <div className="card-grid card-grid--three">
+                {items.map((item) => (
+                  <ContentCard item={item} key={item.id} />
+                ))}
+              </div>
+              <Pagination
+                basePath="/recherche"
+                currentPage={currentPage}
+                filters={filters}
+                totalPages={totalPages}
+              />
+            </>
+          ) : (
+            <div className="empty-state">
+              <h3>Aucun contenu ne correspond a ces filtres.</h3>
+              <p>Modifiez vos criteres ou explorez les catalogues par module.</p>
+              <Link className="button" href="/recherche">
+                Reinitialiser
+              </Link>
+            </div>
+          )}
         </div>
       </section>
     </>
   );
 }
 
+/* ================================================================
+   CHECKOUT VIEW — Booking Summary dark style Boleto
+   Remplace l'ancien sticky-panel blanc par un panneau sombre
+   avec détail ligne par ligne (image 8 de référence)
+   ================================================================ */
 export function CheckoutView({
   item,
   selectedOffer,
@@ -766,6 +1019,11 @@ export function CheckoutView({
   const organizer = findOrganizerProfile(item.organizerSlug);
   const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
   const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const { subtotal, serviceFee, total: totalPayable } = getCheckoutAmounts(item, selectedOffer);
+  const paymentReference = buildPaymentReference(item, selectedOffer);
+  const paidAt = normalizePaidAt();
+  const paymentQuery = buildPaymentQuery(selectedOffer, paymentReference, paidAt);
+  const successHref = `/checkout/${item.module}/${item.slug}/succes${paymentQuery}`;
 
   return (
     <>
@@ -783,6 +1041,8 @@ export function CheckoutView({
 
       <section className="section">
         <div className="shell checkout-layout">
+
+          {/* ── Formulaire checkout ────────────────────────────── */}
           <div className="checkout-form">
             <div className="checkout-head">
               <div>
@@ -825,11 +1085,7 @@ export function CheckoutView({
                 </label>
                 <label>
                   Quantite
-                  <select defaultValue="1">
-                    <option value="1">1</option>
-                    <option value="2">2</option>
-                    <option value="3">3</option>
-                  </select>
+                  <QuantityStepper />
                 </label>
               </div>
             </div>
@@ -844,50 +1100,362 @@ export function CheckoutView({
                 ))}
               </div>
               <p className="section-copy">
-                La confirmation finale doit etre validee par verification serveur et webhook de
-                paiement.
+                La confirmation finale est validee par verification serveur et webhook de paiement.
               </p>
             </div>
 
-            <button className="button button--full" type="button">
-              Continuer vers le paiement
-            </button>
           </div>
 
-          <aside className="sticky-panel">
-            <div className="sticky-panel__price">
-              <span>Resume</span>
-              <strong>{selectedOffer?.title ?? "Offre principale"}</strong>
+          {/* ── Booking Summary — Dark, style Boleto ─────────── */}
+          <aside className="booking-summary">
+
+            {/* Header */}
+            <div className="booking-summary__header">
+              <p className="booking-summary__eyebrow">Resume</p>
+              <h2 className="booking-summary__title">
+                {selectedOffer?.title ?? "Offre principale"}
+              </h2>
+              <p className="booking-summary__subtitle">{item.category}</p>
             </div>
-            <ul className="facts-list">
-              <li>
-                <strong>Date</strong>
-                <span>{dateLabel}</span>
-              </li>
-              <li>
-                <strong>Lieu</strong>
-                <span>{item.venueName ?? item.city}</span>
-              </li>
-              <li>
-                <strong>Organisateur</strong>
-                <span>{item.organizers[0]?.name ?? "Organisateur"}</span>
-              </li>
-            </ul>
-            <div className="checkout-total">
-              <div>
-                <span>Sous-total</span>
-                <strong>{item.isFree ? "Gratuit" : formatMoney(total, item.currency)}</strong>
+
+            {/* Organisateur */}
+            <div className="booking-summary__publisher">
+              <img alt={organizerName} src={organizerImage} />
+              <div className="booking-summary__publisher-copy">
+                <small>Publie par</small>
+                <strong>{organizerName}</strong>
               </div>
-              <div>
-                <span>Frais</span>
-                <strong>{item.isFree ? "0" : formatMoney(1000, item.currency)}</strong>
+            </div>
+
+            {/* Lignes de détail */}
+            <div className="booking-summary__details">
+              <div className="booking-summary__detail-row">
+                <span className="booking-summary__detail-label">Date</span>
+                <span className="booking-summary__detail-value">{dateLabel}</span>
               </div>
-              <div className="checkout-total__grand">
+              <div className="booking-summary__detail-row">
+                <span className="booking-summary__detail-label">Lieu</span>
+                <span className="booking-summary__detail-value">
+                  {item.venueName ?? item.city}, {item.country}
+                </span>
+              </div>
+              <div className="booking-summary__detail-row">
+                <span className="booking-summary__detail-label">Format</span>
+                <span className="booking-summary__detail-value">
+                  {item.format ?? "Presentiel"}
+                </span>
+              </div>
+              {selectedOffer?.perks && selectedOffer.perks.length > 0 && (
+                <div className="booking-summary__detail-row">
+                  <span className="booking-summary__detail-label">Inclus</span>
+                  <span className="booking-summary__detail-value">
+                    {selectedOffer.perks.slice(0, 2).join(", ")}
+                    {selectedOffer.perks.length > 2 && "…"}
+                  </span>
+                </div>
+              )}
+            </div>
+
+            {/* Prix */}
+            <div className="booking-summary__price-block">
+              <div className="booking-summary__price-row">
+                <span className="booking-summary__price-label">Sous-total</span>
+                <span className="booking-summary__price-value">
+                  {item.isFree ? "Gratuit" : formatMoney(subtotal, item.currency)}
+                </span>
+              </div>
+              <div className="booking-summary__price-row">
+                <span className="booking-summary__price-label">Frais de service</span>
+                <span className="booking-summary__price-value">
+                  {item.isFree ? "—" : formatMoney(serviceFee, item.currency)}
+                </span>
+              </div>
+            </div>
+
+            {/* Total */}
+            <div className="booking-summary__total-block">
+              <span className="booking-summary__total-label">Total a payer</span>
+              <span className="booking-summary__total-value">
+                {item.isFree ? "Gratuit" : formatMoney(totalPayable, item.currency)}
+              </span>
+            </div>
+
+            {/* CTA */}
+            <div className="booking-summary__cta">
+              <Link className="button button--full" href={successHref}>
+                Confirmer le paiement
+              </Link>
+            </div>
+
+            {/* Réassurance */}
+            <div className="booking-summary__trust">
+              <LockIcon />
+              <span>Paiement securise — verification serveur</span>
+            </div>
+          </aside>
+
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ================================================================
+   PAYMENT SUCCESS VIEW
+   ================================================================ */
+export function PaymentSuccessView({
+  item,
+  selectedOffer,
+  platform,
+  paymentReference,
+  paidAt,
+}: {
+  item: PublicContent | null;
+  selectedOffer: PublicContent["tiers"][number] | null;
+  platform: PlatformConfiguration;
+  paymentReference?: string;
+  paidAt?: string;
+}) {
+  if (!item) {
+    notFound();
+  }
+
+  const organizer = findOrganizerProfile(item.organizerSlug);
+  const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
+  const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const { subtotal, serviceFee, total } = getCheckoutAmounts(item, selectedOffer);
+  const resolvedReference = buildPaymentReference(item, selectedOffer, paymentReference);
+  const resolvedPaidAt = normalizePaidAt(paidAt);
+  const receiptHref = `/checkout/${item.module}/${item.slug}/recu${buildPaymentQuery(
+    selectedOffer,
+    resolvedReference,
+    resolvedPaidAt,
+  )}`;
+
+  return (
+    <>
+      <section className="page-hero page-hero--compact">
+        <div className="shell page-hero__content">
+          <p className="eyebrow">Paiement confirme</p>
+          <h1>Reservation enregistree</h1>
+          <p>Le paiement a ete valide et un recapitulatif est deja disponible.</p>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="shell success-layout">
+          <article className="success-card">
+            <span className="success-card__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path d="M20 7 9.5 17.5 4 12" />
+              </svg>
+            </span>
+            <p className="eyebrow">Succes</p>
+            <h2>Votre commande est confirmee</h2>
+            <p className="section-copy">
+              {platform.brandName} a centralise la confirmation, la reference de paiement et le
+              recapitulatif de commande.
+            </p>
+
+            <div className="success-card__meta">
+              <article>
+                <span>Reference</span>
+                <strong>{resolvedReference}</strong>
+              </article>
+              <article>
+                <span>Offre</span>
+                <strong>{selectedOffer?.title ?? item.title}</strong>
+              </article>
+              <article>
                 <span>Total</span>
+                <strong>{item.isFree ? "Gratuit" : formatMoney(total, item.currency)}</strong>
+              </article>
+              <article>
+                <span>Paye le</span>
+                <strong>{formatDateLabel(resolvedPaidAt)}</strong>
+              </article>
+            </div>
+
+            <div className="success-card__actions">
+              <Link className="button" href={receiptHref}>
+                Voir le recu
+              </Link>
+              <Link className="button button--ghost" href={`/${item.module}/${item.slug}`}>
+                Retour au contenu
+              </Link>
+            </div>
+          </article>
+
+          <aside className="success-side">
+            <div className="success-side__panel">
+              <Link className="publisher-pill publisher-pill--card" href={`/organisateurs/${item.organizerSlug}`}>
+                <img alt={organizerName} src={organizerImage} />
+                <span>
+                  <small>Publie par</small>
+                  <strong>{organizerName}</strong>
+                </span>
+              </Link>
+
+              <div className="success-side__facts">
+                <div>
+                  <span>Date</span>
+                  <strong>{formatDateRange(item)}</strong>
+                </div>
+                <div>
+                  <span>Lieu</span>
+                  <strong>
+                    {item.venueName ?? item.city}, {item.country}
+                  </strong>
+                </div>
+                <div>
+                  <span>Sous-total</span>
+                  <strong>{item.isFree ? "Gratuit" : formatMoney(subtotal, item.currency)}</strong>
+                </div>
+                <div>
+                  <span>Frais</span>
+                  <strong>{item.isFree ? "—" : formatMoney(serviceFee, item.currency)}</strong>
+                </div>
+              </div>
+
+              <div className="success-side__footer">
+                <LockIcon />
+                <span>Confirmation envoyee et reference disponible pour le suivi.</span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ================================================================
+   RECEIPT VIEW
+   ================================================================ */
+export function ReceiptView({
+  item,
+  selectedOffer,
+  platform,
+  paymentReference,
+  paidAt,
+}: {
+  item: PublicContent | null;
+  selectedOffer: PublicContent["tiers"][number] | null;
+  platform: PlatformConfiguration;
+  paymentReference?: string;
+  paidAt?: string;
+}) {
+  if (!item) {
+    notFound();
+  }
+
+  const organizer = findOrganizerProfile(item.organizerSlug);
+  const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
+  const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const { subtotal, serviceFee, total } = getCheckoutAmounts(item, selectedOffer);
+  const resolvedReference = buildPaymentReference(item, selectedOffer, paymentReference);
+  const resolvedPaidAt = normalizePaidAt(paidAt);
+  const successHref = `/checkout/${item.module}/${item.slug}/succes${buildPaymentQuery(
+    selectedOffer,
+    resolvedReference,
+    resolvedPaidAt,
+  )}`;
+
+  return (
+    <>
+      <section className="page-hero page-hero--compact">
+        <div className="shell page-hero__content">
+          <p className="eyebrow">Recu</p>
+          <h1>Recu de paiement</h1>
+          <p>Un recapitulatif clair, imprimable et partageable pour la transaction.</p>
+        </div>
+      </section>
+
+      <section className="section">
+        <div className="shell receipt-layout">
+          <article className="receipt-card">
+            <header className="receipt-card__header">
+              <div>
+                <p className="eyebrow">Recu officiel</p>
+                <h2>{platform.brandName}</h2>
+                <p className="section-copy">Reference {resolvedReference}</p>
+              </div>
+              <span className="receipt-card__status">Paye</span>
+            </header>
+
+            <div className="receipt-card__meta">
+              <div>
+                <span>Contenu</span>
+                <strong>{item.title}</strong>
+              </div>
+              <div>
+                <span>Offre</span>
+                <strong>{selectedOffer?.title ?? "Offre principale"}</strong>
+              </div>
+              <div>
+                <span>Date de paiement</span>
+                <strong>{formatDateLabel(resolvedPaidAt)}</strong>
+              </div>
+              <div>
+                <span>Lieu</span>
                 <strong>
-                  {item.isFree ? "Gratuit" : formatMoney(total + 1000, item.currency)}
+                  {item.venueName ?? item.city}, {item.country}
                 </strong>
               </div>
+            </div>
+
+            <div className="receipt-card__publisher">
+              <img alt={organizerName} src={organizerImage} />
+              <div>
+                <small>Organisateur</small>
+                <strong>{organizerName}</strong>
+              </div>
+            </div>
+
+            <div className="receipt-lines">
+              <div className="receipt-line">
+                <span>{selectedOffer?.title ?? item.title}</span>
+                <strong>{item.isFree ? "Gratuit" : formatMoney(subtotal, item.currency)}</strong>
+              </div>
+              <div className="receipt-line receipt-line--muted">
+                <span>Quantite</span>
+                <strong>1</strong>
+              </div>
+              <div className="receipt-line receipt-line--muted">
+                <span>Frais de service</span>
+                <strong>{item.isFree ? "—" : formatMoney(serviceFee, item.currency)}</strong>
+              </div>
+            </div>
+
+            <div className="receipt-card__total">
+              <span>Total regle</span>
+              <strong>{item.isFree ? "Gratuit" : formatMoney(total, item.currency)}</strong>
+            </div>
+
+            <footer className="receipt-card__footer">
+              <div>
+                <span>Support</span>
+                <strong>{platform.supportEmail}</strong>
+              </div>
+              <div>
+                <span>Telephone</span>
+                <strong>{platform.supportPhone}</strong>
+              </div>
+            </footer>
+          </article>
+
+          <aside className="receipt-side">
+            <div className="receipt-side__panel">
+              <PrintButton className="button button--full">Imprimer le recu</PrintButton>
+              <Link className="button button--ghost button--full" href={successHref}>
+                Retour au succes
+              </Link>
+              <Link className="button button--ghost button--full" href={`/${item.module}/${item.slug}`}>
+                Retour au contenu
+              </Link>
+              <p className="receipt-side__note">
+                Ce recu reprend la reference, le montant et l'organisateur visible publiquement.
+              </p>
             </div>
           </aside>
         </div>
