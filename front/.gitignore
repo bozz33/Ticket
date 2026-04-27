@@ -2,3 +2,5 @@ node_modules
 .next
 .env.local
 npm-debug.log*
+.tmp-edge*/
+.next-dev*.log

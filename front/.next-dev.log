@@ -605,3 +605,20 @@ https://nextjs.org/telemetry
  GET / 200 in 328ms (next.js: 130ms, application-code: 197ms)
 ✓ Compiled in 37ms
  GET / 200 in 1824ms (next.js: 8ms, application-code: 1816ms)
+ GET / 200 in 1179ms (next.js: 28ms, application-code: 1151ms)
+✓ Compiled in 56ms
+ GET / 200 in 347ms (next.js: 59ms, application-code: 288ms)
+ GET / 200 in 1521ms (next.js: 51ms, application-code: 1470ms)
+ GET / 200 in 601ms (next.js: 18ms, application-code: 582ms)
+ GET / 200 in 2.6s (next.js: 11ms, application-code: 2.6s)
+ GET / 200 in 953ms (next.js: 18ms, application-code: 935ms)
+ GET /evenements 200 in 4.4s (next.js: 1446ms, application-code: 3.0s)
+ GET / 200 in 684ms (next.js: 30ms, application-code: 653ms)
+✓ Compiled in 116ms
+ GET / 200 in 461ms (next.js: 7ms, application-code: 453ms)
+✓ Compiled in 48ms
+ GET / 200 in 17ms (next.js: 6ms, application-code: 10ms)
+ GET / 200 in 147ms (next.js: 3ms, application-code: 145ms)
+ GET / 200 in 464ms (next.js: 6ms, application-code: 458ms)
+ GET / 200 in 888ms (next.js: 5ms, application-code: 883ms)
+ GET /recherche 200 in 523ms (next.js: 257ms, application-code: 266ms)

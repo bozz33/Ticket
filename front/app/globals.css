@@ -55,7 +55,7 @@ main {
 }
 
 .shell {
-  width: min(1200px, calc(100% - 32px));
+  width: min(1320px, calc(100% - 40px));
   margin: 0 auto;
 }
 
@@ -1346,6 +1346,10 @@ main {
   max-width: 720px;
 }
 
+.page-hero__content > p:not(.eyebrow) {
+  color: rgba(255, 255, 255, 0.82);
+}
+
 .page-hero__pills {
   display: flex;
   flex-wrap: wrap;
@@ -1376,7 +1380,7 @@ main {
 }
 
 .listing-layout {
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 260px minmax(0, 1fr);
 }
 
 .detail-layout,
