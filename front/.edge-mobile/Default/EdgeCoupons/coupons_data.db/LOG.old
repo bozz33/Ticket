@@ -1,0 +1,10 @@
+2026/04/26-23:31:25.475 70a4 Reusing MANIFEST C:\laragon\www\Ticket\front\.edge-mobile\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/26-23:31:25.484 70a4 Recovering log #4
+2026/04/26-23:31:25.508 70a4 Level-0 table #7: started
+2026/04/26-23:31:25.525 70a4 Level-0 table #7: 682224 bytes OK
+2026/04/26-23:31:25.525 70a4 Recovering log #7
+2026/04/26-23:31:25.526 70a4 Reusing old log C:\laragon\www\Ticket\front\.edge-mobile\Default\EdgeCoupons/coupons_data.db/000007.log 
+2026/04/26-23:31:25.537 70a4 Delete type=0 #4
+2026/04/26-23:31:25.537 70a4 Delete type=2 #8
+2026/04/26-23:31:25.541 7a70 Level-0 table #9: started
+2026/04/26-23:31:25.552 7a70 Level-0 table #9: 682224 bytes OK

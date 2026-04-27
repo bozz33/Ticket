@@ -1,0 +1,18 @@
+2026/04/27-00:14:44.510 4844 Reusing MANIFEST C:\laragon\www\Ticket\front\.edge-desktop\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/27-00:14:44.516 4844 Recovering log #12
+2026/04/27-00:14:44.518 4844 Level-0 table #15: started
+2026/04/27-00:14:44.553 4844 Level-0 table #15: 682224 bytes OK
+2026/04/27-00:14:44.558 4844 Recovering log #15
+2026/04/27-00:14:44.560 4844 Reusing old log C:\laragon\www\Ticket\front\.edge-desktop\Default\EdgeCoupons/coupons_data.db/000015.log 
+2026/04/27-00:14:44.644 4844 Delete type=0 #12
+2026/04/27-00:14:44.652 7cf0 Compacting 5@0 + 0@1 files
+2026/04/27-00:14:44.674 7cf0 Generated table #16@0: 3 keys, 682224 bytes
+2026/04/27-00:14:44.674 7cf0 Compacted 5@0 + 0@1 files => 682224 bytes
+2026/04/27-00:14:44.677 7cf0 compacted to: files[ 0 1 1 0 0 0 0 ]
+2026/04/27-00:14:44.683 7cf0 Delete type=2 #7
+2026/04/27-00:14:44.683 7cf0 Delete type=2 #9
+2026/04/27-00:14:44.683 7cf0 Delete type=2 #11
+2026/04/27-00:14:44.683 7cf0 Delete type=2 #13
+2026/04/27-00:14:44.683 7cf0 Delete type=2 #15
+2026/04/27-00:14:44.685 7cf0 Level-0 table #18: started
+2026/04/27-00:14:44.699 7cf0 Level-0 table #18: 682224 bytes OK

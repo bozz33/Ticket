@@ -1,0 +1,4 @@
+2026/04/27-00:49:56.163 71e8 Creating DB C:\laragon\www\Ticket\front\.tmp-edge\Default\EdgeCoupons/coupons_data.db since it was missing.
+2026/04/27-00:49:56.445 71e8 Reusing MANIFEST C:\laragon\www\Ticket\front\.tmp-edge\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/27-00:50:02.853 4a18 Level-0 table #5: started
+2026/04/27-00:50:02.872 4a18 Level-0 table #5: 682121 bytes OK

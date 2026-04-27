@@ -1,0 +1,844 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ticket Preview</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:wght@600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f4efe7;
+        --bg-alt: #fbf8f3;
+        --surface: #ffffff;
+        --text: #12202b;
+        --text-soft: #5f6b76;
+        --line: #d8dee5;
+        --accent: #d98c2b;
+        --accent-strong: #b86d10;
+        --teal: #0f8b8d;
+        --radius: 8px;
+        --shadow: 0 20px 60px rgba(16, 22, 29, 0.12);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Manrope", sans-serif;
+        color: var(--text);
+        background:
+          radial-gradient(circle at top left, rgba(217, 140, 43, 0.1), transparent 28%),
+          radial-gradient(circle at top right, rgba(15, 139, 141, 0.1), transparent 22%),
+          linear-gradient(180deg, #f5f1ea 0%, #f7f3ee 55%, #fbf8f3 100%);
+      }
+
+      a {
+        color: inherit;
+        text-decoration: none;
+      }
+
+      img {
+        display: block;
+        max-width: 100%;
+      }
+
+      .shell {
+        width: min(1200px, calc(100% - 32px));
+        margin: 0 auto;
+      }
+
+      .eyebrow {
+        margin: 0 0 12px;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .site-header {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        background: rgba(16, 22, 29, 0.94);
+        backdrop-filter: blur(12px);
+      }
+
+      .nav {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 18px 0;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        color: #fff;
+      }
+
+      .brand__mark {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        aspect-ratio: 1;
+        border-radius: var(--radius);
+        background: var(--accent);
+        font-weight: 800;
+      }
+
+      .brand strong,
+      .hero h1,
+      .section-header h2,
+      .card__title,
+      .organizer-card__title {
+        font-family: "Fraunces", serif;
+      }
+
+      .nav__links,
+      .nav__actions {
+        display: flex;
+        gap: 18px;
+        align-items: center;
+      }
+
+      .nav__links a {
+        color: rgba(255, 255, 255, 0.82);
+        font-size: 0.96rem;
+      }
+
+      .button {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 46px;
+        padding: 0 18px;
+        border-radius: var(--radius);
+        border: 1px solid transparent;
+        background: var(--accent);
+        color: #fff;
+        font-weight: 700;
+      }
+
+      .button--ghost {
+        background: transparent;
+        border-color: rgba(255, 255, 255, 0.16);
+      }
+
+      .hero {
+        position: relative;
+        overflow: hidden;
+        min-height: 76vh;
+        color: #fff;
+        background: #0d141b;
+      }
+
+      .hero::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          linear-gradient(90deg, rgba(8, 12, 16, 0.82) 0%, rgba(8, 12, 16, 0.52) 48%, rgba(8, 12, 16, 0.72) 100%),
+          linear-gradient(180deg, rgba(8, 12, 16, 0.26), rgba(8, 12, 16, 0.86));
+      }
+
+      .hero__image {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .hero__content {
+        position: relative;
+        z-index: 1;
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.92fr);
+        gap: 40px;
+        align-items: end;
+        padding: 132px 0 64px;
+      }
+
+      .hero h1 {
+        margin: 0;
+        line-height: 1.02;
+        font-size: clamp(2.5rem, 4vw, 4.7rem);
+      }
+
+      .hero__lede {
+        max-width: 560px;
+        color: rgba(255, 255, 255, 0.78);
+        line-height: 1.7;
+      }
+
+      .hero__actions {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-top: 24px;
+      }
+
+      .hero-search {
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.07);
+        padding: 20px;
+        box-shadow: var(--shadow);
+      }
+
+      .hero-search__tabs,
+      .hero-search__trust {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .hero-search__tabs {
+        margin-bottom: 18px;
+      }
+
+      .hero-search__tabs span {
+        display: inline-flex;
+        align-items: center;
+        min-height: 42px;
+        padding: 0 12px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+      }
+
+      .hero-search__fields {
+        display: grid;
+        grid-template-columns: minmax(0, 1.2fr) 180px 150px;
+        gap: 12px;
+      }
+
+      .hero-search__fields label {
+        display: grid;
+        gap: 8px;
+        color: rgba(255, 255, 255, 0.78);
+        font-size: 0.92rem;
+      }
+
+      .hero-search__fields input,
+      .hero-search__fields select {
+        min-height: 48px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(255, 255, 255, 0.16);
+        background: rgba(255, 255, 255, 0.08);
+        color: #fff;
+        padding: 0 14px;
+      }
+
+      .hero-search__trust {
+        margin-top: 18px;
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 0.86rem;
+      }
+
+      .hero-search__suggestions {
+        display: grid;
+        gap: 8px;
+        margin-top: 10px;
+      }
+
+      .hero-search__suggestion {
+        padding: 12px;
+        border-radius: var(--radius);
+        background: rgba(255, 255, 255, 0.05);
+      }
+
+      .hero-search__suggestion strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      .hero-search__suggestion span {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.86rem;
+      }
+
+      .stats {
+        background: #10161d;
+        color: #fff;
+      }
+
+      .stats__grid,
+      .cards,
+      .organizers {
+        display: grid;
+        gap: 22px;
+      }
+
+      .stats__grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        padding: 24px 0;
+      }
+
+      .stat {
+        display: grid;
+        gap: 6px;
+        padding: 18px;
+        border-radius: var(--radius);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .stat strong {
+        font-size: 2rem;
+      }
+
+      .section {
+        padding: 72px 0;
+      }
+
+      .section--light {
+        background: rgba(255, 255, 255, 0.42);
+      }
+
+      .section-header {
+        display: flex;
+        align-items: end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 28px;
+      }
+
+      .section-header h2 {
+        margin: 0;
+        font-size: clamp(1.7rem, 2.4vw, 2.6rem);
+      }
+
+      .section-copy {
+        color: var(--text-soft);
+        line-height: 1.7;
+      }
+
+      .cards {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .card {
+        overflow: hidden;
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .card__media {
+        aspect-ratio: 1.08;
+      }
+
+      .card__media img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .card__body {
+        display: grid;
+        gap: 14px;
+        padding: 18px;
+      }
+
+      .badge-row,
+      .meta-row,
+      .card__footer {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        min-height: 28px;
+        padding: 0 10px;
+        border-radius: 999px;
+        background: rgba(217, 140, 43, 0.12);
+        color: var(--accent-strong);
+        font-size: 0.8rem;
+        font-weight: 700;
+      }
+
+      .meta-row,
+      .card__body p,
+      .card__footer span {
+        color: var(--text-soft);
+      }
+
+      .card__title {
+        font-size: 1.28rem;
+        line-height: 1.18;
+      }
+
+      .card__footer {
+        justify-content: space-between;
+        align-items: end;
+      }
+
+      .card__price strong {
+        display: block;
+        color: var(--text);
+      }
+
+      .organizers {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .organizer-card {
+        overflow: hidden;
+        border-radius: var(--radius);
+        background: var(--surface);
+        box-shadow: var(--shadow);
+      }
+
+      .organizer-card__banner {
+        aspect-ratio: 1.8;
+      }
+
+      .organizer-card__banner img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+
+      .organizer-card__body {
+        padding: 18px;
+      }
+
+      .organizer-card__identity {
+        display: grid;
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+      }
+
+      .organizer-card__logo {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+        border-radius: var(--radius);
+      }
+
+      .organizer-card__title {
+        font-size: 1.08rem;
+      }
+
+      .organizer-card__body p,
+      .organizer-card__mini a {
+        color: var(--text-soft);
+      }
+
+      .organizer-card__mini {
+        display: grid;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .organizer-card__mini a {
+        color: var(--teal);
+        font-weight: 700;
+      }
+
+      .site-footer {
+        background: #10161d;
+        color: rgba(255, 255, 255, 0.76);
+      }
+
+      .site-footer .shell {
+        padding: 24px 0 34px;
+      }
+
+      @media (max-width: 1100px) {
+        .hero__content,
+        .cards,
+        .organizers,
+        .stats__grid {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .hero__content {
+          align-items: start;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .shell {
+          width: min(100% - 24px, 1200px);
+        }
+
+        .nav,
+        .hero__content,
+        .hero-search__fields,
+        .cards,
+        .organizers,
+        .stats__grid,
+        .section-header,
+        .card__footer {
+          display: grid;
+          grid-template-columns: 1fr;
+        }
+
+        .nav__links,
+        .nav__actions {
+          flex-wrap: wrap;
+        }
+
+        .hero {
+          min-height: auto;
+        }
+
+        .hero__content {
+          padding-top: 110px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="shell nav">
+        <div class="brand">
+          <span class="brand__mark">T</span>
+          <span>
+            <strong>Ticket</strong>
+          </span>
+        </div>
+        <nav class="nav__links">
+          <a href="#events">Evenements</a>
+          <a href="#training">Formations</a>
+          <a href="#expo">Stands</a>
+          <a href="#calls">Appels a projets</a>
+          <a href="#funding">Crowdfunding</a>
+        </nav>
+        <div class="nav__actions">
+          <span class="button button--ghost">Mon compte</span>
+          <span class="button">Devenir organisateur</span>
+        </div>
+      </div>
+    </header>
+
+    <section class="hero">
+      <img
+        class="hero__image"
+        alt="Hero"
+        src="https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=1800&q=80"
+      />
+      <div class="shell hero__content">
+        <div>
+          <p class="eyebrow">Decouverte, confiance, conversion</p>
+          <h1>Ticket</h1>
+          <p class="hero__lede">
+            Un portail public unifie pour trouver des evenements, des formations, des stands, des
+            appels a projets et des campagnes de financement.
+          </p>
+          <div class="hero__actions">
+            <span class="button">Explorer le catalogue</span>
+            <span class="button button--ghost">Publier sur la plateforme</span>
+          </div>
+        </div>
+
+        <div class="hero-search">
+          <div class="hero-search__tabs">
+            <span>Evenements</span>
+            <span>Formations</span>
+            <span>Stands</span>
+            <span>Appels a projets</span>
+            <span>Crowdfunding</span>
+          </div>
+          <div class="hero-search__fields">
+            <label>
+              Recherche
+              <input id="query" placeholder="Concert, masterclass, stand, programme..." />
+            </label>
+            <label>
+              Module
+              <select id="module">
+                <option value="all">Tous</option>
+                <option value="evenements">Evenements</option>
+                <option value="formations">Formations</option>
+                <option value="stands">Stands</option>
+                <option value="appels-a-projets">Appels a projets</option>
+                <option value="crowdfunding">Crowdfunding</option>
+              </select>
+            </label>
+            <span class="button">Rechercher</span>
+          </div>
+          <div class="hero-search__suggestions" id="suggestions"></div>
+          <div class="hero-search__trust">
+            <span>Paiement securise et verification serveur</span>
+            <span>Billets et confirmations centralises</span>
+            <span>Parcours mobile optimise jusqu'au checkout</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="stats">
+      <div class="shell stats__grid">
+        <article class="stat">
+          <strong>10</strong>
+          <span>Contenus publies</span>
+        </article>
+        <article class="stat">
+          <strong>3</strong>
+          <span>Organisateurs</span>
+        </article>
+        <article class="stat">
+          <strong>5</strong>
+          <span>Modules actifs</span>
+        </article>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="shell">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Selection editee</p>
+            <h2>A la une</h2>
+            <p class="section-copy">
+              Une vitrine riche et visuelle, avec des cartes denses et des CTA directs.
+            </p>
+          </div>
+        </div>
+        <div class="cards" id="featured-cards"></div>
+      </div>
+    </section>
+
+    <section class="section section--light">
+      <div class="shell">
+        <div class="section-header">
+          <div>
+            <p class="eyebrow">Organisateurs</p>
+            <h2>Profils publics mis en avant</h2>
+            <p class="section-copy">
+              Chaque tenant peut etre valorise comme une vraie page publique d'organisateur.
+            </p>
+          </div>
+        </div>
+        <div class="organizers" id="organizers"></div>
+      </div>
+    </section>
+
+    <footer class="site-footer">
+      <div class="shell">
+        Ticket preview local. Cette page permet de visualiser le design sans serveur Next.js.
+      </div>
+    </footer>
+
+    <script>
+      const items = [
+        {
+          title: "Abidjan Jazz Nights 2026",
+          module: "evenements",
+          category: "Musique",
+          city: "Abidjan",
+          date: "19 juin 2026",
+          price: "15 000 XOF",
+          image:
+            "https://images.unsplash.com/photo-1501386761578-eac5c94b800a?auto=format&fit=crop&w=1200&q=80",
+          summary: "Trois soirees live entre jazz, soul et food court au bord de la lagune.",
+        },
+        {
+          title: "Bootcamp Production Evenementielle",
+          module: "formations",
+          category: "Production",
+          city: "Dakar",
+          date: "18 mai 2026",
+          price: "180 000 XOF",
+          image:
+            "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1200&q=80",
+          summary: "Un programme court pour structurer planning, billetterie, ops terrain et reporting.",
+        },
+        {
+          title: "Agro Expo Abidjan - Reservation de stands",
+          module: "stands",
+          category: "Exposition",
+          city: "Abidjan",
+          date: "15 septembre 2026",
+          price: "350 000 XOF",
+          image:
+            "https://images.unsplash.com/photo-1511795409834-432f7b1728f2?auto=format&fit=crop&w=1200&q=80",
+          summary: "Reservez votre emplacement, comparez les packs et finalisez votre dossier exposant.",
+        },
+        {
+          title: "Appel a projets FemTech Impact 2026",
+          module: "appels-a-projets",
+          category: "Innovation",
+          city: "Yaounde",
+          date: "Cloture 28 juin 2026",
+          price: "10 000 XOF",
+          image:
+            "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1200&q=80",
+          summary: "Subventions, mentorat et demo day pour startups en sante, inclusion et parcours feminin.",
+        },
+        {
+          title: "Rehabilitation d'une salle polyvalente",
+          module: "crowdfunding",
+          category: "Impact social",
+          city: "Bouake",
+          date: "Fin 30 juillet 2026",
+          price: "5 000 XOF",
+          image:
+            "https://images.unsplash.com/photo-1488521787991-ed7bbaae773c?auto=format&fit=crop&w=1200&q=80",
+          summary: "Financer la remise a niveau d'un espace communautaire pour culture, formation et jeunesse.",
+        },
+        {
+          title: "Sommet Tech Afrique 2026",
+          module: "evenements",
+          category: "Conference",
+          city: "Dakar",
+          date: "8 juillet 2026",
+          price: "25 000 XOF",
+          image:
+            "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1200&q=80",
+          summary: "Keynotes, networking et sessions produit pour founders, ops et equipes innovation.",
+        },
+      ];
+
+      const organizers = [
+        {
+          name: "Lagoon Live",
+          city: "Abidjan",
+          country: "Cote d'Ivoire",
+          tagline: "Experiences culturelles et concerts premium en Afrique de l'Ouest.",
+          banner:
+            "https://images.unsplash.com/photo-1503095396549-807759245b35?auto=format&fit=crop&w=1600&q=80",
+          logo:
+            "https://images.unsplash.com/photo-1614680376573-df3480f0c6ff?auto=format&fit=crop&w=320&q=80",
+          links: ["Abidjan Jazz Nights 2026", "Sommet Tech Afrique 2026"],
+        },
+        {
+          name: "Atelier Neo",
+          city: "Dakar",
+          country: "Senegal",
+          tagline: "Formations, bootcamps et programmes certifiants pour equipes et createurs.",
+          banner:
+            "https://images.unsplash.com/photo-1521737604893-d14cc237f11d?auto=format&fit=crop&w=1600&q=80",
+          logo:
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=320&q=80",
+          links: ["Bootcamp Production Evenementielle"],
+        },
+        {
+          name: "Impact Foundry",
+          city: "Yaounde",
+          country: "Cameroun",
+          tagline: "Programmes d'innovation, expo business et financement de projets a impact.",
+          banner:
+            "https://images.unsplash.com/photo-1520607162513-77705c0f0d4a?auto=format&fit=crop&w=1600&q=80",
+          logo:
+            "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=320&q=80",
+          links: [
+            "Agro Expo Abidjan - Reservation de stands",
+            "Appel a projets FemTech Impact 2026",
+          ],
+        },
+      ];
+
+      const featuredCards = document.getElementById("featured-cards");
+      const organizerCards = document.getElementById("organizers");
+      const suggestions = document.getElementById("suggestions");
+      const queryInput = document.getElementById("query");
+      const moduleInput = document.getElementById("module");
+
+      featuredCards.innerHTML = items
+        .map(
+          (item) => `
+            <article class="card">
+              <div class="card__media">
+                <img src="${item.image}" alt="${item.title}" />
+              </div>
+              <div class="card__body">
+                <div class="badge-row">
+                  <span class="badge">${item.category}</span>
+                  <span class="badge">${item.module}</span>
+                </div>
+                <div class="meta-row">
+                  <span>${item.city}</span>
+                  <span>${item.date}</span>
+                </div>
+                <div class="card__title">${item.title}</div>
+                <p>${item.summary}</p>
+                <div class="card__footer">
+                  <div class="card__price">
+                    <span>A partir de</span>
+                    <strong>${item.price}</strong>
+                  </div>
+                  <span class="button">Voir</span>
+                </div>
+              </div>
+            </article>
+          `,
+        )
+        .join("");
+
+      organizerCards.innerHTML = organizers
+        .map(
+          (organizer) => `
+            <article class="organizer-card">
+              <div class="organizer-card__banner">
+                <img src="${organizer.banner}" alt="${organizer.name}" />
+              </div>
+              <div class="organizer-card__body">
+                <div class="organizer-card__identity">
+                  <img class="organizer-card__logo" src="${organizer.logo}" alt="${organizer.name}" />
+                  <div>
+                    <div class="organizer-card__title">${organizer.name}</div>
+                    <p>${organizer.city}, ${organizer.country}</p>
+                  </div>
+                </div>
+                <p>${organizer.tagline}</p>
+                <div class="organizer-card__mini">
+                  ${organizer.links.map((entry) => `<a href="#">${entry}</a>`).join("")}
+                </div>
+              </div>
+            </article>
+          `,
+        )
+        .join("");
+
+      function updateSuggestions() {
+        const query = queryInput.value.trim().toLowerCase();
+        const module = moduleInput.value;
+
+        if (query.length < 2) {
+          suggestions.innerHTML = "";
+          return;
+        }
+
+        const matches = items
+          .filter((item) => (module === "all" ? true : item.module === module))
+          .filter((item) =>
+            [item.title, item.summary, item.category, item.city, item.module]
+              .join(" ")
+              .toLowerCase()
+              .includes(query),
+          )
+          .slice(0, 4);
+
+        suggestions.innerHTML = matches
+          .map(
+            (item) => `
+              <div class="hero-search__suggestion">
+                <strong>${item.title}</strong>
+                <span>${item.module} - ${item.category} - ${item.city}</span>
+              </div>
+            `,
+          )
+          .join("");
+      }
+
+      queryInput.addEventListener("input", updateSuggestions);
+      moduleInput.addEventListener("change", updateSuggestions);
+    </script>
+  </body>
+</html>

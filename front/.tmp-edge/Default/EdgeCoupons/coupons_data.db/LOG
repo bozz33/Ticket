@@ -1,0 +1,8 @@
+2026/04/27-00:51:20.619 8390 Reusing MANIFEST C:\laragon\www\Ticket\front\.tmp-edge\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/27-00:51:20.663 8390 Recovering log #3
+2026/04/27-00:51:20.888 8390 Level-0 table #3: started
+2026/04/27-00:51:21.430 8390 Level-0 table #3: 682121 bytes OK
+2026/04/27-00:51:21.430 8390 Recovering log #4
+2026/04/27-00:51:21.431 8390 Reusing old log C:\laragon\www\Ticket\front\.tmp-edge\Default\EdgeCoupons/coupons_data.db/000004.log 
+2026/04/27-00:51:21.467 8390 Delete type=0 #3
+2026/04/27-00:51:21.467 8390 Delete type=2 #5

@@ -1,0 +1,5 @@
+2026/04/27-00:14:39.804 3b44 Reusing MANIFEST C:\laragon\www\Ticket\front\.edge-desktop\Default\EdgeCoupons/coupons_data.db/MANIFEST-000001
+2026/04/27-00:14:39.805 3b44 Recovering log #12
+2026/04/27-00:14:39.806 3b44 Reusing old log C:\laragon\www\Ticket\front\.edge-desktop\Default\EdgeCoupons/coupons_data.db/000012.log 
+2026/04/27-00:14:39.816 4fb8 Compacting 4@0 + 0@1 files
+2026/04/27-00:14:39.838 4fb8 compacted to: files[ 4 0 1 0 0 0 0 ]

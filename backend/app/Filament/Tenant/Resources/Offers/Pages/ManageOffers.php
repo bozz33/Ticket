@@ -1,0 +1,17 @@
+<?php
+
+namespace App\Filament\Tenant\Resources\Offers\Pages;
+
+use App\Filament\Tenant\Resources\Offers\OfferResource;
+use Filament\Actions\CreateAction;
+use Filament\Resources\Pages\ManageRecords;
+
+class ManageOffers extends ManageRecords
+{
+    protected static string $resource = OfferResource::class;
+
+    protected function getHeaderActions(): array
+    {
+        return [CreateAction::make()];
+    }
+}
