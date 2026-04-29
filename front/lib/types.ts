@@ -145,3 +145,100 @@ export interface SearchSuggestion {
   city: string;
   category: string;
 }
+
+// ─── Panel acheteur ──────────────────────────────────────────────────────────
+
+export type OrderStatus = "pending" | "confirmed" | "cancelled" | "refunded";
+export type ReceiptStatus = "issued" | "cancelled" | "refunded";
+export type AccessPassStatus = "active" | "used" | "revoked" | "expired";
+export type AccessPassType =
+  | "event_ticket"
+  | "training_enrollment"
+  | "stand_reservation"
+  | "purchase_pass";
+export type ScanResult =
+  | "granted"
+  | "already_used"
+  | "revoked"
+  | "expired"
+  | "not_found"
+  | "denied";
+
+export interface AccountUser {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface AccountOffer {
+  id: number;
+  name: string;
+  offer_type: string;
+}
+
+export interface AccountOrder {
+  id: number;
+  public_id: string;
+  reference: string;
+  transaction_reference: string;
+  status: OrderStatus;
+  quantity: number;
+  unit_amount: number;
+  total_amount: number;
+  currency_code: string;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  buyer_phone: string | null;
+  offer: AccountOffer | null;
+  receipt: AccountReceipt | null;
+  access_passes: AccountAccessPass[];
+  access_passes_count: number;
+  created_at: string;
+  meta: Record<string, unknown> | null;
+}
+
+export interface AccountReceipt {
+  id: number;
+  public_id: string;
+  reference: string;
+  status: ReceiptStatus;
+  total_amount: number;
+  currency_code: string;
+  buyer_name: string | null;
+  buyer_email: string | null;
+  issued_at: string | null;
+  created_at: string;
+  order: AccountOrder | null;
+  meta: Record<string, unknown> | null;
+}
+
+export interface AccountAccessPass {
+  id: number;
+  public_id: string;
+  access_code: string;
+  type: AccessPassType;
+  status: AccessPassStatus;
+  holder_name: string | null;
+  holder_email: string | null;
+  used_at: string | null;
+  expires_at: string | null;
+  revoked_at: string | null;
+  revocation_reason: string | null;
+  order: { reference: string } | null;
+  offer: { name: string } | null;
+  scans_count?: number;
+  created_at: string;
+  meta: Record<string, unknown> | null;
+}
+
+export interface PublicPassVerification {
+  public_id: string;
+  type: AccessPassType;
+  type_label: string;
+  status: AccessPassStatus;
+  holder_name: string | null;
+  used_at: string | null;
+  expires_at: string | null;
+  qr_payload: { code: string; type: string; public_id: string };
+}
+
