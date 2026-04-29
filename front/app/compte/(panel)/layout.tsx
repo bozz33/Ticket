@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 
-import "./account.css";
+import "../account.css";
 
 interface User {
   id: number;
@@ -84,12 +84,18 @@ export default function AccountLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     fetch("/api/account/me")
-      .then((r) => (r.ok ? r.json() : null))
+      .then((r) => {
+        if (r.status === 401) {
+          router.push("/compte/connexion");
+          return null;
+        }
+        return r.ok ? r.json() : null;
+      })
       .then((data) => {
         if (data?.user) setUser(data.user);
       })
       .catch(() => {});
-  }, []);
+  }, [router]);
 
   async function handleLogout() {
     await fetch("/api/account/logout", { method: "POST" });

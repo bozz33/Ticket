@@ -195,7 +195,7 @@ export default async function CommandeDetailPage({
                 <div className="ac-detail-row" style={{ border: "none", paddingTop: "12px" }}>
                   <Link
                     href={`/compte/recus/${order.receipt.reference}`}
-                    className="button button--sm"
+                    className="button button--small"
                     style={{ width: "100%", textAlign: "center" }}
                   >
                     Voir le reçu

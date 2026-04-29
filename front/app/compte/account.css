@@ -507,6 +507,20 @@
   color: var(--danger);
 }
 
+.ac-qr-status__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--text);
+  margin-top: 8px;
+}
+
+.ac-qr-status__sub {
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  text-align: center;
+  line-height: 1.5;
+}
+
 /* ── Pass type icon ──────────────────────────────────────── */
 
 .ac-pass-type {

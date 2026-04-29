@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
+import "../../account.css";
+
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -96,8 +98,8 @@ function LoginForm() {
           </button>
 
           <p className="ac-form__link">
-            Pas encore de compte ?{" "}
-            <Link href="/compte/inscription">Créer un compte</Link>
+            Un problème ?{" "}
+            <Link href="/support">Contacter le support</Link>
           </p>
         </form>
       </div>
