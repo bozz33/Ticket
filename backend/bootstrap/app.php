@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'initialize.tenant.route' => \App\Http\Middleware\InitializeTenancyByRouteParameter::class,
+            'auth.platform.api' => \App\Http\Middleware\AuthenticatePlatformApi::class,
+            'auth.tenant.api' => \App\Http\Middleware\AuthenticateTenantApi::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

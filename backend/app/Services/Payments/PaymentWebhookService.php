@@ -5,11 +5,15 @@ namespace App\Services\Payments;
 use App\Models\GatewayWebhookLog;
 use App\Models\PaymentGateway;
 use App\Models\PlatformTransaction;
+use App\Models\Tenant;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Log;
 
 class PaymentWebhookService
 {
+    public function __construct(private readonly OrderFulfillmentService $fulfillmentService) {}
+
     public function receive(PaymentGateway $gateway, Request $request): GatewayWebhookLog
     {
         $payload = $request->all();
@@ -23,8 +27,9 @@ class PaymentWebhookService
 
         try {
             $this->verifySignature($gateway, $request);
+            $transaction = $this->syncTransaction($gateway, $payload);
+            $this->triggerFulfillment($transaction, $payload);
             $status = 'processed';
-            $this->syncTransaction($gateway, $payload);
         } catch (\Throwable $exception) {
             $status = 'failed';
             $responseCode = 400;
@@ -69,20 +74,21 @@ class PaymentWebhookService
         }
     }
 
-    protected function syncTransaction(PaymentGateway $gateway, array $payload): void
+    protected function syncTransaction(PaymentGateway $gateway, array $payload): PlatformTransaction
     {
         $reference = Arr::get($payload, 'data.reference');
 
         if (blank($reference)) {
-            return;
+            throw new \RuntimeException('Référence de transaction manquante dans le payload.');
         }
 
-        PlatformTransaction::query()->updateOrCreate(
-            [
-                'transaction_reference' => (string) $reference,
-            ],
+        $tenantId = Arr::get($payload, 'data.metadata.tenant_id');
+
+        return PlatformTransaction::query()->updateOrCreate(
+            ['transaction_reference' => (string) $reference],
             [
                 'payment_gateway_id' => $gateway->getKey(),
+                'tenant_id' => $tenantId,
                 'gateway_reference' => (string) (Arr::get($payload, 'data.id') ?? $reference),
                 'type' => 'gateway_charge',
                 'direction' => 'credit',
@@ -95,5 +101,38 @@ class PaymentWebhookService
                 'meta' => $payload,
             ],
         );
+    }
+
+    protected function triggerFulfillment(PlatformTransaction $transaction, array $payload): void
+    {
+        $event = Arr::get($payload, 'event', '');
+        $status = Arr::get($payload, 'data.status', '');
+
+        if ($event !== 'charge.success' && $status !== 'success') {
+            return;
+        }
+
+        if ($transaction->tenant_id === null) {
+            return;
+        }
+
+        $tenant = Tenant::query()->find($transaction->tenant_id);
+
+        if ($tenant === null) {
+            Log::warning('OrderFulfillment: tenant introuvable', ['tenant_id' => $transaction->tenant_id]);
+
+            return;
+        }
+
+        $tenant->run(function () use ($transaction, $payload): void {
+            try {
+                $this->fulfillmentService->fulfill($transaction->transaction_reference, $payload);
+            } catch (\Throwable $exception) {
+                Log::error('OrderFulfillment: échec du fulfillment', [
+                    'transaction_reference' => $transaction->transaction_reference,
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        });
     }
 }
