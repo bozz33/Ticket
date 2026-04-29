@@ -103,7 +103,7 @@ export default async function RecuDetailPage({
                 <div className="ac-detail-row" style={{ border: "none", paddingTop: "12px" }}>
                   <Link
                     href={`/compte/commandes/${receipt.order.reference}`}
-                    className="button button--sm"
+                    className="button button--small"
                     style={{ width: "100%", textAlign: "center" }}
                   >
                     Voir la commande
