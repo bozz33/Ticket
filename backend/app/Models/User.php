@@ -6,6 +6,7 @@ namespace App\Models;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -69,6 +70,11 @@ class User extends Authenticatable implements FilamentUser
         return $panel->getId() === 'tenant'
             && $this->is_active
             && ($this->hasRole('owner') || $this->can('tenant.access'));
+    }
+
+    public function apiTokens(): HasMany
+    {
+        return $this->hasMany(UserApiToken::class);
     }
 
     public function getDefaultGuardName(): string
