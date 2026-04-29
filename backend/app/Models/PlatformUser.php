@@ -6,6 +6,7 @@ use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
@@ -56,6 +57,11 @@ class PlatformUser extends Authenticatable implements FilamentUser
     public function isSuperAdmin(): bool
     {
         return (bool) $this->is_super_admin || $this->hasRole('super-admin');
+    }
+
+    public function apiTokens(): HasMany
+    {
+        return $this->hasMany(PlatformApiToken::class);
     }
 
     public function getDefaultGuardName(): string

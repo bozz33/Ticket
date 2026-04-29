@@ -13,6 +13,10 @@ class PlatformSettingController extends Controller
     public function index(Request $request, PlatformSettingsService $platformSettingsService): JsonResponse
     {
         $group = $request->query('group');
+
+        // null = retourner tous les settings (public + privés).
+        // true = uniquement les settings marqués publics.
+        // Cet endpoint est protégé par auth.platform.api, donc null est sûr.
         $publicOnly = $request->has('public') ? $request->boolean('public') : null;
 
         return response()->json([
