@@ -14,8 +14,11 @@ export default async function SearchPage({
     <SearchResultsView
       categories={data.references.categories}
       cities={data.references.cities}
+      currentPage={data.currentPage}
       filters={data.filters}
       items={data.items}
+      totalItems={data.totalItems}
+      totalPages={data.totalPages}
     />
   );
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\HealthCheckController;
 use App\Http\Controllers\Api\V1\OrganizationProfileController;
 use App\Http\Controllers\Api\V1\Payments\PaymentWebhookController;
 use App\Http\Controllers\Api\V1\Public\PublicAccessPassController;
+use App\Http\Controllers\Api\V1\Public\PublicContentController;
 use App\Http\Controllers\Api\V1\PublicPlatformConfigurationController;
 use App\Http\Controllers\Api\V1\PublicReferenceDataController;
 use App\Http\Controllers\Api\V1\PublicTenantDocumentController;
@@ -50,6 +51,9 @@ Route::prefix('v1')->group(function (): void {
         Route::get('/public/tenants/{tenant}/documents', [PublicTenantDocumentController::class, 'index']);
         Route::get('/public/tenants/{tenant}/documents/{document}', [PublicTenantDocumentController::class, 'show']);
         Route::get('/public/tenants/{tenant}/access-passes/{code}', [PublicAccessPassController::class, 'show']);
+        Route::get('/public/tenants/{tenant}/content', [PublicContentController::class, 'index']);
+        Route::get('/public/tenants/{tenant}/content/filters', [PublicContentController::class, 'filters']);
+        Route::get('/public/tenants/{tenant}/content/{module}/{slug}', [PublicContentController::class, 'show']);
     });
 
     // ─── Webhooks paiement (sécurisé par signature HMAC Paystack) ─────────

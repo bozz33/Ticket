@@ -7,7 +7,6 @@ import { ContentCard } from "@/components/ContentCard";
 import { HeroSearch } from "@/components/HeroSearch";
 import { PrintButton } from "@/components/PrintButton";
 import { QuantityStepper } from "@/components/QuantityStepper";
-import { findOrganizerProfile } from "@/lib/data/catalog";
 import { PlatformConfiguration, PublicContent, SearchFilters } from "@/lib/types";
 import {
   buildPublicUrl,
@@ -525,9 +524,8 @@ function ShareLinks({ item }: { item: PublicContent }) {
 
 /* ── Panneau sticky résumé (page détail) ────────────────────── */
 function StickySummary({ item }: { item: PublicContent }) {
-  const organizer = findOrganizerProfile(item.organizerSlug);
-  const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
-  const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Equipe organisatrice";
+  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerName = item.organizers[0]?.name ?? "Equipe organisatrice";
 
   return (
     <aside className="sticky-panel">
@@ -711,9 +709,8 @@ export function ModuleDetailView({
   }
 
   const meta = getModuleMeta(item.module);
-  const organizer = findOrganizerProfile(item.organizerSlug);
-  const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
-  const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
+  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerName = item.organizers[0]?.name ?? "Organisateur";
 
   return (
     <>
@@ -1016,9 +1013,8 @@ export function CheckoutView({
   }
 
   const total = selectedOffer?.price ?? item.priceFrom;
-  const organizer = findOrganizerProfile(item.organizerSlug);
-  const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
-  const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerName = item.organizers[0]?.name ?? "Organisateur";
+  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const { subtotal, serviceFee, total: totalPayable } = getCheckoutAmounts(item, selectedOffer);
   const paymentReference = buildPaymentReference(item, selectedOffer);
   const paidAt = normalizePaidAt();
@@ -1220,9 +1216,8 @@ export function PaymentSuccessView({
     notFound();
   }
 
-  const organizer = findOrganizerProfile(item.organizerSlug);
-  const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
-  const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerName = item.organizers[0]?.name ?? "Organisateur";
+  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const { subtotal, serviceFee, total } = getCheckoutAmounts(item, selectedOffer);
   const resolvedReference = buildPaymentReference(item, selectedOffer, paymentReference);
   const resolvedPaidAt = normalizePaidAt(paidAt);
@@ -1349,9 +1344,8 @@ export function ReceiptView({
     notFound();
   }
 
-  const organizer = findOrganizerProfile(item.organizerSlug);
-  const organizerName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
-  const organizerImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerName = item.organizers[0]?.name ?? "Organisateur";
+  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const { subtotal, serviceFee, total } = getCheckoutAmounts(item, selectedOffer);
   const resolvedReference = buildPaymentReference(item, selectedOffer, paymentReference);
   const resolvedPaidAt = normalizePaidAt(paidAt);

@@ -7,7 +7,7 @@ export async function GET(
   context: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await context.params;
-  const payload = findOrganizer(slug);
+  const payload = await findOrganizer(slug);
 
   if (!payload) {
     return NextResponse.json({ message: "Organizer not found." }, { status: 404 });
