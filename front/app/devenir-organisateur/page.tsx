@@ -1,5 +1,4 @@
-import Link from "next/link";
-
+import { OrganizerRegistrationForm } from "./OrganizerRegistrationForm";
 import { getPlatformConfiguration } from "@/lib/data/public";
 
 export const dynamic = "force-dynamic";
@@ -19,12 +18,9 @@ export default async function BecomeOrganizerPage() {
           <p className="eyebrow">Onboarding tenant</p>
           <h1>Publier et vendre sur la plateforme</h1>
           <p>
-            Un front public unifie, un backoffice tenant autonome et des parcours de conversion
-            coherents sur tous les modules.
+            Un front public unifié, un backoffice tenant autonome et des parcours de conversion
+            cohérents sur tous les modules.
           </p>
-          <Link className="button" href={platform.organizerCtaUrl}>
-            Commencer l'onboarding
-          </Link>
         </div>
       </section>
 
@@ -36,12 +32,27 @@ export default async function BecomeOrganizerPage() {
           </article>
           <article className="explore-tile">
             <h2>Stands, appels et crowdfunding</h2>
-            <p>Une meme base produit pour plusieurs modules metier sans casser l'experience publique.</p>
+            <p>Une même base produit pour plusieurs modules metier sans casser l&apos;experience publique.</p>
           </article>
           <article className="explore-tile">
             <h2>Pages organisateur</h2>
-            <p>Chaque tenant dispose d'une vitrine publique dediee dans le portail commun.</p>
+            <p>Chaque tenant dispose d&apos;une vitrine publique dédiée dans le portail commun.</p>
           </article>
+        </div>
+      </section>
+
+      <section className="section section--light" id="inscription">
+        <div className="shell" style={{ maxWidth: "520px" }}>
+          <div style={{ marginBottom: "32px" }}>
+            <p className="eyebrow">Commencer maintenant</p>
+            <h2 style={{ fontSize: "1.8rem", fontWeight: 700, margin: "8px 0 12px" }}>
+              Créer votre espace organisateur
+            </h2>
+            <p style={{ color: "var(--text-soft)" }}>
+              Votre espace est créé instantanément. Vous pourrez publier votre premier contenu dans les minutes qui suivent.
+            </p>
+          </div>
+          <OrganizerRegistrationForm brandName={platform.brandName} />
         </div>
       </section>
     </>

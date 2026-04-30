@@ -9,6 +9,7 @@ use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
 class TenantAuthController extends Controller
@@ -50,6 +51,36 @@ class TenantAuthController extends Controller
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
             'user' => $user->only(['id', 'name', 'email']),
         ]);
+    }
+
+    public function register(Request $request): JsonResponse
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password' => ['required', 'string', 'min:8', 'confirmed'],
+            'token_name' => ['sometimes', 'string', 'max:100'],
+        ]);
+
+        $user = User::query()->create([
+            'name' => $validated['name'],
+            'username' => Str::lower(Str::before($validated['email'], '@')) . '_' . Str::random(4),
+            'email' => Str::lower($validated['email']),
+            'password' => $validated['password'],
+            'is_active' => true,
+        ]);
+
+        $token = $this->tokenService->createToken(
+            $user,
+            $validated['token_name'] ?? 'panel_acheteur',
+            ['*'],
+        );
+
+        return response()->json([
+            'token' => $token,
+            'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
+            'user' => $user->only(['id', 'name', 'email']),
+        ], 201);
     }
 
     public function logout(Request $request): JsonResponse
