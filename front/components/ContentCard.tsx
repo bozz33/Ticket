@@ -39,12 +39,13 @@ export function ContentCard({ item }: { item: PublicContent }) {
   const publisherImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const publisherName = item.organizers[0]?.name ?? "Organisateur";
   const featuredBadge = item.badges[0] ?? (item.popular ? "Tendance" : item.featured ? "Selection" : null);
+  const coverSrc = item.coverImageUrl || meta.heroImageUrl;
 
   return (
     <article className="content-card">
       <div className="content-card__stage">
         <Link className="content-card__media" href={detailHref}>
-          <img alt={item.title} src={item.coverImageUrl} />
+          <img alt={item.title} src={coverSrc} />
         </Link>
         <div className="content-card__overlay" />
         <div className="content-card__topline">
