@@ -6,7 +6,7 @@ import {
   PublicContent,
   SearchFilters,
 } from "@/lib/types";
-import { mockContent, mockOrganizers, mockPlatformConfiguration } from "@/lib/data/mock";
+import { mockPlatformConfiguration } from "@/lib/data/mock";
 import {
   findContent,
   findOrganizer,
@@ -91,7 +91,8 @@ export async function getPlatformConfiguration(): Promise<PlatformConfiguration>
 }
 
 export async function getAllContent(filters: SearchFilters = {}): Promise<PublicContent[]> {
-  return listContent(filters);
+  const result = await listContent(filters);
+  return result.items;
 }
 
 export async function getFeaturedContent(): Promise<PublicContent[]> {
@@ -106,11 +107,7 @@ export async function getContentByModule(
   module: ModuleRoute,
   filters: SearchFilters = {},
 ): Promise<ListingData> {
-  const items = await getAllContent({
-    ...filters,
-    module,
-  });
-
+  const result = await listContent({ ...filters, module });
   const meta = getModuleMeta(module);
 
   return {
@@ -118,11 +115,11 @@ export async function getContentByModule(
     title: meta.title,
     description: meta.description,
     heroImageUrl: meta.heroImageUrl,
-    items,
-    filters: {
-      ...filters,
-      module,
-    },
+    items: result.items,
+    filters: { ...filters, module },
+    currentPage: result.currentPage,
+    totalItems: result.totalItems,
+    totalPages: result.totalPages,
   };
 }
 
@@ -164,11 +161,12 @@ export async function getReferenceFilters() {
 }
 
 export async function getHomePageData() {
-  const [platform, featured, popular, organizers] = await Promise.all([
+  const [platform, featured, popular, organizers, references] = await Promise.all([
     getPlatformConfiguration(),
     getFeaturedContent(),
     getPopularContent(),
     getOrganizerHighlights(),
+    getReferenceFilters(),
   ]);
 
   return {
@@ -176,26 +174,30 @@ export async function getHomePageData() {
     featured,
     popular,
     organizers,
+    categories: references.categories,
     stats: [
-      { label: "Contenus publies", value: String(mockContent.length) },
-      { label: "Organisateurs", value: String(mockOrganizers.length) },
       { label: "Modules actifs", value: "5" },
+      { label: "Catégories", value: String(references.categories.length) },
+      { label: "Villes", value: String(references.cities.length) },
     ],
   };
 }
 
 export async function getSearchPageData(searchParams: Record<string, string | string[] | undefined>) {
   const filters = normalizeSearchParams(searchParams);
-  const [platform, items, references] = await Promise.all([
+  const [platform, listing, references] = await Promise.all([
     getPlatformConfiguration(),
-    getAllContent(filters),
+    listContent(filters),
     getReferenceFilters(),
   ]);
 
   return {
     platform,
     filters,
-    items,
+    items: listing.items,
+    currentPage: listing.currentPage,
+    totalItems: listing.totalItems,
+    totalPages: listing.totalPages,
     references,
   };
 }

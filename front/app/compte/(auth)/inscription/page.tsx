@@ -1,16 +1,15 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
 
 import "../../account.css";
 
-function LoginForm() {
+export default function InscriptionPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const redirect = searchParams.get("redirect") ?? "/compte/commandes";
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,20 +21,20 @@ function LoginForm() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/account/login", {
+      const res = await fetch("/api/account/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ name, email, password }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        setError(data?.error ?? "Identifiants incorrects.");
+        setError(data?.error ?? "Inscription impossible.");
         return;
       }
 
-      router.push(redirect);
+      router.push("/compte/commandes");
       router.refresh();
     } catch {
       setError("Impossible de contacter le serveur.");
@@ -55,14 +54,26 @@ function LoginForm() {
             <path d="M13 11v2" />
           </svg>
         </div>
-        <h1 className="ac-login__title">Connexion</h1>
-        <p className="ac-login__sub">Accédez à vos commandes et passes d&apos;accès.</p>
+        <h1 className="ac-login__title">Créer un compte</h1>
+        <p className="ac-login__sub">Suivez vos commandes et gérez vos passes d&apos;accès.</p>
 
         <form className="ac-form" onSubmit={handleSubmit}>
           <div className="ac-form__field">
-            <label className="ac-form__label" htmlFor="email">
-              Adresse e-mail
-            </label>
+            <label className="ac-form__label" htmlFor="name">Nom complet</label>
+            <input
+              id="name"
+              className="ac-form__input"
+              type="text"
+              autoComplete="name"
+              required
+              placeholder="Jean Dupont"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+
+          <div className="ac-form__field">
+            <label className="ac-form__label" htmlFor="email">Adresse e-mail</label>
             <input
               id="email"
               className="ac-form__input"
@@ -76,16 +87,15 @@ function LoginForm() {
           </div>
 
           <div className="ac-form__field">
-            <label className="ac-form__label" htmlFor="password">
-              Mot de passe
-            </label>
+            <label className="ac-form__label" htmlFor="password">Mot de passe</label>
             <input
               id="password"
               className="ac-form__input"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               required
-              placeholder="••••••••"
+              minLength={8}
+              placeholder="8 caractères minimum"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -94,27 +104,15 @@ function LoginForm() {
           {error && <p className="ac-form__error">{error}</p>}
 
           <button className="ac-form__submit" type="submit" disabled={loading}>
-            {loading ? "Connexion…" : "Se connecter"}
+            {loading ? "Création…" : "Créer mon compte"}
           </button>
 
           <p className="ac-form__link">
-            Pas encore de compte ?{" "}
-            <Link href="/compte/inscription">S&apos;inscrire</Link>
-          </p>
-          <p className="ac-form__link">
-            Un problème ?{" "}
-            <Link href="/support">Contacter le support</Link>
+            Déjà inscrit ?{" "}
+            <Link href="/compte/connexion">Se connecter</Link>
           </p>
         </form>
       </div>
     </div>
-  );
-}
-
-export default function ConnexionPage() {
-  return (
-    <Suspense>
-      <LoginForm />
-    </Suspense>
   );
 }
