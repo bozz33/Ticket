@@ -23,14 +23,16 @@ export async function GET(
     return NextResponse.json({ message: "Module not found." }, { status: 404 });
   }
 
-  const item = findContent(module, slug);
+  const item = await findContent(module, slug);
 
   if (!item) {
     return NextResponse.json({ message: "Content not found." }, { status: 404 });
   }
 
+  const related = await listRelatedContent(item);
+
   return NextResponse.json({
     data: item,
-    related: listRelatedContent(item),
+    related,
   });
 }

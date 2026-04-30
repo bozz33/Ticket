@@ -74,12 +74,14 @@ export function CatalogFilters({
   categories,
   cities,
   includeModule = false,
+  layout,
 }: {
   action: string;
   filters: SearchFilters;
   categories: string[];
   cities: string[];
   includeModule?: boolean;
+  layout?: string;
 }) {
   const currentModule = filters.module ?? "all";
 

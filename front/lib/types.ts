@@ -14,6 +14,7 @@ export interface SearchFilters {
   city?: string;
   price?: "all" | "free" | "paid";
   sort?: SortOption;
+  page?: number;
 }
 
 export interface OrganizerProfile {
@@ -136,6 +137,9 @@ export interface ListingData {
   heroImageUrl: string;
   items: PublicContent[];
   filters: SearchFilters;
+  currentPage: number;
+  totalItems: number;
+  totalPages: number;
 }
 
 export interface SearchSuggestion {
