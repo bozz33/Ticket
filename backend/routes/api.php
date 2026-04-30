@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\V1\OrganizationProfileController;
 use App\Http\Controllers\Api\V1\Payments\PaymentWebhookController;
 use App\Http\Controllers\Api\V1\Public\PublicAccessPassController;
 use App\Http\Controllers\Api\V1\Public\PublicContentController;
+use App\Http\Controllers\Api\V1\Public\PublicOnboardingController;
 use App\Http\Controllers\Api\V1\PublicPlatformConfigurationController;
 use App\Http\Controllers\Api\V1\PublicReferenceDataController;
 use App\Http\Controllers\Api\V1\PublicTenantDocumentController;
@@ -106,9 +107,13 @@ Route::prefix('v1')->group(function (): void {
         Route::post('/tenants/{tenant}/subscriptions', [PlanController::class, 'assignToTenant']);
     });
 
+    // ─── Onboarding organisateur (public, sans auth) ──────────────────────
+    Route::post('/public/onboarding/register', [PublicOnboardingController::class, 'register']);
+
     // ─── Authentification Tenant ───────────────────────────────────────────
     Route::prefix('tenants/{tenant}/auth')->middleware(['initialize.tenant.route'])->group(function (): void {
         Route::post('/login', [TenantAuthController::class, 'login']);
+        Route::post('/register', [TenantAuthController::class, 'register']);
         Route::middleware(['auth.tenant.api'])->group(function (): void {
             Route::post('/logout', [TenantAuthController::class, 'logout']);
             Route::get('/me', [TenantAuthController::class, 'me']);

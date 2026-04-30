@@ -34,6 +34,72 @@ async function apiFetch<T>(
   }
 }
 
+export async function registerAccount(
+  tenantSlug: string,
+  name: string,
+  email: string,
+  password: string,
+): Promise<{ token: string; user: AccountUser } | { error: string } | null> {
+  if (!apiBase) return null;
+  try {
+    const res = await fetch(
+      `${apiBase}/api/v1/tenants/${tenantSlug}/auth/register`,
+      {
+        method: "POST",
+        cache: "no-store",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          name,
+          email,
+          password,
+          password_confirmation: password,
+          token_name: "panel_acheteur",
+        }),
+      },
+    );
+    const data = await res.json();
+    if (!res.ok) {
+      const message =
+        data?.message ??
+        (Object.values(data?.errors ?? {}) as string[][])[0]?.[0] ??
+        "Inscription impossible.";
+      return { error: message as string };
+    }
+    return { token: data.token as string, user: data.user as AccountUser };
+  } catch {
+    return { error: "Impossible de contacter le serveur." };
+  }
+}
+
+export async function registerOrganizer(payload: {
+  org_name: string;
+  email: string;
+  password: string;
+  country_code?: string;
+  currency_code?: string;
+}): Promise<{ tenant: { slug: string; name: string; login_url: string } } | { error: string } | null> {
+  if (!apiBase) return null;
+  try {
+    const res = await fetch(`${apiBase}/api/v1/public/onboarding/register`, {
+      method: "POST",
+      cache: "no-store",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({ ...payload, password_confirmation: payload.password }),
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      const message =
+        data?.message ??
+        (Object.values(data?.errors ?? {}) as string[][])[0]?.[0] ??
+        "Inscription impossible.";
+      return { error: message as string };
+    }
+    return { tenant: data.tenant };
+  } catch {
+    return { error: "Impossible de contacter le serveur." };
+  }
+}
+
 export async function loginAccount(
   tenantSlug: string,
   email: string,
