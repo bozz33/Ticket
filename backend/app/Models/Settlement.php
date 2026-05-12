@@ -15,17 +15,21 @@ class Settlement extends Model
     protected $fillable = [
         'tenant_id',
         'payout_batch_id',
+        'payout_policy_id',
         'reference',
         'status',
         'period_start',
         'period_end',
         'gross_amount',
         'fee_amount',
+        'reserve_amount',
+        'payout_fee_amount',
         'net_amount',
         'currency_code',
         'scheduled_at',
         'paid_at',
         'meta',
+        'pricing_snapshot',
     ];
 
     protected function casts(): array
@@ -35,10 +39,13 @@ class Settlement extends Model
             'period_end' => 'date',
             'gross_amount' => 'integer',
             'fee_amount' => 'integer',
+            'reserve_amount' => 'integer',
+            'payout_fee_amount' => 'integer',
             'net_amount' => 'integer',
             'scheduled_at' => 'datetime',
             'paid_at' => 'datetime',
             'meta' => 'array',
+            'pricing_snapshot' => 'array',
         ];
     }
 
@@ -50,5 +57,10 @@ class Settlement extends Model
     public function payoutBatch(): BelongsTo
     {
         return $this->belongsTo(PayoutBatch::class);
+    }
+
+    public function payoutPolicy(): BelongsTo
+    {
+        return $this->belongsTo(PayoutPolicy::class);
     }
 }

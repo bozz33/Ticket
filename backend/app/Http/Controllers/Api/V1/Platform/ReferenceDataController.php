@@ -3,18 +3,22 @@
 namespace App\Http\Controllers\Api\V1\Platform;
 
 use App\Http\Controllers\Controller;
-use App\Models\City;
 use App\Models\Country;
 use App\Models\Currency;
 use App\Models\Language;
 use App\Models\PaymentMethodType;
 use App\Models\PublicStatus;
 use App\Models\ResourceType;
+use App\Support\ReferenceData\CityReferenceSearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
 class ReferenceDataController extends Controller
 {
+    public function __construct(
+        private readonly CityReferenceSearchService $cityReferenceSearchService,
+    ) {}
+
     public function countries(): JsonResponse
     {
         return response()->json([
@@ -60,16 +64,16 @@ class ReferenceDataController extends Controller
     public function cities(Request $request): JsonResponse
     {
         $country = $request->query('country');
+        $query = $request->query('q');
+        $limit = (int) ($request->query('limit', 50));
 
         return response()->json([
-            'data' => City::query()
-                ->with('country')
-                ->when($country !== null && $country !== '', function ($query) use ($country) {
-                    $query->whereHas('country', fn ($countryQuery) => $countryQuery->where('iso2', strtoupper($country)));
-                })
-                ->orderBy('sort_order')
-                ->orderBy('name')
-                ->get(),
+            'data' => $this->cityReferenceSearchService->search(
+                countryCode: is_string($country) ? $country : null,
+                query: is_string($query) ? $query : null,
+                limit: $limit,
+                onlyActive: false,
+            ),
         ]);
     }
 }

@@ -3,11 +3,12 @@
 namespace App\Filament\Platform\Resources\Roles\Pages;
 
 use App\Filament\Platform\Resources\Roles\RoleResource;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Support\Pages\EditRecordPage;
+use Filament\Support\Enums\Width;
 
-class EditRole extends EditRecord
+class EditRole extends EditRecordPage
 {
     protected static string $resource = RoleResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 }

@@ -33,11 +33,13 @@ class SeoSettingResource extends Resource
 
     protected static ?string $permissionPrefix = 'platform.platform_settings';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Configuration';
+    protected static string|UnitEnum|null $navigationGroup = 'Front public';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-globe-alt';
 
     protected static ?string $navigationLabel = 'SEO';
+
+    protected static ?int $navigationSort = 30;
 
     protected static ?string $modelLabel = 'Réglage SEO';
 

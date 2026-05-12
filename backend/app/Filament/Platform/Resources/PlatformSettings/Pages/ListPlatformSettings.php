@@ -3,9 +3,9 @@
 namespace App\Filament\Platform\Resources\PlatformSettings\Pages;
 
 use App\Filament\Platform\Resources\PlatformSettings\PlatformSettingResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Support\Pages\ListRecordsPage;
 
-class ListPlatformSettings extends ListRecords
+class ListPlatformSettings extends ListRecordsPage
 {
     protected static string $resource = PlatformSettingResource::class;
 }

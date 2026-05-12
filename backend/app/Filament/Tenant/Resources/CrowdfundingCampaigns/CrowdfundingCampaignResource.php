@@ -3,7 +3,9 @@
 namespace App\Filament\Tenant\Resources\CrowdfundingCampaigns;
 
 use App\Enums\CategoryScope;
-use App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages\ManageCrowdfundingCampaigns;
+use App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages\CreateCrowdfundingCampaign;
+use App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages\EditCrowdfundingCampaign;
+use App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages\ListCrowdfundingCampaigns;
 use App\Models\Category;
 use App\Models\CrowdfundingCampaign;
 use App\Models\PublicStatus;
@@ -47,8 +49,8 @@ class CrowdfundingCampaignResource extends Resource
     {
         return $schema->components([
             Section::make('Campagne')->schema([
-                Select::make('category_id')->label('Catégorie')->options(fn (): array => Category::query()->whereIn('module_scope', [CategoryScope::Global->value, CategoryScope::Campaign->value])->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload(),
-                Select::make('public_status_code')->label('Statut public')->options(fn (): array => PublicStatus::query()->orderBy('sort_order')->pluck('name', 'code')->all())->searchable()->preload(),
+                Select::make('category_id')->label('Catégorie catalogue')->helperText('Sert aux filtres du catalogue public et peut rester vide si le classement n’est pas nécessaire.')->options(fn (): array => Category::query()->whereIn('module_scope', [CategoryScope::Global->value, CategoryScope::Campaign->value])->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload(),
+                Select::make('public_status_code')->label('Visibilité publique')->helperText('Détermine si la fiche apparaît publiquement ou reste en brouillon/archive.')->options(fn (): array => PublicStatus::query()->orderBy('sort_order')->pluck('name', 'code')->all())->default('published')->searchable()->preload(),
                 TextInput::make('title')->label('Titre')->required()->maxLength(255)->live(onBlur: true)->afterStateUpdated(fn ($state, $set) => $set('slug', Str::slug((string) $state))),
                 TextInput::make('slug')->label('Slug')->required()->maxLength(255)->unique(ignoreRecord: true),
                 TextInput::make('summary')->label('Résumé')->maxLength(255)->columnSpanFull(),
@@ -59,7 +61,12 @@ class CrowdfundingCampaignResource extends Resource
                 DateTimePicker::make('starts_at')->label('Début'),
                 DateTimePicker::make('ends_at')->label('Fin'),
                 Toggle::make('is_active')->label('Actif')->default(true),
-                DateTimePicker::make('published_at')->label('Publié le'),
+                DateTimePicker::make('published_at')
+                    ->label('Publié le')
+                    ->helperText('Renseigné automatiquement lors de la création.')
+                    ->default(now())
+                    ->disabled()
+                    ->dehydrated(),
                 KeyValue::make('meta')->label('Métadonnées')->columnSpanFull(),
             ])->columns(2),
         ]);
@@ -76,7 +83,8 @@ class CrowdfundingCampaignResource extends Resource
             IconColumn::make('is_active')->label('Actif')->boolean(),
             TextColumn::make('updated_at')->label('Mis à jour')->since(),
         ])->defaultSort('updated_at', 'desc')->recordActions([
-            EditAction::make(),
+            EditAction::make()
+                ->url(fn (CrowdfundingCampaign $record): string => static::getUrl('edit', ['record' => $record])),
             DeleteAction::make(),
         ])->toolbarActions([
             BulkActionGroup::make([
@@ -87,7 +95,11 @@ class CrowdfundingCampaignResource extends Resource
 
     public static function getPages(): array
     {
-        return ['index' => ManageCrowdfundingCampaigns::route('/')];
+        return [
+            'index' => ListCrowdfundingCampaigns::route('/'),
+            'create' => CreateCrowdfundingCampaign::route('/create'),
+            'edit' => EditCrowdfundingCampaign::route('/{record}/edit'),
+        ];
     }
 
     public static function canCreate(): bool

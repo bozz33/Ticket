@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\ReferenceData\CountryReferenceImporter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 
@@ -51,3 +52,21 @@ Artisan::command('ticket:migrate-tenant', function () use ($resolveMigrationPath
         '--force' => true,
     ]);
 })->purpose('Run tenant database migrations using explicit paths');
+
+Artisan::command('ticket:import-reference-countries {path?}', function (?string $path = null) {
+    $resolvedPath = $path
+        ? (str_starts_with($path, DIRECTORY_SEPARATOR) || preg_match('/^[A-Za-z]:\\\\/', $path) ? $path : base_path($path))
+        : (is_file(base_path('database/data/reference_countries_states_cities.json'))
+            ? base_path('database/data/reference_countries_states_cities.json')
+            : base_path('database/data/reference_countries.json'));
+
+    $result = app(CountryReferenceImporter::class)->importFromFile($resolvedPath);
+
+    $this->info(sprintf(
+        'Reference import completed: %d countries processed, %d cities processed. Active totals: %d countries, %d cities.',
+        $result['countries'],
+        $result['cities'],
+        $result['active_countries_total'],
+        $result['active_cities_total'],
+    ));
+})->purpose('Import local country and city reference data into the central database');

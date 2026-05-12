@@ -23,11 +23,13 @@ class PlatformSettingResource extends Resource
 
     protected static ?string $permissionPrefix = 'platform.platform_settings';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Configuration';
+    protected static string|UnitEnum|null $navigationGroup = 'Front public';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?string $navigationLabel = 'Configuration globale';
+    protected static ?string $navigationLabel = 'Configuration front';
+
+    protected static ?int $navigationSort = 5;
 
     protected static ?string $modelLabel = 'Paramètre global';
 

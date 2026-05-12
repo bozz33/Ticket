@@ -2,7 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Offers;
 
-use App\Filament\Tenant\Resources\Offers\Pages\ManageOffers;
+use App\Filament\Tenant\Resources\Offers\Pages\CreateOffer;
+use App\Filament\Tenant\Resources\Offers\Pages\EditOffer;
+use App\Filament\Tenant\Resources\Offers\Pages\ListOffers;
 use App\Models\CallForProject;
 use App\Models\CrowdfundingCampaign;
 use App\Models\Event;
@@ -102,6 +104,11 @@ class OfferResource extends Resource
                         ->default(1),
                     TextInput::make('max_per_order')
                         ->label('Maximum par commande')
+                        ->helperText('Limite chaque panier afin d’éviter les réservations trop volumineuses.')
+                        ->numeric(),
+                    TextInput::make('max_per_account')
+                        ->label('Maximum par compte')
+                        ->helperText('Limite cumulée sur toute la durée de vente pour un même compte acheteur vérifié.')
                         ->numeric(),
                     DateTimePicker::make('sales_start_at')->label('Début de vente'),
                     DateTimePicker::make('sales_end_at')->label('Fin de vente'),
@@ -130,7 +137,8 @@ class OfferResource extends Resource
             ])
             ->defaultSort('sort_order')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->url(fn (Offer $record): string => static::getUrl('edit', ['record' => $record])),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
@@ -143,7 +151,9 @@ class OfferResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageOffers::route('/'),
+            'index' => ListOffers::route('/'),
+            'create' => CreateOffer::route('/create'),
+            'edit' => EditOffer::route('/{record}/edit'),
         ];
     }
 

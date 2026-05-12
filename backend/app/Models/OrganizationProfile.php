@@ -57,4 +57,9 @@ class OrganizationProfile extends Model
     {
         return $this->hasMany(Event::class)->latest();
     }
+
+    public function followers(): HasMany
+    {
+        return $this->hasMany(OrganizationFollower::class);
+    }
 }

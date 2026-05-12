@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\CompliancePolicies\Pages;
 
 use App\Filament\Platform\Resources\CompliancePolicies\CompliancePolicyResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageCompliancePolicies extends ManageRecords
+class ManageCompliancePolicies extends ManageRecordsPage
 {
     protected static string $resource = CompliancePolicyResource::class;
 

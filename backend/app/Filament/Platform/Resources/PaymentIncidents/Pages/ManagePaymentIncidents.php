@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\PaymentIncidents\Pages;
 
 use App\Filament\Platform\Resources\PaymentIncidents\PaymentIncidentResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManagePaymentIncidents extends ManageRecords
+class ManagePaymentIncidents extends ManageRecordsPage
 {
     protected static string $resource = PaymentIncidentResource::class;
 

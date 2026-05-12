@@ -2,7 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Roles;
 
-use App\Filament\Tenant\Resources\Roles\Pages\ManageRoles;
+use App\Filament\Tenant\Resources\Roles\Pages\CreateRole;
+use App\Filament\Tenant\Resources\Roles\Pages\EditRole;
+use App\Filament\Tenant\Resources\Roles\Pages\ListRoles;
 use App\Models\Role;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
@@ -85,7 +87,9 @@ class RoleResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageRoles::route('/'),
+            'index' => ListRoles::route('/'),
+            'create' => CreateRole::route('/create'),
+            'edit' => EditRole::route('/{record}/edit'),
         ];
     }
 

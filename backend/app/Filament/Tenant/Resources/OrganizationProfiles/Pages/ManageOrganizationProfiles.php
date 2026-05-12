@@ -5,9 +5,9 @@ namespace App\Filament\Tenant\Resources\OrganizationProfiles\Pages;
 use App\Filament\Tenant\Resources\OrganizationProfiles\OrganizationProfileResource;
 use App\Models\OrganizationProfile;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageOrganizationProfiles extends ManageRecords
+class ManageOrganizationProfiles extends ManageRecordsPage
 {
     protected static string $resource = OrganizationProfileResource::class;
 

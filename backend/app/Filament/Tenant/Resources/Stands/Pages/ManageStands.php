@@ -4,9 +4,9 @@ namespace App\Filament\Tenant\Resources\Stands\Pages;
 
 use App\Filament\Tenant\Resources\Stands\StandResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageStands extends ManageRecords
+class ManageStands extends ManageRecordsPage
 {
     protected static string $resource = StandResource::class;
 

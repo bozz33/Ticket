@@ -2,16 +2,17 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
 
-class User extends Authenticatable implements FilamentUser
+class User extends Authenticatable implements FilamentUser, MustVerifyEmailContract
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, HasRoles, Notifiable, SoftDeletes;
@@ -35,6 +36,8 @@ class User extends Authenticatable implements FilamentUser
         'phone',
         'locale',
         'timezone',
+        'avatar_path',
+        'email_verified_at',
         'is_active',
         'last_login_at',
     ];
@@ -74,5 +77,20 @@ class User extends Authenticatable implements FilamentUser
     public function getDefaultGuardName(): string
     {
         return $this->guard_name;
+    }
+
+    public function apiTokens(): HasMany
+    {
+        return $this->hasMany(UserApiToken::class);
+    }
+
+    public function organizationFollows(): HasMany
+    {
+        return $this->hasMany(OrganizationFollower::class);
+    }
+
+    public function eventLikes(): HasMany
+    {
+        return $this->hasMany(EventLike::class);
     }
 }

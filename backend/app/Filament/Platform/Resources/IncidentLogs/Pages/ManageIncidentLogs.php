@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\IncidentLogs\Pages;
 
 use App\Filament\Platform\Resources\IncidentLogs\IncidentLogResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageIncidentLogs extends ManageRecords
+class ManageIncidentLogs extends ManageRecordsPage
 {
     protected static string $resource = IncidentLogResource::class;
 

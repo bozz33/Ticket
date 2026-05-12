@@ -1,7 +1,9 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 
-import { findContent, listRelatedContent } from "@/lib/data/catalog";
+import { getContentDetail, getRelatedContent } from "@/lib/data/public";
 import { ModuleRoute } from "@/lib/types";
+
+const PUBLIC_CONTENT_REVALIDATE = 120;
 
 function isModuleRoute(value: string): value is ModuleRoute {
   return (
@@ -14,23 +16,29 @@ function isModuleRoute(value: string): value is ModuleRoute {
 }
 
 export async function GET(
-  _request: Request,
-  context: { params: Promise<{ module: string; slug: string }> },
+  request: NextRequest,
+  context: { params: Promise<unknown> },
 ) {
-  const { module, slug } = await context.params;
+  const { module, slug } = (await context.params) as { module: string; slug: string };
+  const tenant = request.nextUrl.searchParams.get("tenant") ?? undefined;
 
   if (!isModuleRoute(module)) {
     return NextResponse.json({ message: "Module not found." }, { status: 404 });
   }
 
-  const item = findContent(module, slug);
+  const item = await getContentDetail(module, slug, tenant);
 
   if (!item) {
     return NextResponse.json({ message: "Content not found." }, { status: 404 });
   }
+  const related = await getRelatedContent(item);
 
   return NextResponse.json({
     data: item,
-    related: listRelatedContent(item),
+    related,
+  }, {
+    headers: {
+      "Cache-Control": `public, max-age=0, s-maxage=${PUBLIC_CONTENT_REVALIDATE}, stale-while-revalidate=${PUBLIC_CONTENT_REVALIDATE}`,
+    },
   });
 }

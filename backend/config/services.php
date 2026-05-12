@@ -35,4 +35,16 @@ return [
         ],
     ],
 
+    'paystack' => [
+        'public_key' => env('PAYSTACK_PUBLIC_KEY'),
+        'secret_key' => env('PAYSTACK_SECRET_KEY'),
+        'webhook_secret' => env('PAYSTACK_WEBHOOK_SECRET'),
+        'proxy' => env('PAYSTACK_HTTP_PROXY'),
+        'disable_env_proxy' => env('PAYSTACK_DISABLE_ENV_PROXY', true),
+        'connect_timeout' => env('PAYSTACK_CONNECT_TIMEOUT', 10),
+        'timeout' => env('PAYSTACK_TIMEOUT', 20),
+        'cainfo' => env('PAYSTACK_CAINFO'),
+        'verify_tls' => env('PAYSTACK_VERIFY_TLS', true),
+    ],
+
 ];

@@ -38,13 +38,24 @@ class TenantOverview extends StatsOverviewWidget
         $transactionsQuery = PlatformTransaction::query()->where('tenant_id', $tenant->getKey());
         $monthlyTransactionsQuery = PlatformTransaction::query()
             ->where('tenant_id', $tenant->getKey())
-            ->whereBetween('occurred_at', [$startOfMonth, $endOfMonth]);
+            ->whereBetween('occurred_at', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', ['success', 'successful', 'confirmed', 'completed', 'paid']);
 
         $settlementsQuery = Settlement::query()->where('tenant_id', $tenant->getKey());
 
-        $monthlyCommission = (int) (clone $monthlyTransactionsQuery)->sum('fee_amount');
-        $monthlyNet = (int) (clone $monthlyTransactionsQuery)->sum('net_amount');
-        $pendingSettlements = (int) (clone $settlementsQuery)->whereIn('status', ['draft', 'scheduled'])->count();
+        $monthlyTransactions = (clone $monthlyTransactionsQuery)
+            ->get(['direction', 'platform_fee_amount', 'net_amount']);
+        $monthlyCommission = (int) $monthlyTransactions->sum(function (PlatformTransaction $transaction): int {
+            $amount = (int) $transaction->platform_fee_amount;
+
+            return $transaction->direction === 'debit' ? -$amount : $amount;
+        });
+        $monthlyNet = (int) $monthlyTransactions->sum(function (PlatformTransaction $transaction): int {
+            $amount = (int) $transaction->net_amount;
+
+            return $transaction->direction === 'debit' ? -$amount : $amount;
+        });
+        $pendingSettlements = (int) (clone $settlementsQuery)->whereIn('status', ['pending', 'approved', 'scheduled'])->count();
         $transactionCount = (int) (clone $transactionsQuery)->count();
 
         return [

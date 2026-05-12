@@ -4,9 +4,9 @@ namespace App\Filament\Tenant\Resources\CallsForProjects\Pages;
 
 use App\Filament\Tenant\Resources\CallsForProjects\CallForProjectResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageCallForProjects extends ManageRecords
+class ManageCallForProjects extends ManageRecordsPage
 {
     protected static string $resource = CallForProjectResource::class;
 

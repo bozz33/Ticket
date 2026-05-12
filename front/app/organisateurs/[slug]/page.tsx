@@ -1,8 +1,8 @@
 import { OrganizerView } from "@/components/RouteViews";
-import { getOrganizerBySlug } from "@/lib/data/public";
+import { getOrganizerBySlug, getOrganizerCatalogPageData } from "@/lib/data/public";
 import { createMetadata } from "@/lib/metadata";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 export async function generateMetadata({
   params,
@@ -26,7 +26,19 @@ export default async function OrganizerDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const payload = await getOrganizerBySlug(slug);
+  const payload = await getOrganizerCatalogPageData(slug, { module: "evenements" }, 12);
 
-  return <OrganizerView items={payload?.items ?? []} organizer={payload?.organizer ?? null} />;
+  return (
+    <OrganizerView
+      categories={payload?.categories ?? []}
+      cities={payload?.cities ?? []}
+      currentPage={payload?.currentPage ?? 1}
+      filters={payload?.filters ?? { module: "evenements" }}
+      items={payload?.items ?? []}
+      organizer={payload?.organizer ?? null}
+      stats={payload?.stats ?? { total: 0, free: 0, paid: 0, byModule: {} }}
+      totalItems={payload?.totalItems ?? 0}
+      totalPages={payload?.totalPages ?? 0}
+    />
+  );
 }

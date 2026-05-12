@@ -3,9 +3,9 @@
 namespace App\Filament\Platform\Resources\PaymentMethodTypes\Pages;
 
 use App\Filament\Platform\Resources\PaymentMethodTypes\PaymentMethodTypeResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Support\Pages\ListRecordsPage;
 
-class ListPaymentMethodTypes extends ListRecords
+class ListPaymentMethodTypes extends ListRecordsPage
 {
     protected static string $resource = PaymentMethodTypeResource::class;
 }

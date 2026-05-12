@@ -5,14 +5,15 @@ namespace App\Filament\Platform\Resources\Tenants\Pages;
 use App\Filament\Platform\Resources\Tenants\TenantResource;
 use App\Services\Tenancy\ProvisionTenant;
 use Filament\Notifications\Notification;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Support\Pages\CreateRecordPage;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 
-class CreateTenant extends CreateRecord
+class CreateTenant extends CreateRecordPage
 {
     protected static string $resource = TenantResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 
     protected array $tenantAdminCredentials = [];
 

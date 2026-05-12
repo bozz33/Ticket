@@ -3,11 +3,12 @@
 namespace App\Filament\Platform\Resources\PlatformUsers\Pages;
 
 use App\Filament\Platform\Resources\PlatformUsers\PlatformUserResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Support\Pages\CreateRecordPage;
+use Filament\Support\Enums\Width;
 
-class CreatePlatformUser extends CreateRecord
+class CreatePlatformUser extends CreateRecordPage
 {
     protected static string $resource = PlatformUserResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 }

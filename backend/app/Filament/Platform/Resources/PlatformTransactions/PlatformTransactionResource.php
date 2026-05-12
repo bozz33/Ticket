@@ -2,8 +2,6 @@
 
 namespace App\Filament\Platform\Resources\PlatformTransactions;
 
-use App\Filament\Platform\Resources\PlatformTransactions\Pages\CreatePlatformTransaction;
-use App\Filament\Platform\Resources\PlatformTransactions\Pages\EditPlatformTransaction;
 use App\Filament\Platform\Resources\PlatformTransactions\Pages\ListPlatformTransactions;
 use App\Models\PaymentGateway;
 use App\Models\Plan;
@@ -11,10 +9,6 @@ use App\Models\PlatformTransaction;
 use App\Models\Tenant;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
-use Filament\Actions\BulkActionGroup;
-use Filament\Actions\DeleteAction;
-use Filament\Actions\DeleteBulkAction;
-use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
@@ -82,6 +76,7 @@ class PlatformTransactionResource extends Resource
     {
         return $table
             ->recordTitleAttribute('transaction_reference')
+            ->recordUrl(null)
             ->columns([
                 TextColumn::make('transaction_reference')
                     ->label('Référence')
@@ -92,7 +87,13 @@ class PlatformTransactionResource extends Resource
                 TextColumn::make('type')->label('Type')->badge(),
                 TextColumn::make('status')->label('Statut')->badge(),
                 TextColumn::make('gross_amount')->label('Brut')->numeric(),
-                TextColumn::make('fee_amount')->label('Frais')->numeric(),
+                TextColumn::make('customer_fee_amount')->label('Frais client')->numeric()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('gateway_fee_amount')->label('Frais gateway')->numeric(),
+                TextColumn::make('platform_fee_amount')->label('Commission plateforme')->numeric(),
+                TextColumn::make('tax_amount')->label('Taxes')->numeric()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('payout_fee_amount')->label('Frais reversement')->numeric()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('absorbed_fee_amount')->label('Frais absorbes')->numeric()->toggleable(isToggledHiddenByDefault: true),
+                TextColumn::make('fee_amount')->label('Frais totaux')->numeric(),
                 TextColumn::make('net_amount')->label('Net')->numeric(),
                 TextColumn::make('currency_code')->label('Devise'),
                 TextColumn::make('occurred_at')->label('Date')->dateTime(),
@@ -125,23 +126,34 @@ class PlatformTransactionResource extends Resource
                     ->options(fn (): array => PaymentGateway::query()->orderBy('name')->pluck('name', 'id')->all())
                     ->searchable(),
             ])
-            ->recordActions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ]);
+            ->recordActions([])
+            ->toolbarActions([]);
     }
 
     public static function getPages(): array
     {
         return [
             'index' => ListPlatformTransactions::route('/'),
-            'create' => CreatePlatformTransaction::route('/create'),
-            'edit' => EditPlatformTransaction::route('/{record}/edit'),
         ];
+    }
+
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
+    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    {
+        return false;
+    }
+
+    public static function canDeleteAny(): bool
+    {
+        return false;
     }
 }

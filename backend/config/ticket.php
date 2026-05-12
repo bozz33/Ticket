@@ -30,6 +30,28 @@ return [
         'archived',
     ],
     'public_frontend_url' => env('PUBLIC_FRONTEND_URL', 'http://localhost:3000'),
+    'token_expirations' => [
+        'tenant_api_minutes' => (int) env('TENANT_API_TOKEN_TTL_MINUTES', 60 * 24 * 30),
+        'platform_api_minutes' => (int) env('PLATFORM_API_TOKEN_TTL_MINUTES', 60 * 24),
+    ],
+    'email_validation' => [
+        'dns_check' => filter_var(env('VERIFY_EMAIL_DNS', env('APP_ENV') === 'production'), FILTER_VALIDATE_BOOL),
+    ],
+    'rate_limits' => [
+        'platform_auth_per_minute' => (int) env('RATE_LIMIT_PLATFORM_AUTH_PER_MINUTE', 5),
+        'tenant_auth_per_minute' => (int) env('RATE_LIMIT_TENANT_AUTH_PER_MINUTE', 5),
+        'public_onboarding_per_minute' => (int) env('RATE_LIMIT_PUBLIC_ONBOARDING_PER_MINUTE', 3),
+        'public_call_for_project_apply_per_minute' => (int) env('RATE_LIMIT_PUBLIC_CALL_FOR_PROJECT_APPLY_PER_MINUTE', 5),
+        'public_payment_initialize_per_minute' => (int) env('RATE_LIMIT_PUBLIC_PAYMENT_INITIALIZE_PER_MINUTE', 10),
+        'public_payment_verify_per_minute' => (int) env('RATE_LIMIT_PUBLIC_PAYMENT_VERIFY_PER_MINUTE', 30),
+        'public_pass_lookup_per_minute' => (int) env('RATE_LIMIT_PUBLIC_PASS_LOOKUP_PER_MINUTE', 30),
+        'payment_webhooks_per_minute' => (int) env('RATE_LIMIT_PAYMENT_WEBHOOKS_PER_MINUTE', 120),
+        'tenant_checkin_per_minute' => (int) env('RATE_LIMIT_TENANT_CHECKIN_PER_MINUTE', 60),
+    ],
+    'logging' => [
+        'payments_channel' => env('PAYMENTS_LOG_CHANNEL', 'payments'),
+        'security_channel' => env('SECURITY_LOG_CHANNEL', 'security'),
+    ],
     'panels' => [
         'platform' => 'platform',
         'tenant' => 'tenant',

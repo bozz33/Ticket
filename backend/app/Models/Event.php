@@ -65,4 +65,9 @@ class Event extends Model
     {
         return $this->morphMany(Offer::class, 'offerable')->orderBy('sort_order');
     }
+
+    public function likes(): HasMany
+    {
+        return $this->hasMany(EventLike::class);
+    }
 }

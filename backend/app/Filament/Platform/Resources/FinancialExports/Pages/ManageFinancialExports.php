@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\FinancialExports\Pages;
 
 use App\Filament\Platform\Resources\FinancialExports\FinancialExportResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageFinancialExports extends ManageRecords
+class ManageFinancialExports extends ManageRecordsPage
 {
     protected static string $resource = FinancialExportResource::class;
 

@@ -4,9 +4,9 @@ namespace App\Filament\Tenant\Resources\Roles\Pages;
 
 use App\Filament\Tenant\Resources\Roles\RoleResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageRoles extends ManageRecords
+class ManageRoles extends ManageRecordsPage
 {
     protected static string $resource = RoleResource::class;
 

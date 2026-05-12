@@ -20,7 +20,7 @@ import {
   SearchSuggestion,
   SpeakerHighlightEntry,
 } from "@/lib/types";
-import { formatDateRange, getModuleMeta, normalizeSearchParams } from "@/lib/utils";
+import { formatDateRange, normalizeSearchParams } from "@/lib/utils";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
 const publicTenantSlug = process.env.NEXT_PUBLIC_TENANT_SLUG?.trim() ?? "";
@@ -79,6 +79,15 @@ type PublicContentIndexPayload = {
     per_page?: number;
   };
   filters?: Partial<PublicReferenceFilters>;
+  presentation?: {
+    module?: ModuleRoute;
+    title?: string;
+    singular?: string;
+    cta?: string;
+    description?: string;
+    href?: string;
+    heroImageUrl?: string;
+  };
 };
 
 type PublicContentQuery = SearchFilters & {
@@ -263,6 +272,7 @@ async function fetchContentPage(
   totalItems: number;
   totalPages: number;
   references: PublicReferenceFilters;
+  presentation?: NonNullable<PublicContentIndexPayload["presentation"]>;
 }> {
   const path = getGlobalPublicPath("/content");
 
@@ -278,6 +288,7 @@ async function fetchContentPage(
       categories: normalizeStringArray(payload?.filters?.categories),
       cities: normalizeStringArray(payload?.filters?.cities),
     },
+    presentation: payload?.presentation,
   };
 }
 
@@ -379,14 +390,15 @@ export async function getContentByModule(
     fetchContentPage({ ...filters, module }, currentPage, 12),
     getFrontPageData(`/${module}`),
   ]);
-  const meta = getModuleMeta(module);
+  const presentation = result.presentation;
 
   return {
     page,
     module,
-    title: meta.title,
-    description: meta.description,
-    heroImageUrl: meta.heroImageUrl,
+    title: presentation?.title ?? module,
+    singular: presentation?.singular ?? module,
+    description: presentation?.description ?? "",
+    heroImageUrl: presentation?.heroImageUrl ?? "",
     items: result.items,
     filters: {
       ...filters,
@@ -411,14 +423,15 @@ export async function getEventCatalogPageData(filters: SearchFilters = {}): Prom
     fetchContentPage(normalizedFilters, currentPage, 12),
     getFrontPageData("/evenements"),
   ]);
-  const meta = getModuleMeta("evenements");
+  const presentation = result.presentation;
 
   return {
     page,
     module: "evenements",
-    title: meta.title,
-    description: "Explorez tout le catalogue public depuis la vitrine événements, puis filtrez par module selon vos besoins.",
-    heroImageUrl: meta.heroImageUrl,
+    title: presentation?.title ?? "Evenements",
+    singular: presentation?.singular ?? "evenement",
+    description: presentation?.description ?? "",
+    heroImageUrl: presentation?.heroImageUrl ?? "",
     items: result.items,
     filters: normalizedFilters,
     currentPage: result.currentPage,

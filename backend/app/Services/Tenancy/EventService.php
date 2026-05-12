@@ -66,10 +66,16 @@ class EventService
 
     public function findByIdentifier(string $identifier): ?Event
     {
+        if (Str::isUuid($identifier)) {
+            return Event::query()
+                ->with(['organizationProfile', 'category', 'dates'])
+                ->where('public_id', $identifier)
+                ->first();
+        }
+
         return Event::query()
             ->with(['organizationProfile', 'category', 'dates'])
             ->where('slug', $identifier)
-            ->orWhere('public_id', $identifier)
             ->first();
     }
 }

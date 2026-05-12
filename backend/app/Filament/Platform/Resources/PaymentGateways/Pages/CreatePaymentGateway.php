@@ -3,11 +3,12 @@
 namespace App\Filament\Platform\Resources\PaymentGateways\Pages;
 
 use App\Filament\Platform\Resources\PaymentGateways\PaymentGatewayResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Support\Pages\CreateRecordPage;
+use Filament\Support\Enums\Width;
 
-class CreatePaymentGateway extends CreateRecord
+class CreatePaymentGateway extends CreateRecordPage
 {
     protected static string $resource = PaymentGatewayResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 }

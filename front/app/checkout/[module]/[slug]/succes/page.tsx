@@ -1,0 +1,59 @@
+import { notFound } from "next/navigation";
+
+import { PaymentSuccessView } from "@/components/RouteViews";
+import { getCheckoutData, verifyCheckoutPayment } from "@/lib/data/public";
+import { ModuleRoute } from "@/lib/types";
+
+export const dynamic = "force-dynamic";
+
+const modules: ModuleRoute[] = [
+  "evenements",
+  "formations",
+  "stands",
+  "appels-a-projets",
+  "crowdfunding",
+];
+
+function isModuleRoute(value: string): value is ModuleRoute {
+  return modules.includes(value as ModuleRoute);
+}
+
+export default async function CheckoutSuccessPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ module: string; slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { module, slug } = await params;
+
+  if (!isModuleRoute(module)) {
+    notFound();
+  }
+
+  const search = await searchParams;
+  const offer = Array.isArray(search.offer) ? search.offer[0] : search.offer;
+  const tx =
+    (Array.isArray(search.tx) ? search.tx[0] : search.tx) ??
+    (Array.isArray(search.reference) ? search.reference[0] : search.reference) ??
+    (Array.isArray(search.trxref) ? search.trxref[0] : search.trxref);
+  const data = await getCheckoutData(module, slug, offer);
+
+  if (!data || !tx) {
+    notFound();
+  }
+
+  const verification = await verifyCheckoutPayment(tx);
+
+  return (
+    <PaymentSuccessView
+      item={data.item}
+      isConfirmed={verification?.is_successful ?? false}
+      paidAt={verification?.paid_at ?? undefined}
+      paymentReference={verification?.reference ?? tx}
+      platform={data.platform}
+      selectedOffer={data.selectedOffer}
+      verification={verification}
+    />
+  );
+}

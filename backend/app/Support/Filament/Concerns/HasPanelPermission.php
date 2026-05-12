@@ -7,6 +7,10 @@ use App\Support\Tenancy\TenantContext;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
 
+/**
+ * @property static string|null $permissionPrefix
+ * @property static string|null $requiredTenantFeature
+ */
 trait HasPanelPermission
 {
     public static function shouldRegisterNavigation(): bool
@@ -60,13 +64,13 @@ trait HasPanelPermission
             return true;
         }
 
-        $permissionPrefix = property_exists(static::class, 'permissionPrefix') ? static::$permissionPrefix : null;
+        $permissionPrefix = static::resolveStaticPropertyValue('permissionPrefix');
 
         if ($permissionPrefix === null) {
             return false;
         }
 
-        $requiredTenantFeature = property_exists(static::class, 'requiredTenantFeature') ? static::$requiredTenantFeature : null;
+        $requiredTenantFeature = static::resolveStaticPropertyValue('requiredTenantFeature');
 
         if ($requiredTenantFeature !== null) {
             $tenant = app(TenantContext::class)->get();
@@ -81,6 +85,17 @@ trait HasPanelPermission
         return method_exists($user, 'can') ? $user->can($permission) : false;
     }
 
+    protected static function resolveStaticPropertyValue(string $property): mixed
+    {
+        $reflection = new \ReflectionClass(static::class);
+
+        if (! $reflection->hasProperty($property)) {
+            return null;
+        }
+
+        return $reflection->getStaticPropertyValue($property);
+    }
+
     protected static function shouldShowInNavigation(): bool
     {
         if (! str_starts_with(static::class, 'App\\Filament\\Platform\\Resources\\')) {
@@ -89,14 +104,19 @@ trait HasPanelPermission
 
         return in_array(static::class, [
             'App\\Filament\\Platform\\Resources\\CentralCategories\\CentralCategoryResource',
-            'App\\Filament\\Platform\\Resources\\CommercialPolicies\\CommercialPolicyResource',
             'App\\Filament\\Platform\\Resources\\FeatureFlags\\FeatureFlagResource',
+            'App\\Filament\\Platform\\Resources\\FrontMenus\\FrontMenuResource',
+            'App\\Filament\\Platform\\Resources\\FrontPages\\FrontPageResource',
+            'App\\Filament\\Platform\\Resources\\GatewayFeeRules\\GatewayFeeRuleResource',
             'App\\Filament\\Platform\\Resources\\PaymentGateways\\PaymentGatewayResource',
+            'App\\Filament\\Platform\\Resources\\PayoutPolicies\\PayoutPolicyResource',
             'App\\Filament\\Platform\\Resources\\Plans\\PlanResource',
             'App\\Filament\\Platform\\Resources\\PlatformAuditLogs\\PlatformAuditLogResource',
             'App\\Filament\\Platform\\Resources\\PlatformSettings\\PlatformSettingResource',
+            'App\\Filament\\Platform\\Resources\\PlatformFeeRules\\PlatformFeeRuleResource',
             'App\\Filament\\Platform\\Resources\\PlatformTransactions\\PlatformTransactionResource',
             'App\\Filament\\Platform\\Resources\\PlatformUsers\\PlatformUserResource',
+            'App\\Filament\\Platform\\Resources\\Refunds\\RefundResource',
             'App\\Filament\\Platform\\Resources\\Roles\\RoleResource',
             'App\\Filament\\Platform\\Resources\\SeoSettings\\SeoSettingResource',
             'App\\Filament\\Platform\\Resources\\Settlements\\SettlementResource',

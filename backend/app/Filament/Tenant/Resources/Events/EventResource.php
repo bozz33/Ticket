@@ -3,7 +3,9 @@
 namespace App\Filament\Tenant\Resources\Events;
 
 use App\Enums\CategoryScope;
-use App\Filament\Tenant\Resources\Events\Pages\ManageEvents;
+use App\Filament\Tenant\Resources\Events\Pages\CreateEvent;
+use App\Filament\Tenant\Resources\Events\Pages\EditEvent;
+use App\Filament\Tenant\Resources\Events\Pages\ListEvents;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\Event;
@@ -59,13 +61,16 @@ class EventResource extends Resource
             ->components([
                 Section::make('Événement')->schema([
                     Select::make('category_id')
-                        ->label('Catégorie')
+                        ->label('Catégorie catalogue')
+                        ->helperText('Sert aux filtres du catalogue public et peut rester vide si le classement n’est pas nécessaire.')
                         ->options(fn (): array => Category::query()->whereIn('module_scope', [CategoryScope::Global->value, CategoryScope::Event->value])->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())
                         ->searchable()
                         ->preload(),
                     Select::make('public_status_code')
-                        ->label('Statut public')
+                        ->label('Visibilité publique')
+                        ->helperText('Détermine si la fiche apparaît publiquement ou reste en brouillon/archive.')
                         ->options(fn (): array => PublicStatus::query()->orderBy('sort_order')->pluck('name', 'code')->all())
+                        ->default('published')
                         ->searchable()
                         ->preload(),
                     TextInput::make('title')
@@ -82,14 +87,19 @@ class EventResource extends Resource
                     TextInput::make('country_code')->label('Pays')->maxLength(2),
                     Select::make('city_id')
                         ->label('Ville')
-                        ->options(fn (): array => City::query()->orderBy('name')->pluck('name', 'id')->all())
+                        ->options(fn (): array => City::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
                         ->searchable()
                         ->preload(),
                     TextInput::make('venue_name')->label('Lieu')->maxLength(255),
                     TextInput::make('venue_address')->label('Adresse du lieu')->maxLength(255),
                     TextInput::make('cover_image_url')->label('Image couverture')->url()->maxLength(255),
                     Toggle::make('is_active')->label('Actif')->default(true),
-                    DateTimePicker::make('published_at')->label('Publié le'),
+                    DateTimePicker::make('published_at')
+                        ->label('Publié le')
+                        ->helperText('Renseigné automatiquement lors de la création.')
+                        ->default(now())
+                        ->disabled()
+                        ->dehydrated(),
                     KeyValue::make('meta')->label('Métadonnées')->columnSpanFull(),
                 ])->columns(2),
                 Section::make('Dates')->schema([
@@ -125,7 +135,8 @@ class EventResource extends Resource
             ])
             ->defaultSort('updated_at', 'desc')
             ->recordActions([
-                EditAction::make(),
+                EditAction::make()
+                    ->url(fn (Event $record): string => static::getUrl('edit', ['record' => $record])),
                 DeleteAction::make(),
             ])
             ->toolbarActions([
@@ -138,7 +149,9 @@ class EventResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageEvents::route('/'),
+            'index' => ListEvents::route('/'),
+            'create' => CreateEvent::route('/create'),
+            'edit' => EditEvent::route('/{record}/edit'),
         ];
     }
 

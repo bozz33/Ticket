@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\PayoutBatches\Pages;
 
 use App\Filament\Platform\Resources\PayoutBatches\PayoutBatchResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManagePayoutBatches extends ManageRecords
+class ManagePayoutBatches extends ManageRecordsPage
 {
     protected static string $resource = PayoutBatchResource::class;
 

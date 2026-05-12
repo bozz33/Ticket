@@ -3,11 +3,12 @@
 namespace App\Filament\Platform\Resources\CommercialPolicies\Pages;
 
 use App\Filament\Platform\Resources\CommercialPolicies\CommercialPolicyResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Support\Pages\CreateRecordPage;
+use Filament\Support\Enums\Width;
 
-class CreateCommercialPolicy extends CreateRecord
+class CreateCommercialPolicy extends CreateRecordPage
 {
     protected static string $resource = CommercialPolicyResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 }

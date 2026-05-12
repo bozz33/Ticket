@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\GatewayWebhookLogs\Pages;
 
 use App\Filament\Platform\Resources\GatewayWebhookLogs\GatewayWebhookLogResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageGatewayWebhookLogs extends ManageRecords
+class ManageGatewayWebhookLogs extends ManageRecordsPage
 {
     protected static string $resource = GatewayWebhookLogResource::class;
 

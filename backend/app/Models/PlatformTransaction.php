@@ -25,9 +25,16 @@ class PlatformTransaction extends Model
         'gross_amount',
         'fee_amount',
         'net_amount',
+        'gateway_fee_amount',
+        'platform_fee_amount',
+        'tax_amount',
+        'payout_fee_amount',
+        'customer_fee_amount',
+        'absorbed_fee_amount',
         'currency_code',
         'occurred_at',
         'meta',
+        'pricing_snapshot',
     ];
 
     protected function casts(): array
@@ -36,8 +43,15 @@ class PlatformTransaction extends Model
             'gross_amount' => 'integer',
             'fee_amount' => 'integer',
             'net_amount' => 'integer',
+            'gateway_fee_amount' => 'integer',
+            'platform_fee_amount' => 'integer',
+            'tax_amount' => 'integer',
+            'payout_fee_amount' => 'integer',
+            'customer_fee_amount' => 'integer',
+            'absorbed_fee_amount' => 'integer',
             'occurred_at' => 'datetime',
             'meta' => 'array',
+            'pricing_snapshot' => 'array',
         ];
     }
 
@@ -59,5 +73,10 @@ class PlatformTransaction extends Model
     public function incidents(): HasMany
     {
         return $this->hasMany(PaymentIncident::class);
+    }
+
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
     }
 }

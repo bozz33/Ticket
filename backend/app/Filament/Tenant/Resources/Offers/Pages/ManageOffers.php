@@ -4,9 +4,9 @@ namespace App\Filament\Tenant\Resources\Offers\Pages;
 
 use App\Filament\Tenant\Resources\Offers\OfferResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageOffers extends ManageRecords
+class ManageOffers extends ManageRecordsPage
 {
     protected static string $resource = OfferResource::class;
 

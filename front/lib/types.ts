@@ -351,6 +351,7 @@ export interface ListingData {
   page?: FrontPageData | null;
   module: ModuleRoute;
   title: string;
+  singular: string;
   description: string;
   heroImageUrl: string;
   items: PublicContent[];

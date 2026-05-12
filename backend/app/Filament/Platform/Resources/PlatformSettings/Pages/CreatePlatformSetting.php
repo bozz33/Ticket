@@ -3,11 +3,12 @@
 namespace App\Filament\Platform\Resources\PlatformSettings\Pages;
 
 use App\Filament\Platform\Resources\PlatformSettings\PlatformSettingResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Support\Pages\CreateRecordPage;
+use Filament\Support\Enums\Width;
 
-class CreatePlatformSetting extends CreateRecord
+class CreatePlatformSetting extends CreateRecordPage
 {
     protected static string $resource = PlatformSettingResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 }

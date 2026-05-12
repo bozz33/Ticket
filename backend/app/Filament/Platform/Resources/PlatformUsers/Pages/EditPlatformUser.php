@@ -3,11 +3,12 @@
 namespace App\Filament\Platform\Resources\PlatformUsers\Pages;
 
 use App\Filament\Platform\Resources\PlatformUsers\PlatformUserResource;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Support\Pages\EditRecordPage;
+use Filament\Support\Enums\Width;
 
-class EditPlatformUser extends EditRecord
+class EditPlatformUser extends EditRecordPage
 {
     protected static string $resource = PlatformUserResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 }

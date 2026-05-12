@@ -1,65 +1,21 @@
-import { ModuleRoute, PublicContent, SearchFilters, SortOption } from "@/lib/types";
+import { PublicContent, SearchFilters, SortOption } from "@/lib/types";
 
-export const moduleLabels: Record<
-  ModuleRoute,
-  {
-    title: string;
-    singular: string;
-    cta: string;
-    description: string;
-    heroImageUrl: string;
-  }
-> = {
-  evenements: {
-    title: "Evenements",
-    singular: "evenement",
-    cta: "Acheter",
-    description:
-      "Concerts, conferences et experiences live publies par les organisations de la plateforme.",
-    heroImageUrl:
-      "https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?auto=format&fit=crop&w=1600&q=80",
-  },
-  formations: {
-    title: "Formations",
-    singular: "formation",
-    cta: "S'inscrire",
-    description:
-      "Sessions, masterclass et ateliers avec des parcours clairs jusqu'a l'inscription.",
-    heroImageUrl:
-      "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=1600&q=80",
-  },
-  stands: {
-    title: "Stands",
-    singular: "stand",
-    cta: "Reserver",
-    description:
-      "Catalogues d'exposition et offres de reservation pour salons, foires et showcases.",
-    heroImageUrl:
-      "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1600&q=80",
-  },
-  "appels-a-projets": {
-    title: "Appels a projets",
-    singular: "appel",
-    cta: "Candidater",
-    description:
-      "Programmes, concours et appels a candidatures avec conditions, calendrier et pieces requises.",
-    heroImageUrl:
-      "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?auto=format&fit=crop&w=1600&q=80",
-  },
-  crowdfunding: {
-    title: "Crowdfunding",
-    singular: "campagne",
-    cta: "Contribuer",
-    description:
-      "Campagnes financieres publiees par les organisateurs avec progression, paliers et impact attendu.",
-    heroImageUrl:
-      "https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=1600&q=80",
-  },
-};
+export const staticPageHeroImages = {
+  accueil: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1800&q=80",
+  "a-propos": "https://images.unsplash.com/photo-1511578314322-379afb476865?auto=format&fit=crop&w=1800&q=80",
+  categories: "https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=1800&q=80",
+  contact: "https://images.unsplash.com/photo-1516321497487-e288fb19713f?auto=format&fit=crop&w=1800&q=80",
+  remboursement: "https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1800&q=80",
+  "mentions-legales": "https://images.unsplash.com/photo-1450101499163-c8848c66ca85?auto=format&fit=crop&w=1800&q=80",
+  faq: "https://images.unsplash.com/photo-1517048676732-d65bc937f952?auto=format&fit=crop&w=1800&q=80",
+  "devenir-organisateur": "https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1800&q=80",
+} as const;
 
-export function getModuleMeta(module: ModuleRoute) {
-  return moduleLabels[module];
-}
+export type StaticPageHeroKey = keyof typeof staticPageHeroImages;
+
+export function getStaticPageHeroImage(page: StaticPageHeroKey): string {
+  return staticPageHeroImages[page];
+ }
 
 export function formatMoney(amount: number, currency: string): string {
   return new Intl.NumberFormat("fr-FR", {
@@ -97,11 +53,41 @@ export function buildPublicUrl(path: string): string {
 export function buildSearchQuery(filters: SearchFilters): string {
   const params = new URLSearchParams();
 
-  Object.entries(filters).forEach(([key, value]) => {
-    if (typeof value === "string" && value.trim() !== "") {
-      params.set(key, value);
-    }
-  });
+  if (filters.module && filters.module !== "all") {
+    params.set("module", filters.module);
+  }
+
+  if (filters.q?.trim()) {
+    params.set("q", filters.q.trim());
+  }
+
+  if (filters.category?.trim()) {
+    params.set("category", filters.category.trim());
+  }
+
+  if (filters.city?.trim()) {
+    params.set("city", filters.city.trim());
+  }
+
+  if (filters.dateFrom?.trim()) {
+    params.set("date_from", filters.dateFrom.trim());
+  }
+
+  if (filters.dateTo?.trim()) {
+    params.set("date_to", filters.dateTo.trim());
+  }
+
+  if (filters.price && filters.price !== "all") {
+    params.set("price", filters.price);
+  }
+
+  if (filters.sort) {
+    params.set("sort", filters.sort);
+  }
+
+  if (typeof filters.page === "number" && Number.isFinite(filters.page)) {
+    params.set("page", String(filters.page));
+  }
 
   const query = params.toString();
 
@@ -118,14 +104,19 @@ export function normalizeSearchParams(
   };
 
   const sort = getValue("sort");
+  const pageValue = getValue("page");
+  const parsedPage = pageValue ? Number(pageValue) : NaN;
 
   return {
     module: getValue("module") as SearchFilters["module"],
     q: getValue("q"),
     category: getValue("category"),
     city: getValue("city"),
+    dateFrom: getValue("date_from"),
+    dateTo: getValue("date_to"),
     price: (getValue("price") as SearchFilters["price"]) ?? "all",
     sort: isSortOption(sort) ? sort : "popular",
+    page: Number.isInteger(parsedPage) && parsedPage > 0 ? parsedPage : undefined,
   };
 }
 
@@ -137,6 +128,10 @@ export function matchesFilters(item: PublicContent, filters: SearchFilters): boo
   const q = filters.q?.trim().toLowerCase();
   const category = filters.category?.trim().toLowerCase();
   const city = filters.city?.trim().toLowerCase();
+  const dateFrom = filters.dateFrom ? new Date(`${filters.dateFrom}T00:00:00`) : null;
+  const dateTo = filters.dateTo ? new Date(`${filters.dateTo}T23:59:59`) : null;
+  const itemStart = item.startsAt ? new Date(item.startsAt) : item.deadlineAt ? new Date(item.deadlineAt) : null;
+  const itemEnd = item.endsAt ? new Date(item.endsAt) : itemStart;
 
   if (filters.module && filters.module !== "all" && item.module !== filters.module) {
     return false;
@@ -164,6 +159,22 @@ export function matchesFilters(item: PublicContent, filters: SearchFilters): boo
   }
 
   if (city && item.city.toLowerCase() !== city) {
+    return false;
+  }
+
+  if (dateFrom && itemEnd && itemEnd < dateFrom) {
+    return false;
+  }
+
+  if (dateFrom && !itemEnd) {
+    return false;
+  }
+
+  if (dateTo && itemStart && itemStart > dateTo) {
+    return false;
+  }
+
+  if (dateTo && !itemStart) {
     return false;
   }
 

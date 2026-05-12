@@ -1,7 +1,13 @@
 node_modules
 .next
+.next-build/
 .env.local
 npm-debug.log*
 .tmp-edge*/
 .next-dev*.log
 .runtime/
+.chrome-shot/
+.edge-desktop/
+.edge-mobile/
+.screenshots/
+tsconfig.tsbuildinfo

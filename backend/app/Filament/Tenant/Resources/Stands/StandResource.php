@@ -3,7 +3,9 @@
 namespace App\Filament\Tenant\Resources\Stands;
 
 use App\Enums\CategoryScope;
-use App\Filament\Tenant\Resources\Stands\Pages\ManageStands;
+use App\Filament\Tenant\Resources\Stands\Pages\CreateStand;
+use App\Filament\Tenant\Resources\Stands\Pages\EditStand;
+use App\Filament\Tenant\Resources\Stands\Pages\ListStands;
 use App\Models\Category;
 use App\Models\PublicStatus;
 use App\Models\Stand;
@@ -47,8 +49,8 @@ class StandResource extends Resource
     {
         return $schema->components([
             Section::make('Stand')->schema([
-                Select::make('category_id')->label('Catégorie')->options(fn (): array => Category::query()->whereIn('module_scope', [CategoryScope::Global->value, CategoryScope::Stand->value])->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload(),
-                Select::make('public_status_code')->label('Statut public')->options(fn (): array => PublicStatus::query()->orderBy('sort_order')->pluck('name', 'code')->all())->searchable()->preload(),
+                Select::make('category_id')->label('Catégorie catalogue')->helperText('Sert aux filtres du catalogue public et peut rester vide si le classement n’est pas nécessaire.')->options(fn (): array => Category::query()->whereIn('module_scope', [CategoryScope::Global->value, CategoryScope::Stand->value])->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload(),
+                Select::make('public_status_code')->label('Visibilité publique')->helperText('Détermine si la fiche apparaît publiquement ou reste en brouillon/archive.')->options(fn (): array => PublicStatus::query()->orderBy('sort_order')->pluck('name', 'code')->all())->default('published')->searchable()->preload(),
                 TextInput::make('name')->label('Nom')->required()->maxLength(255)->live(onBlur: true)->afterStateUpdated(fn ($state, $set) => $set('slug', Str::slug((string) $state))),
                 TextInput::make('slug')->label('Slug')->required()->maxLength(255)->unique(ignoreRecord: true),
                 TextInput::make('summary')->label('Résumé')->maxLength(255)->columnSpanFull(),
@@ -57,7 +59,12 @@ class StandResource extends Resource
                 TextInput::make('price_amount')->label('Prix')->numeric()->default(0),
                 TextInput::make('quantity_available')->label('Quantité disponible')->numeric()->default(0),
                 Toggle::make('is_active')->label('Actif')->default(true),
-                DateTimePicker::make('published_at')->label('Publié le'),
+                DateTimePicker::make('published_at')
+                    ->label('Publié le')
+                    ->helperText('Renseigné automatiquement lors de la création.')
+                    ->default(now())
+                    ->disabled()
+                    ->dehydrated(),
                 KeyValue::make('meta')->label('Métadonnées')->columnSpanFull(),
             ])->columns(2),
         ]);
@@ -74,7 +81,8 @@ class StandResource extends Resource
             IconColumn::make('is_active')->label('Actif')->boolean(),
             TextColumn::make('updated_at')->label('Mis à jour')->since(),
         ])->defaultSort('updated_at', 'desc')->recordActions([
-            EditAction::make(),
+            EditAction::make()
+                ->url(fn (Stand $record): string => static::getUrl('edit', ['record' => $record])),
             DeleteAction::make(),
         ])->toolbarActions([
             BulkActionGroup::make([
@@ -85,7 +93,11 @@ class StandResource extends Resource
 
     public static function getPages(): array
     {
-        return ['index' => ManageStands::route('/')];
+        return [
+            'index' => ListStands::route('/'),
+            'create' => CreateStand::route('/create'),
+            'edit' => EditStand::route('/{record}/edit'),
+        ];
     }
 
     public static function canCreate(): bool

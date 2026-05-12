@@ -3,9 +3,9 @@
 namespace App\Filament\Platform\Resources\CentralTags\Pages;
 
 use App\Filament\Platform\Resources\CentralTags\CentralTagResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Support\Pages\ListRecordsPage;
 
-class ListCentralTags extends ListRecords
+class ListCentralTags extends ListRecordsPage
 {
     protected static string $resource = CentralTagResource::class;
 }

@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\Role;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
 
 class ProvisionTenant
@@ -122,6 +123,10 @@ class ProvisionTenant
             'email' => $user->email,
             'password' => $plainPassword,
             'public_url' => rtrim(config('ticket.public_frontend_url', config('app.url')), '/') . sprintf('/fr/organisateurs/%s?tab=events', $tenant->public_id),
+            'access_url' => URL::temporarySignedRoute('tenant.panel.access', now()->addMinutes(15), [
+                'tenant' => $tenant->slug,
+                'user' => $user->getKey(),
+            ]),
             'login_url' => url(sprintf('/tenants/%s/admin/login', $tenant->slug)),
         ];
     }

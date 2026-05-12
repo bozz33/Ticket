@@ -16,12 +16,15 @@
 /public/build
 /public/hot
 /public/storage
+/storage/
 /storage/*.key
 /storage/pail
 /vendor
+/database/*.sqlite
 /database/*.tmp
 /database/*.tmp-journal
 /database/*-journal
+/database/testing/*.sqlite
 /database/testing/*.sqlite-journal
 Homestead.json
 Homestead.yaml

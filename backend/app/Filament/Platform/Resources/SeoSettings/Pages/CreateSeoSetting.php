@@ -3,11 +3,12 @@
 namespace App\Filament\Platform\Resources\SeoSettings\Pages;
 
 use App\Filament\Platform\Resources\SeoSettings\SeoSettingResource;
-use Filament\Resources\Pages\CreateRecord;
+use App\Filament\Support\Pages\CreateRecordPage;
+use Filament\Support\Enums\Width;
 
-class CreateSeoSetting extends CreateRecord
+class CreateSeoSetting extends CreateRecordPage
 {
     protected static string $resource = SeoSettingResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 }

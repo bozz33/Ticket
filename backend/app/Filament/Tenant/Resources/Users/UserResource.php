@@ -2,7 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Users;
 
-use App\Filament\Tenant\Resources\Users\Pages\ManageUsers;
+use App\Filament\Tenant\Resources\Users\Pages\CreateUser;
+use App\Filament\Tenant\Resources\Users\Pages\EditUser;
+use App\Filament\Tenant\Resources\Users\Pages\ListUsers;
 use App\Models\User;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
@@ -109,7 +111,9 @@ class UserResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => ManageUsers::route('/'),
+            'index' => ListUsers::route('/'),
+            'create' => CreateUser::route('/create'),
+            'edit' => EditUser::route('/{record}/edit'),
         ];
     }
 

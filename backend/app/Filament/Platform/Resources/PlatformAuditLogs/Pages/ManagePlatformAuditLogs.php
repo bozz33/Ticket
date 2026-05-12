@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\PlatformAuditLogs\Pages;
 
 use App\Filament\Platform\Resources\PlatformAuditLogs\PlatformAuditLogResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManagePlatformAuditLogs extends ManageRecords
+class ManagePlatformAuditLogs extends ManageRecordsPage
 {
     protected static string $resource = PlatformAuditLogResource::class;
 

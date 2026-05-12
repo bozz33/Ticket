@@ -1,11 +1,11 @@
 import type { MetadataRoute } from "next";
 
-import { mockContent, mockOrganizers } from "@/lib/data/mock";
+import { getAllContent, getFrontPagesIndex, getOrganizerHighlights } from "@/lib/data/public";
 import { metadataBase } from "@/lib/metadata";
 
 const baseUrl = metadataBase.toString().replace(/\/$/, "");
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes = [
     "/",
     "/evenements",
@@ -13,28 +13,35 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/stands",
     "/appels-a-projets",
     "/crowdfunding",
-    "/recherche",
     "/categories",
-    "/villes",
-    "/intervenants",
-    "/a-propos",
-    "/support",
-    "/devenir-organisateur",
     "/compte",
   ].map((path) => ({
     url: `${baseUrl}${path}`,
     lastModified: new Date(),
   }));
 
-  const contentRoutes = mockContent.map((item) => ({
+  const [contentItems, organizers, frontPages] = await Promise.all([
+    getAllContent(),
+    getOrganizerHighlights(),
+    getFrontPagesIndex(),
+  ]);
+
+  const cmsRoutes = frontPages
+    .filter((page) => page.path !== "/")
+    .map((page) => ({
+      url: `${baseUrl}${page.path}`,
+      lastModified: new Date(page.updated_at || page.published_at || Date.now()),
+    }));
+
+  const contentRoutes = contentItems.map((item) => ({
     url: `${baseUrl}/${item.module}/${item.slug}`,
     lastModified: new Date(item.publishedAt),
   }));
 
-  const organizerRoutes = mockOrganizers.map((organizer) => ({
+  const organizerRoutes = organizers.map(({ organizer }) => ({
     url: `${baseUrl}/organisateurs/${organizer.slug}`,
     lastModified: new Date(),
   }));
 
-  return [...staticRoutes, ...contentRoutes, ...organizerRoutes];
+  return [...staticRoutes, ...cmsRoutes, ...contentRoutes, ...organizerRoutes];
 }

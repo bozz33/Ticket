@@ -1,7 +1,12 @@
+import { getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
 import { SearchResultsView } from "@/components/RouteViews";
 import { getSearchPageData } from "@/lib/data/public";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
+export const generateMetadata = () => getManagedPageMetadata("/recherche", {
+  title: "Recherche | Ticket",
+  description: "Recherchez dans tous les modules et les contenus publics.",
+});
 
 export default async function SearchPage({
   searchParams,
@@ -14,8 +19,12 @@ export default async function SearchPage({
     <SearchResultsView
       categories={data.references.categories}
       cities={data.references.cities}
+      currentPage={data.currentPage}
       filters={data.filters}
       items={data.items}
+      page={data.page}
+      totalItems={data.totalItems}
+      totalPages={data.totalPages}
     />
   );
 }

@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\PaymentGateways\Pages;
 
 use App\Filament\Platform\Resources\PaymentGateways\PaymentGatewayResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManagePaymentGateways extends ManageRecords
+class ManagePaymentGateways extends ManageRecordsPage
 {
     protected static string $resource = PaymentGatewayResource::class;
 

@@ -3,9 +3,9 @@
 namespace App\Filament\Platform\Resources\CentralCategories\Pages;
 
 use App\Filament\Platform\Resources\CentralCategories\CentralCategoryResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Support\Pages\ListRecordsPage;
 
-class ListCentralCategories extends ListRecords
+class ListCentralCategories extends ListRecordsPage
 {
     protected static string $resource = CentralCategoryResource::class;
 }

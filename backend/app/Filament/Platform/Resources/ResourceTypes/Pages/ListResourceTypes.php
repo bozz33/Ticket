@@ -3,9 +3,9 @@
 namespace App\Filament\Platform\Resources\ResourceTypes\Pages;
 
 use App\Filament\Platform\Resources\ResourceTypes\ResourceTypeResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Support\Pages\ListRecordsPage;
 
-class ListResourceTypes extends ListRecords
+class ListResourceTypes extends ListRecordsPage
 {
     protected static string $resource = ResourceTypeResource::class;
 }

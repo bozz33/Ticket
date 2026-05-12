@@ -3,9 +3,9 @@
 namespace App\Filament\Tenant\Resources\Transactions\Pages;
 
 use App\Filament\Tenant\Resources\Transactions\PlatformTransactionResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Support\Pages\ListRecordsPage;
 
-class ListPlatformTransactions extends ListRecords
+class ListPlatformTransactions extends ListRecordsPage
 {
     protected static string $resource = PlatformTransactionResource::class;
 }

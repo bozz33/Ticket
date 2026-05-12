@@ -61,15 +61,33 @@ class DocumentService
 
     public function findByIdentifier(string $identifier): ?Document
     {
+        if (Str::isUuid($identifier)) {
+            return Document::query()
+                ->with('organizationProfile')
+                ->where('public_id', $identifier)
+                ->first();
+        }
+
         return Document::query()
             ->with('organizationProfile')
             ->where('slug', $identifier)
-            ->orWhere('public_id', $identifier)
             ->first();
     }
 
     public function findPublicByIdentifier(string $identifier): ?Document
     {
+        if (Str::isUuid($identifier)) {
+            return Document::query()
+                ->with('organizationProfile')
+                ->where('visibility', 'public')
+                ->where('is_active', true)
+                ->where(function ($query) {
+                    $query->whereNull('published_at')->orWhere('published_at', '<=', now());
+                })
+                ->where('public_id', $identifier)
+                ->first();
+        }
+
         return Document::query()
             ->with('organizationProfile')
             ->where('visibility', 'public')
@@ -77,9 +95,7 @@ class DocumentService
             ->where(function ($query) {
                 $query->whereNull('published_at')->orWhere('published_at', '<=', now());
             })
-            ->where(function ($query) use ($identifier) {
-                $query->where('slug', $identifier)->orWhere('public_id', $identifier);
-            })
+            ->where('slug', $identifier)
             ->first();
     }
 }

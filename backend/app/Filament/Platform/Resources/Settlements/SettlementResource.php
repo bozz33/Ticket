@@ -4,6 +4,7 @@ namespace App\Filament\Platform\Resources\Settlements;
 
 use App\Filament\Platform\Resources\Settlements\Pages\ManageSettlements;
 use App\Models\PayoutBatch;
+use App\Models\PayoutPolicy;
 use App\Models\Settlement;
 use App\Models\Tenant;
 use App\Support\Filament\Concerns\HasPanelPermission;
@@ -51,12 +52,23 @@ class SettlementResource extends Resource
                 Section::make('Reversement')->schema([
                     Select::make('tenant_id')->label('Tenant')->options(fn (): array => Tenant::query()->orderBy('name')->pluck('name', 'id')->all())->required()->searchable()->preload(),
                     Select::make('payout_batch_id')->label('Batch')->options(fn (): array => PayoutBatch::query()->orderByDesc('id')->pluck('reference', 'id')->all())->searchable()->preload(),
+                    Select::make('payout_policy_id')->label('Politique de reversement')->options(fn (): array => PayoutPolicy::query()->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload(),
                     TextInput::make('reference')->label('Référence')->required()->maxLength(255),
-                    Select::make('status')->label('Statut')->options(['draft' => 'Brouillon', 'scheduled' => 'Planifié', 'paid' => 'Payé', 'failed' => 'Échec'])->default('draft')->required(),
+                    Select::make('status')->label('Statut')->options([
+                        'draft' => 'Brouillon',
+                        'pending' => 'En attente organisateur',
+                        'approved' => 'Approuvé',
+                        'scheduled' => 'Planifié',
+                        'paid' => 'Payé',
+                        'rejected' => 'Rejeté',
+                        'failed' => 'Échec',
+                    ])->default('pending')->required(),
                     DatePicker::make('period_start')->label('Période début'),
                     DatePicker::make('period_end')->label('Période fin'),
                     TextInput::make('gross_amount')->label('Brut')->numeric()->default(0)->required(),
-                    TextInput::make('fee_amount')->label('Frais')->numeric()->default(0)->required(),
+                    TextInput::make('fee_amount')->label('Frais totaux')->numeric()->default(0)->required(),
+                    TextInput::make('reserve_amount')->label('Montant en réserve')->numeric()->default(0)->required(),
+                    TextInput::make('payout_fee_amount')->label('Frais de reversement')->numeric()->default(0)->required(),
                     TextInput::make('net_amount')->label('Net')->numeric()->default(0)->required(),
                     TextInput::make('currency_code')->label('Devise')->default('XOF')->maxLength(3)->required(),
                     DateTimePicker::make('scheduled_at')->label('Planifié le'),
@@ -75,7 +87,11 @@ class SettlementResource extends Resource
                     ->label('Référence')
                     ->searchable(),
                 TextColumn::make('tenant.name')->label('Tenant'),
+                TextColumn::make('payoutPolicy.name')->label('Politique')->toggleable(),
                 TextColumn::make('status')->label('Statut')->badge(),
+                TextColumn::make('gross_amount')->label('Brut')->numeric(),
+                TextColumn::make('payout_fee_amount')->label('Frais reversement')->numeric(),
+                TextColumn::make('reserve_amount')->label('Réserve')->numeric()->toggleable(isToggledHiddenByDefault: true),
                 TextColumn::make('net_amount')->label('Net')->numeric(),
                 TextColumn::make('currency_code')->label('Devise'),
                 TextColumn::make('period_end')->label('Période fin')->date(),

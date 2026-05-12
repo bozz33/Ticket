@@ -4,9 +4,9 @@ namespace App\Filament\Tenant\Resources\Events\Pages;
 
 use App\Filament\Tenant\Resources\Events\EventResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageEvents extends ManageRecords
+class ManageEvents extends ManageRecordsPage
 {
     protected static string $resource = EventResource::class;
 

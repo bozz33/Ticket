@@ -296,6 +296,24 @@ class PublicContentService
         ];
     }
 
+    public function listingPresentation(?string $module = null, ?string $fallback = 'evenements'): array
+    {
+        $resolvedModule = is_string($module) && isset(self::MODULE_MAP[$module])
+            ? $module
+            : ((is_string($fallback) && isset(self::MODULE_MAP[$fallback])) ? $fallback : 'evenements');
+        $presentation = $this->modulePresentation($resolvedModule);
+
+        return [
+            'module' => $resolvedModule,
+            'title' => $presentation['title'],
+            'singular' => $presentation['singular'],
+            'cta' => $presentation['cta'],
+            'description' => $presentation['description'],
+            'href' => $presentation['href'],
+            'heroImageUrl' => $presentation['heroImageUrl'],
+        ];
+    }
+
     public function categoryOverviewAcrossTenants(): array
     {
         return $this->applySort($this->collectItemsAcrossTenants(), 'recent')

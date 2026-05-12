@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\Settlements\Pages;
 
 use App\Filament\Platform\Resources\Settlements\SettlementResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageSettlements extends ManageRecords
+class ManageSettlements extends ManageRecordsPage
 {
     protected static string $resource = SettlementResource::class;
 

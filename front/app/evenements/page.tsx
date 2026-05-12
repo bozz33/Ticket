@@ -1,8 +1,13 @@
+import { getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
 import { ModuleListingView } from "@/components/RouteViews";
-import { getContentByModule, getReferenceFilters } from "@/lib/data/public";
+import { getEventCatalogPageData } from "@/lib/data/public";
 import { normalizeSearchParams } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
+export const generateMetadata = () => getManagedPageMetadata("/evenements", {
+  title: "Evenements | Ticket",
+  description: "Decouvrez les evenements disponibles sur le catalogue public.",
+});
 
 export default async function EventsPage({
   searchParams,
@@ -10,16 +15,9 @@ export default async function EventsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const filters = normalizeSearchParams(await searchParams);
-  const [listing, references] = await Promise.all([
-    getContentByModule("evenements", filters),
-    getReferenceFilters(),
-  ]);
+  const listing = await getEventCatalogPageData(filters);
 
   return (
-    <ModuleListingView
-      categories={references.categories}
-      cities={references.cities}
-      {...listing}
-    />
+    <ModuleListingView {...listing} />
   );
 }

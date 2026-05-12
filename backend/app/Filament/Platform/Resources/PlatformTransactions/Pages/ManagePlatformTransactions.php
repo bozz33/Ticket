@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\PlatformTransactions\Pages;
 
 use App\Filament\Platform\Resources\PlatformTransactions\PlatformTransactionResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManagePlatformTransactions extends ManageRecords
+class ManagePlatformTransactions extends ManageRecordsPage
 {
     protected static string $resource = PlatformTransactionResource::class;
 

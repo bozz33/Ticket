@@ -7,15 +7,16 @@ use App\Filament\Platform\Resources\Tenants\TenantResource;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
-use Filament\Resources\Pages\EditRecord;
+use App\Filament\Support\Pages\EditRecordPage;
+use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 
-class EditTenant extends EditRecord
+class EditTenant extends EditRecordPage
 {
     protected static string $resource = TenantResource::class;
 
-    protected string|null $maxWidth = '7xl';
+    protected Width|string|null $maxContentWidth = Width::Full;
 
     protected function mutateFormDataBeforeFill(array $data): array
     {

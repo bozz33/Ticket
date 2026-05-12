@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 use App\Models\Tenant;
 use App\Models\TenantDomain;
-use Stancl\Tenancy\UUIDGenerator;
 
 return [
     'tenant_model' => Tenant::class,
@@ -31,7 +30,7 @@ return [
     'bootstrappers' => [
         Stancl\Tenancy\Bootstrappers\DatabaseTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\CacheTenancyBootstrapper::class,
-        Stancl\Tenancy\Bootstrappers\FilesystemTenancyBootstrapper::class,
+        App\Tenancy\Bootstrappers\SlugFilesystemTenancyBootstrapper::class,
         Stancl\Tenancy\Bootstrappers\QueueTenancyBootstrapper::class,
         // Stancl\Tenancy\Bootstrappers\RedisTenancyBootstrapper::class, // Note: phpredis is needed
     ],

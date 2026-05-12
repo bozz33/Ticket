@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\TenantSubscriptions\Pages;
 
 use App\Filament\Platform\Resources\TenantSubscriptions\TenantSubscriptionResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageTenantSubscriptions extends ManageRecords
+class ManageTenantSubscriptions extends ManageRecordsPage
 {
     protected static string $resource = TenantSubscriptionResource::class;
 

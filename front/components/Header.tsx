@@ -3,44 +3,83 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-import { PlatformConfiguration } from "@/lib/types";
+import { NavigationLink, PlatformConfiguration } from "@/lib/types";
 
-/* ================================================================
-   Navigation principale (nav-bar sombre)
-   ================================================================ */
-const primaryLinks = [
-  { href: "/evenements", label: "Evenements" },
-  { href: "/formations", label: "Formations" },
-  { href: "/stands", label: "Stands" },
-  { href: "/appels-a-projets", label: "Appels a projets" },
-  { href: "/crowdfunding", label: "Crowdfunding" },
-  { href: "/categories", label: "Categories" },
-];
+function renderLink(link: NavigationLink, key: string, onClick?: () => void) {
+  const target = link.target || undefined;
+  const isExternal = link.href.startsWith("http://") || link.href.startsWith("https://") || target === "_blank";
 
-/* ================================================================
-   Liens utilitaires topbar
-   SUPPRIMÉ : Villes, Intervenants, Support
-   GARDÉ    : A propos, Paiement securise
-   ================================================================ */
-const topbarLinks = [
-  { href: "/a-propos", label: "A propos" },
-  { href: "/remboursement", label: "Remboursement" },
-  { href: "/faq", label: "FAQ" },
-  { href: "/mentions-legales", label: "Mentions legales" },
-];
+  if (isExternal) {
+    return (
+      <a href={link.href} key={key} onClick={onClick} rel={target === "_blank" ? "noreferrer" : undefined} target={target}>
+        {link.label}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={link.href} key={key} onClick={onClick} target={target}>
+      {link.label}
+    </Link>
+  );
+}
 
 export function Header({ platform }: { platform: PlatformConfiguration }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const SCROLLED_ENTER_THRESHOLD = 88;
+  const SCROLLED_EXIT_THRESHOLD = 16;
+  const primaryLinks = platform.menus.header_primary.length > 0
+    ? platform.menus.header_primary
+    : [
+        { href: "/", label: "Accueil" },
+        { href: "/a-propos", label: "A propos" },
+        { href: "/evenements", label: "Evenements" },
+        { href: "/contact", label: "Contact" },
+      ];
+  const topbarLinks = platform.menus.header_utility.length > 0
+    ? platform.menus.header_utility
+    : [
+        { href: "/a-propos", label: "A propos" },
+        { href: "/remboursement", label: "Remboursement" },
+        { href: "/faq", label: "FAQ" },
+        { href: "/mentions-legales", label: "Mentions legales" },
+      ];
 
   const closeMenu = () => setIsMenuOpen(false);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 18);
+    let isTicking = false;
+
+    const syncScrolledState = () => {
+      const nextScrollY = window.scrollY || 0;
+
+      setIsScrolled((current) => {
+        if (current) {
+          return nextScrollY > SCROLLED_EXIT_THRESHOLD;
+        }
+
+        return nextScrollY > SCROLLED_ENTER_THRESHOLD;
+      });
+    };
+
+    const onScroll = () => {
+      if (isTicking) {
+        return;
+      }
+
+      isTicking = true;
+
+      window.requestAnimationFrame(() => {
+        syncScrolledState();
+        isTicking = false;
+      });
+    };
+
     const onResize = () => { if (window.innerWidth > 760) setIsMenuOpen(false); };
     const onKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape") setIsMenuOpen(false); };
 
-    onScroll();
+    syncScrolledState();
     onResize();
 
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -87,11 +126,7 @@ export function Header({ platform }: { platform: PlatformConfiguration }) {
 
           {/* Droite : liens légaux + paiement sécurisé */}
           <div className="topbar__meta">
-            {topbarLinks.map((link) => (
-              <Link href={link.href} key={link.href}>
-                {link.label}
-              </Link>
-            ))}
+            {topbarLinks.map((link, index) => renderLink(link, `topbar-${link.href}-${index}`))}
             <span className="topbar__secure">
               <svg aria-hidden="true" className="topbar__icon" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.9" viewBox="0 0 24 24">
                 <rect height="11" rx="2" width="14" x="5" y="11" />
@@ -107,7 +142,11 @@ export function Header({ platform }: { platform: PlatformConfiguration }) {
       <div className="nav-shell">
         <div className="shell nav">
           <Link className="brand" href="/" onClick={closeMenu}>
-            <span className="brand__mark">T</span>
+            {platform.logoUrl ? (
+              <img alt={platform.brandName} className="brand__logo" src={platform.logoUrl} />
+            ) : (
+              <span className="brand__mark">T</span>
+            )}
             <span className="brand__copy">
               <strong>{platform.brandName}</strong>
               <small>Public marketplace</small>
@@ -128,11 +167,7 @@ export function Header({ platform }: { platform: PlatformConfiguration }) {
 
           <div className={`nav__panel${isMenuOpen ? " is-open" : ""}`}>
             <nav aria-label="Navigation principale" className="nav__links">
-              {primaryLinks.map((link) => (
-                <Link href={link.href} key={link.href} onClick={closeMenu}>
-                  {link.label}
-                </Link>
-              ))}
+              {primaryLinks.map((link, index) => renderLink(link, `primary-${link.href}-${index}`, closeMenu))}
             </nav>
 
             <div className="nav__actions">

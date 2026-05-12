@@ -30,7 +30,6 @@ import {
   formatDateRange,
   formatMoney,
   getStaticPageHeroImage,
-  getModuleMeta,
 } from "@/lib/utils";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
@@ -785,6 +784,7 @@ export async function ModuleListingView({
   page,
   module,
   title,
+  singular,
   description,
   heroImageUrl,
   items,
@@ -798,6 +798,7 @@ export async function ModuleListingView({
   page?: FrontPageData | null;
   module: PublicContent["module"];
   title: string;
+  singular: string;
   description: string;
   heroImageUrl: string;
   items: PublicContent[];
@@ -808,7 +809,6 @@ export async function ModuleListingView({
   categories: string[];
   cities: string[];
 }) {
-  const meta = getModuleMeta(module);
   const hero = getFrontSection(page, "hero");
   const moduleHrefMode = module === "evenements" ? "query" : "route";
   const { accountAuthenticated, likeSummaries } = await getLikeRenderingContext(items);
@@ -862,7 +862,7 @@ export async function ModuleListingView({
             </>
           ) : (
             <div className="empty-state">
-              <h3>Aucun {meta.singular} ne correspond a ces filtres.</h3>
+              <h3>Aucun {singular} ne correspond a ces filtres.</h3>
               <p>Elargissez la recherche ou revenez au catalogue complet.</p>
               <Link className="button" href={`/${module}`}>
                 Reinitialiser les filtres

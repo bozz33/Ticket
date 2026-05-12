@@ -4,9 +4,9 @@ namespace App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages;
 
 use App\Filament\Tenant\Resources\CrowdfundingCampaigns\CrowdfundingCampaignResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageCrowdfundingCampaigns extends ManageRecords
+class ManageCrowdfundingCampaigns extends ManageRecordsPage
 {
     protected static string $resource = CrowdfundingCampaignResource::class;
 

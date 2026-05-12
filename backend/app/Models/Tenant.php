@@ -168,6 +168,21 @@ class Tenant extends Model implements TenantWithDatabase
         return $this->hasMany(Settlement::class);
     }
 
+    public function refunds(): HasMany
+    {
+        return $this->hasMany(Refund::class);
+    }
+
+    public function platformFeeRules(): HasMany
+    {
+        return $this->hasMany(PlatformFeeRule::class);
+    }
+
+    public function payoutPolicies(): HasMany
+    {
+        return $this->hasMany(PayoutPolicy::class);
+    }
+
     public function supportTickets(): HasMany
     {
         return $this->hasMany(PlatformSupportTicket::class);

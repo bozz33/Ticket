@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\SeoSettings\Pages;
 
 use App\Filament\Platform\Resources\SeoSettings\SeoSettingResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageSeoSettings extends ManageRecords
+class ManageSeoSettings extends ManageRecordsPage
 {
     protected static string $resource = SeoSettingResource::class;
 

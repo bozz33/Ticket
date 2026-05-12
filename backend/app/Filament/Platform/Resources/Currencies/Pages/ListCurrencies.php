@@ -3,9 +3,9 @@
 namespace App\Filament\Platform\Resources\Currencies\Pages;
 
 use App\Filament\Platform\Resources\Currencies\CurrencyResource;
-use Filament\Resources\Pages\ListRecords;
+use App\Filament\Support\Pages\ListRecordsPage;
 
-class ListCurrencies extends ListRecords
+class ListCurrencies extends ListRecordsPage
 {
     protected static string $resource = CurrencyResource::class;
 }

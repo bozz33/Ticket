@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\ReconciliationLogs\Pages;
 
 use App\Filament\Platform\Resources\ReconciliationLogs\ReconciliationLogResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageReconciliationLogs extends ManageRecords
+class ManageReconciliationLogs extends ManageRecordsPage
 {
     protected static string $resource = ReconciliationLogResource::class;
 

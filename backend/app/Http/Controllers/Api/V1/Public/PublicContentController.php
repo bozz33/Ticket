@@ -32,6 +32,10 @@ class PublicContentController extends Controller
             function () use ($filters, $page, $perPage): array {
                 $result  = $this->service->listAcrossTenants($filters, $page, $perPage);
                 $available = $this->service->availableFiltersAcrossTenants($filters['module'] ?? null);
+                $presentation = $this->service->listingPresentation(
+                    is_string($filters['module'] ?? null) ? $filters['module'] : null,
+                    'evenements',
+                );
 
                 return [
                     'data'    => $result['items'],
@@ -42,6 +46,7 @@ class PublicContentController extends Controller
                         'per_page'     => $perPage,
                     ],
                     'filters' => $available,
+                    'presentation' => $presentation,
                 ];
             },
         );
@@ -62,6 +67,10 @@ class PublicContentController extends Controller
             function () use ($filters, $page, $perPage): array {
                 $result  = $this->service->list($filters, $page, $perPage);
                 $available = $this->service->availableFilters($filters['module'] ?? null);
+                $presentation = $this->service->listingPresentation(
+                    is_string($filters['module'] ?? null) ? $filters['module'] : null,
+                    'evenements',
+                );
 
                 return [
                     'data'    => $result['items'],
@@ -72,6 +81,7 @@ class PublicContentController extends Controller
                         'per_page'     => $perPage,
                     ],
                     'filters' => $available,
+                    'presentation' => $presentation,
                 ];
             },
         );

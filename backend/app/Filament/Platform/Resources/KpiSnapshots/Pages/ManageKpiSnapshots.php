@@ -4,9 +4,9 @@ namespace App\Filament\Platform\Resources\KpiSnapshots\Pages;
 
 use App\Filament\Platform\Resources\KpiSnapshots\KpiSnapshotResource;
 use Filament\Actions\CreateAction;
-use Filament\Resources\Pages\ManageRecords;
+use App\Filament\Support\Pages\ManageRecordsPage;
 
-class ManageKpiSnapshots extends ManageRecords
+class ManageKpiSnapshots extends ManageRecordsPage
 {
     protected static string $resource = KpiSnapshotResource::class;
 
