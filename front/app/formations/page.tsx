@@ -1,8 +1,13 @@
+import { getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
 import { ModuleListingView } from "@/components/RouteViews";
-import { getContentByModule, getReferenceFilters } from "@/lib/data/public";
+import { getContentByModule } from "@/lib/data/public";
 import { normalizeSearchParams } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
+export const generateMetadata = () => getManagedPageMetadata("/formations", {
+  title: "Formations | Ticket",
+  description: "Decouvrez les formations disponibles sur le catalogue public.",
+});
 
 export default async function FormationsPage({
   searchParams,
@@ -10,16 +15,9 @@ export default async function FormationsPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const filters = normalizeSearchParams(await searchParams);
-  const [listing, references] = await Promise.all([
-    getContentByModule("formations", filters),
-    getReferenceFilters(),
-  ]);
+  const listing = await getContentByModule("formations", filters);
 
   return (
-    <ModuleListingView
-      categories={references.categories}
-      cities={references.cities}
-      {...listing}
-    />
+    <ModuleListingView {...listing} />
   );
 }

@@ -1,8 +1,11 @@
 import Link from "next/link";
 
-import { findOrganizerProfile } from "@/lib/data/catalog";
+import { EventLikeButton } from "@/components/EventLikeButton";
+import { OrganizerFollowPill } from "@/components/OrganizerFollowPill";
 import { PublicContent } from "@/lib/types";
-import { formatDateRange, formatMoney, getModuleMeta } from "@/lib/utils";
+import { formatDateRange, formatMoney } from "@/lib/utils";
+
+const CARD_IMAGE_FALLBACK = "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 360'%3E%3Crect width='640' height='360' fill='%23111827'/%3E%3Ccircle cx='500' cy='90' r='90' fill='%23d59a36' fill-opacity='0.28'/%3E%3Crect x='56' y='72' width='280' height='160' rx='20' fill='%23ffffff' fill-opacity='0.08'/%3E%3Ctext x='56' y='265' fill='%23ffffff' fill-opacity='0.84' font-family='Arial,sans-serif' font-size='34' font-weight='700'%3ETwitter Ticket%3C/text%3E%3C/svg%3E";
 
 function CardIcon({ name }: { name: "calendar" | "location" | "ticket" }) {
   if (name === "calendar") {
@@ -33,26 +36,51 @@ function CardIcon({ name }: { name: "calendar" | "location" | "ticket" }) {
   );
 }
 
-export function ContentCard({ item }: { item: PublicContent }) {
-  const meta = getModuleMeta(item.module);
-  const detailHref = `/${item.module}/${item.slug}`;
+export function ContentCard({
+  item,
+  accountAuthenticated,
+  initialLiked,
+}: {
+  item: PublicContent;
+  accountAuthenticated?: boolean;
+  initialLiked?: boolean;
+}) {
+  const detailHref = item.organizerSlug
+    ? `/${item.module}/${item.slug}?tenant=${encodeURIComponent(item.organizerSlug)}`
+    : `/${item.module}/${item.slug}`;
   const organizerHref = `/organisateurs/${item.organizerSlug}`;
-  const organizer = findOrganizerProfile(item.organizerSlug);
-  const publisherImage = organizer?.logoUrl ?? item.organizers[0]?.imageUrl ?? item.coverImageUrl;
-  const publisherName = organizer?.name ?? item.organizers[0]?.name ?? "Organisateur";
-  const featuredBadge = item.badges[0] ?? (item.popular ? "Tendance" : item.featured ? "Selection" : null);
+  const coverImage = item.coverImageUrl?.trim() || CARD_IMAGE_FALLBACK;
+  const publisherImage = item.organizers[0]?.imageUrl?.trim() || coverImage;
+  const publisherName = item.organizers[0]?.name ?? "Organisateur";
+  const priceBadge = item.isFree ? "Gratuit" : "Payant";
+  const editorialBadge = item.badges.find((badge) => badge !== priceBadge) ?? (item.popular ? "Tendance" : item.featured ? "Selection" : null);
 
   return (
     <article className="content-card">
       <div className="content-card__stage">
         <Link className="content-card__media" href={detailHref}>
-          <img alt={item.title} src={item.coverImageUrl} />
+          <img alt={item.title} decoding="async" loading="lazy" src={coverImage} />
         </Link>
         <div className="content-card__overlay" />
         <div className="content-card__topline">
-          <span className="content-card__module-chip">{meta.title}</span>
-          {featuredBadge ? <span className="badge badge--light">{featuredBadge}</span> : null}
+          <span className="content-card__module-chip">{item.moduleTitle}</span>
+          <div className="content-card__top-badges">
+            <span className={`badge badge--light ${item.isFree ? "badge--free" : "badge--paid"}`}>{priceBadge}</span>
+            {editorialBadge ? <span className="badge badge--light badge--editorial">{editorialBadge}</span> : null}
+          </div>
         </div>
+        {item.module === "evenements" ? (
+          <div className="content-card__floating-actions">
+            <EventLikeButton
+              eventSlug={item.slug}
+              initialAuthenticated={accountAuthenticated}
+              initialCount={item.likesCount}
+              initialLiked={initialLiked}
+              tenantSlug={item.organizerSlug}
+              variant="card"
+            />
+          </div>
+        ) : null}
         <div className="content-card__image-meta">
           <span className="badge">{item.category}</span>
           <span className="content-card__image-city">
@@ -70,9 +98,11 @@ export function ContentCard({ item }: { item: PublicContent }) {
           ))}
         </div>
 
-        <Link className="content-card__title" href={detailHref}>
-          {item.title}
-        </Link>
+        <div className="content-card__headline">
+          <Link className="content-card__title" href={detailHref}>
+            {item.title}
+          </Link>
+        </div>
 
         <div className="content-card__detail-list">
           <div className="content-card__detail-item">
@@ -101,21 +131,19 @@ export function ContentCard({ item }: { item: PublicContent }) {
         </div>
 
         <Link className="button button--full content-card__primary-cta" href={detailHref}>
-          {meta.cta}
+          {item.moduleCta}
         </Link>
       </div>
 
       <div className="content-card__publisher">
         <Link className="content-card__publisher-main" href={organizerHref}>
-          <img alt={publisherName} src={publisherImage} />
+          <img alt={publisherName} decoding="async" loading="lazy" src={publisherImage} />
           <span className="content-card__publisher-copy">
             <small>Publie par</small>
             <strong>{publisherName}</strong>
           </span>
         </Link>
-        <Link className="content-card__publisher-action" href={organizerHref}>
-          Suivre
-        </Link>
+        {item.organizerSlug ? <OrganizerFollowPill initialAuthenticated={accountAuthenticated} slug={item.organizerSlug} /> : null}
       </div>
     </article>
   );

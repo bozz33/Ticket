@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useDeferredValue, useEffect, useState } from "react";
 
 import { SearchSuggestion } from "@/lib/types";
-import { getModuleMeta } from "@/lib/utils";
 
 /* ================================================================
    HeroSearch — Composant amélioré
@@ -12,7 +11,6 @@ import { getModuleMeta } from "@/lib/utils";
    ================================================================ */
 
 const moduleTabs = [
-  { href: "/evenements", label: "Evenements" },
   { href: "/formations", label: "Formations" },
   { href: "/stands", label: "Stands" },
   { href: "/appels-a-projets", label: "Appels a projets" },
@@ -134,7 +132,7 @@ export function HeroSearch({ categories }: { categories: string[] }) {
                 >
                   <strong>{suggestion.title}</strong>
                   <span>
-                    {getModuleMeta(suggestion.module).title} — {suggestion.category} —{" "}
+                    {suggestion.moduleTitle} — {suggestion.category} —{" "}
                     {suggestion.city}
                   </span>
                 </Link>
