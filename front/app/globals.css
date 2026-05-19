@@ -7342,6 +7342,47 @@ body {
   transform: none;
 }
 
+.dynamic-form {
+  display: grid;
+  gap: 16px;
+}
+
+.dynamic-form__field {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.dynamic-form__field input,
+.dynamic-form__field select,
+.dynamic-form__field textarea {
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  color: var(--ink-strong);
+  font: inherit;
+  padding: 12px 14px;
+}
+
+.dynamic-form__field textarea {
+  min-height: 120px;
+}
+
+.dynamic-form__field small,
+.dynamic-form__section p {
+  color: var(--text-soft);
+  font-weight: 500;
+}
+
+.dynamic-form__success {
+  color: #15803d;
+  font-weight: 700;
+}
+
+.dynamic-form__error {
+  color: #b91c1c;
+  font-weight: 700;
+}
+
 .timeline {
   gap: 6px !important;
 }
