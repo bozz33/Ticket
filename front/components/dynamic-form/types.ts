@@ -10,6 +10,7 @@ export interface DynamicFormField {
   help_text?: string;
   required?: boolean;
   visible?: boolean;
+  accept?: string[];
   options?: DynamicFormOption[] | Record<string, string>;
 }
 

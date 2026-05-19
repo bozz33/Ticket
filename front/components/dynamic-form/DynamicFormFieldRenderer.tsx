@@ -1,4 +1,7 @@
 import type { DynamicFormField } from "./types";
+import { DynamicFormFileField } from "./DynamicFormFileField";
+import { DynamicFormLocationField } from "./DynamicFormLocationField";
+import { DynamicFormPhoneField } from "./DynamicFormPhoneField";
 import { normalizeOptions, resolveInputType } from "./helpers";
 
 export function DynamicFormFieldRenderer({
@@ -53,6 +56,18 @@ function renderControl(field: DynamicFormField, id: string, value: unknown, onCh
 
   if (["checkbox", "boolean", "consent"].includes(field.type)) {
     return <input checked={Boolean(value)} id={id} required={field.required} type="checkbox" onChange={(event) => onChange(event.target.checked)} />;
+  }
+
+  if (field.type === "file") {
+    return <DynamicFormFileField field={field} id={id} onChange={onChange} />;
+  }
+
+  if (field.type === "phone") {
+    return <DynamicFormPhoneField field={field} id={id} value={value} onChange={onChange} />;
+  }
+
+  if (field.type === "country" || field.type === "city") {
+    return <DynamicFormLocationField field={field} id={id} value={value} onChange={onChange} />;
   }
 
   return <input id={id} required={field.required} type={resolveInputType(field.type)} value={String(value ?? "")} onChange={(event) => onChange(event.target.value)} />;
