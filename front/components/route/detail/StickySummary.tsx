@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { EventLikeButton } from "@/components/EventLikeButton";
+import { TicketCtaButton } from "@/components/ticketing/TicketCtaButton";
 import type { PublicContent } from "@/lib/types";
 import { formatDateRange, formatMoney } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export function StickySummary({ item }: { item: PublicContent }) {
   const applicationHref = item.module === "appels-a-projets" && item.applicationForm
     ? `/appels-a-projets/${item.slug}/postuler`
     : null;
+  const eventTickets = item.module === "evenements" ? (item.tickets ?? []) : [];
 
   return (
     <aside className="sticky-panel">
@@ -48,7 +50,17 @@ export function StickySummary({ item }: { item: PublicContent }) {
             Soumettre ma candidature
           </Link>
         ) : null}
-        {item.tiers.map((tier) => (
+        {eventTickets.map((ticket) => (
+          <TicketCtaButton
+            compact
+            key={ticket.id}
+            module={item.module}
+            organizerSlug={item.organizerSlug}
+            slug={item.slug}
+            ticket={ticket}
+          />
+        ))}
+        {eventTickets.length === 0 ? item.tiers.map((tier) => (
           <Link
             className="button button--full"
             href={item.organizerSlug
@@ -58,7 +70,7 @@ export function StickySummary({ item }: { item: PublicContent }) {
           >
             {tier.ctaLabel} - {tier.title}
           </Link>
-        ))}
+        )) : null}
       </div>
       {item.module === "evenements" ? (
         <div className="detail-like-panel">

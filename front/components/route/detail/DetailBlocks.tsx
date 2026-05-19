@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { SectionHeader } from "@/components/route/SectionHeader";
+import { TicketTierList } from "@/components/ticketing/TicketTierList";
 import type { PublicContent } from "@/lib/types";
 import { formatMoney } from "@/lib/utils";
 
@@ -17,6 +18,7 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
   const checkoutSuffix = item.organizerSlug
     ? `?offer=%s&tenant=${encodeURIComponent(item.organizerSlug)}`
     : "?offer=%s";
+  const hasEventTickets = item.module === "evenements" && (item.tickets?.length ?? 0) > 0;
 
   return (
     <>
@@ -48,9 +50,17 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
         </section>
       ) : null}
 
-      {item.tiers.length > 0 ? (
+      {hasEventTickets ? (
+        <section className="detail-block">
+          <SectionHeader eyebrow="Billetterie" title="Choisissez votre ticket" />
+          <TicketTierList item={item} />
+        </section>
+      ) : null}
+
+      {!hasEventTickets && item.tiers.length > 0 ? (
         <section className="detail-block">
           <SectionHeader eyebrow="Offres" title={defaults.offerTitle} />
+
           <div className="offer-grid">
             {item.tiers.map((tier) => (
               <article className="offer-card" key={tier.id}>
