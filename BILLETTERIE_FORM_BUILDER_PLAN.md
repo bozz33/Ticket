@@ -615,6 +615,119 @@ Pour le form builder :
 - limiter l'usage de `Offer` aux modules qui en ont encore besoin ;
 - nettoyer les anciens chemins quand les tests sont stables.
 
+## État d'implémentation actuel
+
+### Lots terminés
+
+Les lots suivants ont été implémentés et poussés sur la branche de travail :
+
+```txt
+26f3901 feat: add dedicated event ticket backend foundation
+79b6201 feat: add event ticket filament management
+4274fe2 feat: expose event tickets in public catalog
+be27673 feat: add event ticketing frontend components
+0eb2975 feat: add reusable dynamic form backend foundation
+6436bbd feat: sync event tickets with offers and add form builder admin
+1b7d373 feat: add public dynamic form API
+b7fe68e feat: add reusable dynamic form frontend module
+9cc3f79 feat: integrate dynamic forms into call for project applications
+a93801f docs: document dynamic form public API contract
+```
+
+### Billetterie événement
+
+Implémenté :
+
+- migration tenant `event_tickets` ;
+- modèle `EventTicket` ;
+- relation `Event::tickets()` ;
+- service `EventTicketAvailabilityService` ;
+- synchronisation `EventTicket` vers `Offer` via `EventTicketOfferSyncService` ;
+- commande de backfill `ticket:backfill-event-tickets` ;
+- resource Filament `EventTicketResource` ;
+- relation manager sous événement ;
+- exposition API publique `tickets` en conservant `tiers` ;
+- composants front `components/ticketing` ;
+- badges de disponibilité et CTA désactivés pour les tickets indisponibles.
+
+Le flux checkout continue à utiliser `Offer` comme adaptateur de paiement pendant la transition.
+
+### Form builder
+
+Implémenté :
+
+- migration tenant `form_definitions` et `form_submissions` ;
+- modèles `FormDefinition` et `FormSubmission` ;
+- service `DynamicFormValidator` ;
+- service `PublicFormSubmissionService` ;
+- API publique :
+
+```txt
+GET  /api/v1/public/tenants/{tenant}/forms/{formDefinition}
+POST /api/v1/public/tenants/{tenant}/forms/{formDefinition}/submissions
+```
+
+- resource Filament `FormDefinitionResource` avec `Builder` ;
+- module front `components/dynamic-form` ;
+- proxy Next :
+
+```txt
+front/app/api/public/forms/[formId]/submissions/route.ts
+```
+
+- intégration dans le parcours :
+
+```txt
+/appels-a-projets/[slug]/postuler
+```
+
+Si un `FormDefinition` publié est lié à un appel à projets, le front utilise `DynamicFormRenderer`.
+Sinon, l'ancien wizard de candidature reste utilisé.
+
+### Contrats et tests validés
+
+Backend ciblé :
+
+```txt
+php artisan test --filter=EventTicketAvailabilityServiceTest
+php artisan test --filter=EventTicketOfferSyncServiceTest
+php artisan test --filter=DynamicFormValidatorTest
+php artisan test --filter=PublicFormSubmissionServiceTest
+php artisan test --filter=PublicDynamicFormApiTest
+php artisan test --filter=ApiArchitectureTest
+php artisan test --filter=ApiRouteContractTest
+```
+
+Frontend :
+
+```txt
+npm run quality
+npm run build:ci
+npm run contract:api
+```
+
+Le contrat OpenAPI documente maintenant les endpoints publics du form builder.
+
+### Points techniques corrigés pendant l'implémentation
+
+- l'ordre des routes publiques a été corrigé pour que `/forms/{formDefinition}` ne soit pas capturé par la route générique `/content/{module}/{slug}` ;
+- le contrôleur public du form builder résout désormais les formulaires par `public_id` ou `id` ;
+- les signatures du contrôleur incluent le paramètre `{tenant}` pour éviter une mauvaise injection de paramètres ;
+- le build Next utilise `npm run build:ci`, car le projet force `next build --webpack` avec Next 16 ;
+- `optimize:clear` est nécessaire après modification des routes Laravel si un cache de routes est présent.
+
+### Restant réel
+
+Les éléments suivants restent des évolutions futures, non indispensables au fonctionnement actuel :
+
+- checkout polymorphique natif `orderable_type` / `orderable_id` ;
+- achat direct de `EventTicket` sans adaptateur `Offer` ;
+- suppression progressive des anciens chemins événementiels basés sur `Offer` ;
+- gestion avancée des fichiers dans le form builder dynamique ;
+- conditions d'affichage de champs ;
+- workflow de review/scoring des soumissions ;
+- découpage plus fin des composants front `dynamic-form` en renderers spécialisés par type.
+
 ## Décision finale
 
 La meilleure implémentation est donc :
