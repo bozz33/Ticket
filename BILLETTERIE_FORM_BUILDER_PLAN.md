@@ -726,7 +726,7 @@ Les éléments suivants restent des évolutions futures, non indispensables au f
 - gestion avancée des fichiers dans le form builder dynamique ;
 - conditions d'affichage de champs ;
 - workflow de review/scoring des soumissions ;
-- découpage plus fin des composants front `dynamic-form` en renderers spécialisés par type.
+- découpage encore plus fin des composants front `dynamic-form` en renderers spécialisés par type complexe comme fichier, téléphone et localisation.
 
 ## Décision finale
 
