@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Tenant;
+use App\Services\Ticketing\EventTicketOfferSyncService;
 use App\Support\ReferenceData\CountryReferenceImporter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
@@ -104,6 +105,19 @@ Artisan::command('ticket:rebuild-public-catalog {tenant? : Tenant slug or public
 
     return 0;
 })->purpose('Rebuild the central public catalog read model');
+
+Artisan::command('ticket:backfill-event-tickets', function (): int {
+    $summary = app(EventTicketOfferSyncService::class)->backfillFromEventOffers();
+
+    $this->info(sprintf(
+        'Event ticket backfill completed: %d created, %d already linked, %d skipped.',
+        $summary['created'],
+        $summary['linked'],
+        $summary['skipped'],
+    ));
+
+    return 0;
+})->purpose('Create dedicated event tickets from legacy event offers in the current tenant database');
 
 Artisan::command('ticket:dispatch-outbox {--limit=100 : Maximum messages to dispatch}', function (): int {
     $summary = app(OutboxDispatcher::class)->dispatchPending((int) $this->option('limit'));
