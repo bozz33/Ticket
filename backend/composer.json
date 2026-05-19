@@ -25,6 +25,11 @@
     "autoload": {
         "psr-4": {
             "App\\": "app/",
+            "Ticket\\Payments\\": "packages/payments/src/",
+            "Ticket\\Tenancy\\": "packages/tenancy/src/",
+            "Ticket\\Ticketing\\": "packages/ticketing/src/",
+            "Ticket\\PublicCatalog\\": "packages/public-catalog/src/",
+            "Ticket\\Notifications\\": "packages/notifications/src/",
             "Database\\Factories\\": "database/factories/",
             "Database\\Seeders\\": "database/seeders/"
         }

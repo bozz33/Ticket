@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\FeatureFlags\Pages;
 
 use App\Filament\Platform\Resources\FeatureFlags\FeatureFlagResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManageFeatureFlags extends ManageRecordsPage
 {

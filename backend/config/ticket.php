@@ -15,11 +15,17 @@ return [
         'central' => [
             'directories' => [
                 database_path('migrations/central'),
+                base_path('packages/payments/database/migrations/central'),
+                base_path('packages/tenancy/database/migrations/central'),
+                base_path('packages/public-catalog/database/migrations/central'),
+                base_path('packages/notifications/database/migrations/central'),
             ],
         ],
         'tenant' => [
             'directories' => [
                 database_path('migrations/tenant'),
+                base_path('packages/tenancy/database/migrations/tenant'),
+                base_path('packages/ticketing/database/migrations/tenant'),
             ],
         ],
     ],

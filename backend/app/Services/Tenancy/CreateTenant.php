@@ -2,10 +2,6 @@
 
 namespace App\Services\Tenancy;
 
-class CreateTenant
-{
-    public function handle(array $payload): array
-    {
-        return app(ProvisionTenant::class)->handle($payload);
-    }
-}
+use Ticket\Tenancy\Application\CreateTenant as BaseCreateTenant;
+
+class CreateTenant extends BaseCreateTenant {}

@@ -3,7 +3,6 @@
 namespace App\Filament\Platform\Resources\Settlements\Pages;
 
 use App\Filament\Platform\Resources\Settlements\SettlementResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
 
 class ManageSettlements extends ManageRecordsPage
@@ -12,8 +11,6 @@ class ManageSettlements extends ManageRecordsPage
 
     protected function getHeaderActions(): array
     {
-        return [
-            CreateAction::make(),
-        ];
+        return [];
     }
 }

@@ -18,8 +18,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -36,13 +36,21 @@ class CrowdfundingCampaignResource extends Resource
     use HasPanelPermission;
 
     protected static ?string $model = CrowdfundingCampaign::class;
+
     protected static ?string $permissionPrefix = 'tenant.catalog';
+
     protected static ?string $requiredTenantFeature = 'tenant.crowdfunding';
+
     protected static string|UnitEnum|null $navigationGroup = 'Modules';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-heart';
+
     protected static ?string $navigationLabel = 'Crowdfunding';
+
     protected static ?string $modelLabel = 'Campagne';
+
     protected static ?string $pluralModelLabel = 'Campagnes crowdfunding';
+
     protected static ?string $recordTitleAttribute = 'title';
 
     public static function form(Schema $schema): Schema

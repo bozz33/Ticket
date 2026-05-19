@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Models\AccessPass;
 use App\Models\CallForProject;
 use App\Models\CallForProjectSubmission;
-use App\Models\Event;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\PaymentGateway;
@@ -20,14 +19,14 @@ use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__.'/../vendor/autoload.php';
 
-$app = require __DIR__ . '/../bootstrap/app.php';
+$app = require __DIR__.'/../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
 function output(string $value): void
 {
-    fwrite(STDOUT, $value . PHP_EOL);
+    fwrite(STDOUT, $value.PHP_EOL);
 }
 
 function buildReference(string $prefix, Carbon $timestamp, int $sequence): string
@@ -337,7 +336,7 @@ $tenant->run(function () use (
 output('BUYER_EMAIL=gnakaleroland@gmail.com');
 output('BUYER_PASSWORD=Admin123!');
 output('BUYER_READY=yes');
-output('ORDERS=' . $summary['orders']);
-output('RECEIPTS=' . $summary['receipts']);
-output('PASSES=' . $summary['passes']);
-output('CALL_SUBMISSIONS=' . $summary['submissions']);
+output('ORDERS='.$summary['orders']);
+output('RECEIPTS='.$summary['receipts']);
+output('PASSES='.$summary['passes']);
+output('CALL_SUBMISSIONS='.$summary['submissions']);

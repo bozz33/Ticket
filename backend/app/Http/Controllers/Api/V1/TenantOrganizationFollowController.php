@@ -6,16 +6,16 @@ use App\Exceptions\BuyerAccountActionBlockedException;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Support\Buyers\BuyerAccountReadiness;
-use App\Services\Tenancy\OrganizationFollowService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\Ticketing\Contracts\OrganizationAudience;
 
 class TenantOrganizationFollowController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly OrganizationFollowService $followService,
+        private readonly OrganizationAudience $organizationAudience,
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}
 
@@ -26,7 +26,7 @@ class TenantOrganizationFollowController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->followService->status($user),
+            'data' => $this->organizationAudience->status($user),
         ]);
     }
 
@@ -41,7 +41,7 @@ class TenantOrganizationFollowController extends Controller
             return response()->json([
                 'message' => 'Vous suivez désormais cette organisation.',
                 'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-                'data' => $this->followService->follow($user),
+                'data' => $this->organizationAudience->follow($user),
             ]);
         } catch (BuyerAccountActionBlockedException $exception) {
             return response()->json([
@@ -63,7 +63,7 @@ class TenantOrganizationFollowController extends Controller
             return response()->json([
                 'message' => 'Vous ne suivez plus cette organisation.',
                 'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-                'data' => $this->followService->unfollow($user),
+                'data' => $this->organizationAudience->unfollow($user),
             ]);
         } catch (BuyerAccountActionBlockedException $exception) {
             return response()->json([

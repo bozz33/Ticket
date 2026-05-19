@@ -3,15 +3,15 @@
         <section class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-white/10 dark:bg-gray-900">
             <div class="space-y-3">
                 <p class="text-xs font-semibold uppercase tracking-[0.24em] text-primary-600">
-                    Tarification, taxes et reversements
+                    Tarification, remboursements et reversements
                 </p>
                 <h2 class="text-2xl font-semibold tracking-tight text-gray-950 dark:text-white">
-                    Tout ce qui impacte le net organisateur est piloté ici
+                    Une politique globale simple pilote désormais les ventes
                 </h2>
                 <p class="max-w-3xl text-sm leading-6 text-gray-600 dark:text-gray-300">
-                    La logique recommandée est de séparer les frais provider, les commissions plateforme, la taxe sur frais
-                    et la politique de reversement. Chaque règle peut être activée, désactivée, ciblée par pays, devise,
-                    canal ou tenant, puis auditée via les reversements, remboursements et transactions.
+                    La plateforme applique un taux de commission organisateur configurable et, si vous le souhaitez,
+                    un supplément carte configurable par ticket. Si les champs sont laissés vides, aucun frais ni aucune
+                    commission ne sont appliqués. Les frais gateway réels restent absorbés par la plateforme.
                 </p>
             </div>
 
@@ -21,37 +21,32 @@
                         Commission active
                     </p>
                     <p class="mt-2 text-2xl font-semibold text-gray-950 dark:text-white">
-                        {{ $summary['commission_rate'] !== null ? number_format((float) $summary['commission_rate'], 2, ',', ' ') . ' %' : '—' }}
+                        {{ (float) ($summary['commission_rate'] ?? 0) > 0 ? number_format((float) $summary['commission_rate'], 2, ',', ' ') . ' %' : '0 %' }}
                     </p>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        Retenue principale appliquée sur les ventes.
+                        Retenue appliquée sur le reversement organisateur.
                     </p>
                 </div>
                 <div>
                     <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">
-                        Porteur actuel
+                        Frais carte / ticket
                     </p>
                     <p class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">
-                        {{ match ($summary['commission_bearer']) {
-                            'organizer' => 'Organisateur',
-                            'platform' => 'Plateforme',
-                            'buyer' => 'Acheteur',
-                            default => '—',
-                        } }}
+                        {{ (int) ($summary['card_fee_per_ticket'] ?? 0) > 0 ? number_format((int) $summary['card_fee_per_ticket'], 0, ',', ' ') . ' FCFA' : '0 FCFA' }}
                     </p>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        Dans votre modèle cible, la commission est retenue sur le reversement organisateur.
+                        Appliqués uniquement sur les paiements carte, par ticket.
                     </p>
                 </div>
                 <div>
                     <p class="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-700 dark:text-primary-300">
-                        Frais de reversement
+                        Politique remboursement carte
                     </p>
                     <p class="mt-2 text-lg font-semibold text-gray-950 dark:text-white">
-                        {{ blank($summary['payout_fee_mode']) ? 'Aucun' : 'Configuré' }}
+                        Technique / doublon uniquement
                     </p>
                     <p class="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                        À laisser vide si la plateforme ne prend que 10% et aucun autre frais.
+                        Les frais carte ne sont pas remboursés, sauf erreur technique confirmée ou débit en doublon.
                     </p>
                 </div>
             </div>
@@ -84,7 +79,7 @@
                                             {{ $label }}
                                         </dt>
                                         <dd class="mt-1 text-lg font-semibold text-gray-950 dark:text-white">
-                                            {{ number_format($value, 0, ',', ' ') }}
+                                            {{ number_format((float) $value, 0, ',', ' ') }}
                                         </dd>
                                     </div>
                                 @endforeach
@@ -102,18 +97,23 @@
 
             <div class="mt-4 space-y-4 text-sm leading-6 text-gray-600 dark:text-gray-300">
                 <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
-                    <p class="font-semibold text-gray-950 dark:text-white">1. Frais gateway</p>
-                    <p class="mt-1">Ce que Paystack ou un autre provider prélève réellement sur la transaction.</p>
+                    <p class="font-semibold text-gray-950 dark:text-white">1. Commission organisateur</p>
+                    <p class="mt-1">Le taux configuré est retenu sur le sous-total pour calculer le net organisateur.</p>
                 </div>
 
                 <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
-                    <p class="font-semibold text-gray-950 dark:text-white">2. Commission plateforme</p>
-                    <p class="mt-1">Ce que la plateforme retient pour son modèle économique, avec gestion de taxe et remboursement.</p>
+                    <p class="font-semibold text-gray-950 dark:text-white">2. Supplément carte</p>
+                    <p class="mt-1">Le supplément carte est calculé par ticket et ne s’applique pas au mobile money.</p>
                 </div>
 
                 <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
-                    <p class="font-semibold text-gray-950 dark:text-white">3. Reversement organisateur</p>
-                    <p class="mt-1">Le net versé après réserve, minimum, délai, éventuels frais de payout et validation.</p>
+                    <p class="font-semibold text-gray-950 dark:text-white">3. Frais gateway absorbés</p>
+                    <p class="mt-1">Les frais Paystack restent des coûts internes pour la plateforme et ne se configurent plus ici.</p>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-white/10 dark:bg-white/5">
+                    <p class="font-semibold text-gray-950 dark:text-white">4. Reversement organisateur</p>
+                    <p class="mt-1">Le net versé dépend uniquement de votre commission configurée et des politiques de reversement actives.</p>
                 </div>
             </div>
         </aside>

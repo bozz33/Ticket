@@ -2,12 +2,10 @@
 
 namespace App\Filament\Tenant\Resources\Settlements;
 
-use App\Filament\Tenant\Resources\Settlements\Pages\ListSettlements;
 use App\Filament\Tenant\Resources\Settlements\Pages\CreateSettlement;
-use App\Models\PlatformTransaction;
+use App\Filament\Tenant\Resources\Settlements\Pages\ListSettlements;
 use App\Models\Settlement;
 use App\Support\Filament\Concerns\HasPanelPermission;
-use App\Services\Payments\PayoutPolicyService;
 use App\Support\Tenancy\TenantContext;
 use BackedEnum;
 use Filament\Forms\Components\KeyValue;
@@ -19,6 +17,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Ticket\Payments\Contracts\PayoutManager;
 use UnitEnum;
 
 class SettlementResource extends Resource
@@ -52,8 +51,8 @@ class SettlementResource extends Resource
                             $summary = static::availableBalanceSummary();
 
                             return number_format((int) ($summary['available_amount'] ?? 0), 0, ',', ' ')
-                                . ' '
-                                . ($summary['currency_code'] ?? 'XOF');
+                                .' '
+                                .($summary['currency_code'] ?? 'XOF');
                         })
                         ->helperText(function (): string {
                             $summary = static::availableBalanceSummary();
@@ -70,7 +69,7 @@ class SettlementResource extends Resource
                         ->columnSpanFull(),
                     TextInput::make('gross_amount')
                         ->label('Montant demandé')
-                        ->helperText(fn (): string => 'Montant minimum : ' . number_format(static::minimumPayoutAmount(), 0, ',', ' ') . ' XOF. Les frais de reversement seront calculés automatiquement.')
+                        ->helperText(fn (): string => 'Montant minimum : '.number_format(static::minimumPayoutAmount(), 0, ',', ' ').' XOF. Les frais de reversement seront calculés automatiquement.')
                         ->numeric()
                         ->required()
                         ->minValue(static::minimumPayoutAmount())
@@ -152,7 +151,7 @@ class SettlementResource extends Resource
             ];
         }
 
-        return app(PayoutPolicyService::class)->availableBalance($tenant, (string) ($tenant->currency_code ?: 'XOF'));
+        return app(PayoutManager::class)->availableBalance($tenant, (string) ($tenant->currency_code ?: 'XOF'));
     }
 
     public static function minimumPayoutAmount(): int
@@ -173,7 +172,7 @@ class SettlementResource extends Resource
             ];
         }
 
-        return app(PayoutPolicyService::class)->computePayout($tenant, $grossAmount, (string) ($tenant->currency_code ?: 'XOF'));
+        return app(PayoutManager::class)->computePayout($tenant, $grossAmount, (string) ($tenant->currency_code ?: 'XOF'));
     }
 
     public static function canCreate(): bool

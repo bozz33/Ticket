@@ -4,6 +4,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 return new class extends Migration
 {
@@ -42,7 +43,7 @@ return new class extends Migration
 
         $now = now();
         DB::connection('central')->table('payment_gateways')->insert([
-            'public_id' => (string) \Illuminate\Support\Str::uuid(),
+            'public_id' => (string) Str::uuid(),
             'code' => 'paystack',
             'name' => 'Paystack',
             'provider' => 'paystack',
@@ -56,7 +57,7 @@ return new class extends Migration
 
         DB::connection('central')->table('compliance_policies')->insert([
             [
-                'public_id' => (string) \Illuminate\Support\Str::uuid(),
+                'public_id' => (string) Str::uuid(),
                 'code' => 'privacy.default',
                 'name' => 'Politique de confidentialité',
                 'description' => 'Cadre par défaut pour la protection des données.',
@@ -69,7 +70,7 @@ return new class extends Migration
                 'updated_at' => $now,
             ],
             [
-                'public_id' => (string) \Illuminate\Support\Str::uuid(),
+                'public_id' => (string) Str::uuid(),
                 'code' => 'kyc.default',
                 'name' => 'Politique KYC tenant',
                 'description' => 'Vérifications minimales pour les tenants sensibles.',

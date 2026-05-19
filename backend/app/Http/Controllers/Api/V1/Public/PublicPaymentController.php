@@ -4,21 +4,24 @@ namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Exceptions\BuyerAccountActionBlockedException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Public\PublicPaymentInitializeRequest;
 use App\Models\User;
 use App\Services\Auth\TenantTokenService;
-use App\Services\Payments\PublicPaymentService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Ticket\Payments\Contracts\CheckoutManager;
 
 class PublicPaymentController extends Controller
 {
+    private const OPTIONS_TTL = 45;
+
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly PublicPaymentService $publicPaymentService,
+        private readonly CheckoutManager $checkoutManager,
         private readonly TenantTokenService $tenantTokenService,
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}
@@ -32,28 +35,32 @@ class PublicPaymentController extends Controller
         }
 
         $offer = (string) $request->query('offer', '');
+        $paymentMethod = (string) $request->query('payment_method', '');
 
         if ($offer === '') {
             return response()->json(['message' => 'Offre requise.'], 422);
         }
 
         try {
-            $data = $tenantModel->run(fn () => $this->publicPaymentService->options(
+            $data = $tenantModel->run(fn () => $this->checkoutManager->options(
                 $tenantModel,
                 $offer,
                 max(1, (int) $request->query('quantity', 1)),
+                $paymentMethod !== '' ? $paymentMethod : null,
             ));
 
             return response()->json([
                 'tenant' => $tenantModel->only(['id', 'public_id', 'name', 'slug']),
                 'data' => $data,
+            ], 200, [
+                'Cache-Control' => sprintf('public, max-age=0, s-maxage=%d, stale-while-revalidate=%d', self::OPTIONS_TTL, self::OPTIONS_TTL),
             ]);
         } catch (RuntimeException $exception) {
             return response()->json(['message' => $exception->getMessage()], 422);
         }
     }
 
-    public function initialize(Request $request, string $tenant): JsonResponse
+    public function initialize(PublicPaymentInitializeRequest $request, string $tenant): JsonResponse
     {
         $tenantModel = $this->tenantContext->get();
 
@@ -61,17 +68,7 @@ class PublicPaymentController extends Controller
             return response()->json(['message' => 'Tenant introuvable.'], 404);
         }
 
-        $validated = $request->validate([
-            'offer' => ['required', 'string'],
-            'quantity' => ['nullable', 'integer', 'min:1'],
-            'payment_method' => ['nullable', 'string', 'max:80'],
-            'buyer_name' => ['nullable', 'string', 'max:255'],
-            'buyer_email' => ['nullable', 'email', 'max:255'],
-            'buyer_phone' => ['nullable', 'string', 'max:50'],
-            'content_module' => ['nullable', 'string', 'max:100'],
-            'content_slug' => ['nullable', 'string', 'max:255'],
-            'callback_url' => ['required', 'url', 'max:2048'],
-        ]);
+        $validated = $request->validated();
 
         $buyer = $this->resolveAuthenticatedBuyer($request);
 
@@ -89,7 +86,7 @@ class PublicPaymentController extends Controller
 
         try {
             $this->buyerAccountReadiness->assertReadyForSensitiveAction($buyer, 'acheter ou réserver');
-            $data = $tenantModel->run(fn () => $this->publicPaymentService->initialize($tenantModel, $validated));
+            $data = $tenantModel->run(fn () => $this->checkoutManager->initialize($tenantModel, $validated));
 
             return response()->json([
                 'tenant' => $tenantModel->only(['id', 'public_id', 'name', 'slug']),
@@ -140,7 +137,7 @@ class PublicPaymentController extends Controller
         }
 
         try {
-            $data = $this->publicPaymentService->verify($tenantModel, $reference);
+            $data = $this->checkoutManager->verify($tenantModel, $reference);
 
             return response()->json([
                 'tenant' => $tenantModel->only(['id', 'public_id', 'name', 'slug']),

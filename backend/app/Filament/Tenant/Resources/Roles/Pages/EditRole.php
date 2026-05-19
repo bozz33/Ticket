@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\Roles\Pages;
 
-use App\Filament\Tenant\Resources\Roles\RoleResource;
 use App\Filament\Support\Pages\EditRecordPage;
+use App\Filament\Tenant\Resources\Roles\RoleResource;
 use Filament\Support\Enums\Width;
 
 class EditRole extends EditRecordPage

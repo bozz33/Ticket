@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { registerOrganizer } from "@/lib/data/account";
 import { applyMutationRateLimit, validateMutationOrigin } from "@/lib/request-security";
+import { readJsonRecord, stringField } from "@/lib/server/request";
 
 export async function POST(request: NextRequest) {
   const originError = validateMutationOrigin(request);
@@ -16,8 +17,17 @@ export async function POST(request: NextRequest) {
     return rateLimitError;
   }
 
-  const body = await request.json();
-  const { org_name, email, password, country_code, currency_code } = body;
+  const parsed = await readJsonRecord(request);
+
+  if ("response" in parsed) {
+    return parsed.response;
+  }
+
+  const org_name = stringField(parsed.data, "org_name");
+  const email = stringField(parsed.data, "email");
+  const password = stringField(parsed.data, "password", false);
+  const country_code = stringField(parsed.data, "country_code");
+  const currency_code = stringField(parsed.data, "currency_code");
 
   if (!org_name || !email || !password) {
     return NextResponse.json({ error: "Champs requis." }, { status: 400 });

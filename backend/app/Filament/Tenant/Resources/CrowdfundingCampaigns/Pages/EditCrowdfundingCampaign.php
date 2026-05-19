@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages;
 
-use App\Filament\Tenant\Resources\CrowdfundingCampaigns\CrowdfundingCampaignResource;
 use App\Filament\Support\Pages\EditRecordPage;
+use App\Filament\Tenant\Resources\CrowdfundingCampaigns\CrowdfundingCampaignResource;
 use Filament\Support\Enums\Width;
 
 class EditCrowdfundingCampaign extends EditRecordPage

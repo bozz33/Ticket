@@ -1,0 +1,9 @@
+tmp/
+*.tmp
+*.log
+*.dmp
+**/Crashpad/
+**/chrome-headless*/
+**/edge-headless*/
+front/tsconfig.tsbuildinfo
+front/.next-dev*.log

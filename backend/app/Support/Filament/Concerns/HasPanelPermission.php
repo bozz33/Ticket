@@ -120,7 +120,6 @@ trait HasPanelPermission
             'App\\Filament\\Platform\\Resources\\Roles\\RoleResource',
             'App\\Filament\\Platform\\Resources\\SeoSettings\\SeoSettingResource',
             'App\\Filament\\Platform\\Resources\\Settlements\\SettlementResource',
-            'App\\Filament\\Platform\\Resources\\TenantSubscriptions\\TenantSubscriptionResource',
             'App\\Filament\\Platform\\Resources\\Tenants\\TenantResource',
         ], true);
     }

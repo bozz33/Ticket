@@ -20,8 +20,8 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -29,7 +29,9 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 use UnitEnum;
 
@@ -126,13 +128,40 @@ class EventResource extends Resource
             ->columns([
                 TextColumn::make('title')->label('Titre')->searchable(),
                 TextColumn::make('category.name')->label('Catégorie')->badge(),
-                TextColumn::make('public_status_code')->label('Statut public')->badge(),
+                TextColumn::make('public_status_code')
+                    ->label('Statut public')
+                    ->formatStateUsing(function (?string $state, Event $record): string {
+                        $lastScheduledAt = $record->dates
+                            ->map(fn ($date) => $date->ends_at ?? $date->starts_at)
+                            ->filter()
+                            ->max();
+
+                        if ($lastScheduledAt && Carbon::parse($lastScheduledAt)->isPast()) {
+                            return 'Terminé';
+                        }
+
+                        return (string) ($state ?: '—');
+                    })
+                    ->color(function (?string $state, Event $record): string {
+                        $lastScheduledAt = $record->dates
+                            ->map(fn ($date) => $date->ends_at ?? $date->starts_at)
+                            ->filter()
+                            ->max();
+
+                        if ($lastScheduledAt && Carbon::parse($lastScheduledAt)->isPast()) {
+                            return 'gray';
+                        }
+
+                        return $state === 'published' ? 'success' : 'warning';
+                    })
+                    ->badge(),
                 TextColumn::make('venue_name')->label('Lieu'),
                 TextColumn::make('currency_code')->label('Devise'),
                 IconColumn::make('is_active')->label('Actif')->boolean(),
                 TextColumn::make('published_at')->label('Publié le')->dateTime(),
                 TextColumn::make('updated_at')->label('Mis à jour')->since(),
             ])
+            ->modifyQueryUsing(fn (Builder $query): Builder => $query->with('dates'))
             ->defaultSort('updated_at', 'desc')
             ->recordActions([
                 EditAction::make()

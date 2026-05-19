@@ -3,9 +3,15 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Auth\TenantAvatarUpdateRequest;
+use App\Http\Requests\Api\V1\Auth\TenantForgotPasswordRequest;
+use App\Http\Requests\Api\V1\Auth\TenantLoginRequest;
+use App\Http\Requests\Api\V1\Auth\TenantPasswordUpdateRequest;
+use App\Http\Requests\Api\V1\Auth\TenantProfileUpdateRequest;
+use App\Http\Requests\Api\V1\Auth\TenantRegisterRequest;
+use App\Http\Requests\Api\V1\Auth\TenantResetPasswordRequest;
 use App\Models\User;
 use App\Notifications\BuyerAccountActivityNotification;
-use App\Rules\VerifiedMailboxCandidate;
 use App\Services\Auth\TenantTokenService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use App\Support\Tenancy\TenantContext;
@@ -16,12 +22,11 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Lang;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Lang;
-use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -33,13 +38,9 @@ class TenantAuthController extends Controller
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}
 
-    public function login(Request $request): JsonResponse
+    public function login(TenantLoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email:rfc'],
-            'password' => ['required', 'string'],
-            'token_name' => ['sometimes', 'string', 'max:100'],
-        ]);
+        $validated = $request->validated();
         $email = Str::lower($validated['email']);
 
         $user = User::query()
@@ -68,14 +69,9 @@ class TenantAuthController extends Controller
         ]);
     }
 
-    public function register(Request $request): JsonResponse
+    public function register(TenantRegisterRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email:rfc', 'max:255', 'unique:users,email', new VerifiedMailboxCandidate()],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'token_name' => ['sometimes', 'string', 'max:100'],
-        ]);
+        $validated = $request->validated();
         $email = Str::lower($validated['email']);
 
         if (User::withTrashed()->where('email', $email)->exists()) {
@@ -86,7 +82,7 @@ class TenantAuthController extends Controller
 
         $user = User::query()->create([
             'name' => $validated['name'],
-            'username' => Str::lower(Str::before($email, '@')) . '_' . Str::random(4),
+            'username' => Str::lower(Str::before($email, '@')).'_'.Str::random(4),
             'email' => $email,
             'password' => Hash::make($validated['password']),
             'is_active' => true,
@@ -107,11 +103,9 @@ class TenantAuthController extends Controller
         ], 201);
     }
 
-    public function forgotPassword(Request $request): JsonResponse
+    public function forgotPassword(TenantForgotPasswordRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email:rfc'],
-        ]);
+        $validated = $request->validated();
 
         $status = Password::broker('users')->sendResetLink([
             'email' => Str::lower($validated['email']),
@@ -128,13 +122,9 @@ class TenantAuthController extends Controller
         ]);
     }
 
-    public function resetPassword(Request $request): JsonResponse
+    public function resetPassword(TenantResetPasswordRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'token' => ['required', 'string'],
-            'email' => ['required', 'email:rfc'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-        ]);
+        $validated = $request->validated();
 
         $status = Password::broker('users')->reset(
             [
@@ -186,20 +176,12 @@ class TenantAuthController extends Controller
         ]);
     }
 
-    public function updateMe(Request $request): JsonResponse
+    public function updateMe(TenantProfileUpdateRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->attributes->get('tenant_user');
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'first_name' => ['nullable', 'string', 'max:100'],
-            'last_name' => ['nullable', 'string', 'max:100'],
-            'email' => ['required', 'email:rfc', 'max:255', Rule::unique('users', 'email')->ignore($user->getKey()), new VerifiedMailboxCandidate()],
-            'phone' => ['nullable', 'string', 'max:30'],
-            'locale' => ['nullable', 'string', 'max:10'],
-            'timezone' => ['nullable', 'string', 'timezone'],
-        ]);
+        $validated = $request->validated();
 
         $nextEmail = Str::lower($validated['email']);
         $emailChanged = $nextEmail !== Str::lower((string) $user->email);
@@ -286,15 +268,12 @@ class TenantAuthController extends Controller
         return redirect()->away(sprintf('%s/compte/connexion?verified=success', $baseUrl));
     }
 
-    public function updatePassword(Request $request): JsonResponse
+    public function updatePassword(TenantPasswordUpdateRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->attributes->get('tenant_user');
 
-        $validated = $request->validate([
-            'current_password' => ['required', 'string'],
-            'password' => ['required', 'string', 'min:8', 'confirmed', 'different:current_password'],
-        ]);
+        $validated = $request->validated();
 
         if (! Hash::check($validated['current_password'], $user->password)) {
             throw ValidationException::withMessages([
@@ -321,14 +300,12 @@ class TenantAuthController extends Controller
         ]);
     }
 
-    public function updateAvatar(Request $request): JsonResponse
+    public function updateAvatar(TenantAvatarUpdateRequest $request): JsonResponse
     {
         /** @var User $user */
         $user = $request->attributes->get('tenant_user');
 
-        $validated = $request->validate([
-            'avatar' => ['required', 'image', 'max:2048', 'mimes:jpg,jpeg,png,webp'],
-        ]);
+        $validated = $request->validated();
 
         if (filled($user->avatar_path)) {
             Storage::disk('public')->delete($user->avatar_path);

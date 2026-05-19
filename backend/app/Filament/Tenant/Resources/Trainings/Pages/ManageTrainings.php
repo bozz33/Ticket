@@ -2,9 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Trainings\Pages;
 
+use App\Filament\Support\Pages\ManageRecordsPage;
 use App\Filament\Tenant\Resources\Trainings\TrainingResource;
 use Filament\Actions\CreateAction;
-use App\Filament\Support\Pages\ManageRecordsPage;
 
 class ManageTrainings extends ManageRecordsPage
 {

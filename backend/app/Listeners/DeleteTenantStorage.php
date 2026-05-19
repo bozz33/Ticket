@@ -2,17 +2,17 @@
 
 namespace App\Listeners;
 
-use App\Services\Tenancy\TenantStorageManager;
 use Stancl\Tenancy\Events\TenantDeleted;
+use Ticket\Tenancy\Contracts\TenantStorage;
 
 class DeleteTenantStorage
 {
     public function __construct(
-        protected TenantStorageManager $tenantStorageManager,
+        protected TenantStorage $tenantStorage,
     ) {}
 
     public function handle(TenantDeleted $event): void
     {
-        $this->tenantStorageManager->delete($event->tenant);
+        $this->tenantStorage->delete($event->tenant);
     }
 }

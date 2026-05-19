@@ -10,9 +10,9 @@ use App\Models\Tenant;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Str;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__.'/../vendor/autoload.php';
 
-$app = require __DIR__ . '/../bootstrap/app.php';
+$app = require __DIR__.'/../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
 $tenantSlug = $argv[1] ?? 'vvvv';
@@ -20,12 +20,12 @@ $tenantSlug = $argv[1] ?? 'vvvv';
 $tenant = Tenant::query()->where('slug', $tenantSlug)->first();
 
 if ($tenant === null) {
-    fwrite(STDERR, "Tenant introuvable: {$tenantSlug}" . PHP_EOL);
+    fwrite(STDERR, "Tenant introuvable: {$tenantSlug}".PHP_EOL);
     exit(1);
 }
 
 $offerCode = static function (string $slug, string $eventSlug, string $offerName): string {
-    return strtoupper(Str::slug($slug . '-' . $eventSlug . '-' . $offerName, '-'));
+    return strtoupper(Str::slug($slug.'-'.$eventSlug.'-'.$offerName, '-'));
 };
 
 $events = [
@@ -190,13 +190,13 @@ $tenant->run(function () use ($tenantSlug, $events, $offerCode): void {
     $categoryId = Category::query()->where('slug', 'concert')->value('id') ?? Category::query()->min('id');
 
     $organization = OrganizationProfile::query()->firstOrCreate(
-        ['email' => 'hello@' . $tenantSlug . '.local'],
+        ['email' => 'hello@'.$tenantSlug.'.local'],
         [
-            'legal_name' => strtoupper($tenantSlug) . ' Demo Organization',
+            'legal_name' => strtoupper($tenantSlug).' Demo Organization',
             'display_name' => strtoupper($tenantSlug),
             'description' => 'Organisation de demonstration pour les tests catalogue, detail et checkout.',
             'phone' => '+225 27 22 40 11 00',
-            'website_url' => 'https://' . $tenantSlug . '.demo.local',
+            'website_url' => 'https://'.$tenantSlug.'.demo.local',
             'logo_url' => 'https://images.unsplash.com/photo-1556740749-887f6717d7e4?auto=format&fit=crop&w=600&q=80',
             'banner_url' => 'https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1600&q=80',
             'primary_color' => '#d97706',
@@ -206,7 +206,7 @@ $tenant->run(function () use ($tenantSlug, $events, $offerCode): void {
             'meta' => [
                 'verified' => true,
                 'followers' => 1280,
-                'tagline' => 'Tenant de demonstration pour les tests ' . strtoupper($tenantSlug),
+                'tagline' => 'Tenant de demonstration pour les tests '.strtoupper($tenantSlug),
             ],
         ],
     );
@@ -290,5 +290,5 @@ $tenant->run(function () use ($tenantSlug, $events, $offerCode): void {
         'events' => Event::query()->count(),
         'offers' => Offer::query()->count(),
         'organization_profiles' => OrganizationProfile::query()->count(),
-    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE) . PHP_EOL;
+    ], JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE).PHP_EOL;
 });

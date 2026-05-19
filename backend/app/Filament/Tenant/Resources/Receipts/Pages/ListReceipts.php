@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\Receipts\Pages;
 
-use App\Filament\Tenant\Resources\Receipts\ReceiptResource;
 use App\Filament\Support\Pages\ListRecordsPage;
+use App\Filament\Tenant\Resources\Receipts\ReceiptResource;
 
 class ListReceipts extends ListRecordsPage
 {

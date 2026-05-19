@@ -11,10 +11,12 @@ use App\Services\Auth\TenantTokenService;
 use App\Support\Tenancy\RouteTenantResolver;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\WithFaker;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Stancl\Tenancy\Tenancy;
 use Tests\TestCase;
 
 class ApiSecurityHardeningTest extends TestCase
@@ -78,6 +80,38 @@ class ApiSecurityHardeningTest extends TestCase
             ]);
     }
 
+    public function test_api_validation_errors_use_standard_contract(): void
+    {
+        $this->postJson('/api/v1/public/onboarding/register', [
+            'org_name' => '',
+            'email' => 'invalid',
+            'password' => 'short',
+        ])
+            ->assertStatus(422)
+            ->assertJsonStructure([
+                'message',
+                'error' => ['code'],
+                'errors',
+            ])
+            ->assertJson([
+                'error' => [
+                    'code' => 'validation_failed',
+                ],
+            ]);
+    }
+
+    public function test_api_not_found_errors_use_standard_contract(): void
+    {
+        $this->getJson('/api/v1/unknown-endpoint')
+            ->assertStatus(404)
+            ->assertJson([
+                'message' => 'Ressource introuvable.',
+                'error' => [
+                    'code' => 'not_found',
+                ],
+            ]);
+    }
+
     public function test_platform_login_is_rate_limited(): void
     {
         config()->set('ticket.rate_limits.platform_auth_per_minute', 1);
@@ -124,7 +158,7 @@ class ApiSecurityHardeningTest extends TestCase
             'database_port' => 5432,
         ]));
 
-        $request = \Illuminate\Http\Request::create('/livewire/update', 'POST');
+        $request = Request::create('/livewire/update', 'POST');
         $request->headers->set('referer', 'http://127.0.0.1:8000/tenants/tenant-test/admin/login');
 
         $router = app('router');
@@ -132,7 +166,7 @@ class ApiSecurityHardeningTest extends TestCase
         $route = $router->getRoutes()->match($request);
         $request->setRouteResolver(static fn () => $route);
 
-        $tenancy = \Mockery::mock(\Stancl\Tenancy\Tenancy::class);
+        $tenancy = \Mockery::mock(Tenancy::class);
         $tenancy->shouldReceive('initialize')
             ->once()
             ->withArgs(static fn (Tenant $resolvedTenant): bool => $resolvedTenant->slug === 'tenant-test');
@@ -144,7 +178,7 @@ class ApiSecurityHardeningTest extends TestCase
 
         $response = $middleware->handle(
             $request,
-            static fn (\Illuminate\Http\Request $passedRequest) => response()->json([
+            static fn (Request $passedRequest) => response()->json([
                 'tenant' => $passedRequest->route('tenant'),
                 'path' => $passedRequest->path(),
             ]),

@@ -3,21 +3,40 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
-    "start": "next start"
+    "build:ci": "npm run typecheck && next build --webpack",
+    "build:restricted": "npm run typecheck && node scripts/front-restricted-build.mjs",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "node scripts/front-quality.mjs",
+    "a11y": "node scripts/front-a11y-static.mjs",
+    "perf:budget": "node scripts/front-performance-budget.mjs",
+    "perf:web": "node scripts/front-web-vitals.mjs",
+    "qa:visual": "node scripts/front-visual-smoke.mjs",
+    "contract:api": "node scripts/front-openapi-contract.mjs",
+    "smoke:http": "node scripts/front-http-smoke.mjs",
+    "e2e": "playwright test",
+    "e2e:smoke": "playwright test e2e/public-smoke.spec.ts e2e/account-auth.spec.ts",
+    "e2e:report": "playwright show-report",
+    "test": "node tests/front-security.test.mjs",
+    "quality": "npm run lint && npm run a11y && npm run perf:budget && npm run contract:api && npm run typecheck && npm test"
   },
   "dependencies": {
-    "@types/qrcode": "^1.5.6",
-    "next": "latest",
-    "qrcode": "^1.5.4",
-    "react": "latest",
-    "react-dom": "latest"
+    "@types/qrcode": "1.5.6",
+    "next": "16.2.6",
+    "qrcode": "1.5.4",
+    "react": "19.2.5",
+    "react-dom": "19.2.5"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
   },
   "devDependencies": {
-    "@types/node": "latest",
-    "@types/react": "latest",
-    "@types/react-dom": "latest",
-    "typescript": "latest"
+    "@playwright/test": "1.60.0",
+    "@types/node": "25.6.0",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "typescript": "6.0.3"
   }
 }

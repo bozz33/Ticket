@@ -1,8 +1,8 @@
 <?php
 
-$publicPath = __DIR__ . DIRECTORY_SEPARATOR . 'public';
+$publicPath = __DIR__.DIRECTORY_SEPARATOR.'public';
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'] ?? '/', PHP_URL_PATH) ?: '/');
-$file = $publicPath . $uri;
+$file = $publicPath.$uri;
 
 if ($uri !== '/' && is_file($file)) {
     $extension = strtolower(pathinfo($file, PATHINFO_EXTENSION));
@@ -27,13 +27,13 @@ if ($uri !== '/' && is_file($file)) {
     ];
 
     if (isset($contentTypes[$extension])) {
-        header('Content-Type: ' . $contentTypes[$extension]);
+        header('Content-Type: '.$contentTypes[$extension]);
     }
 
-    header('Content-Length: ' . (string) filesize($file));
+    header('Content-Length: '.(string) filesize($file));
     readfile($file);
 
     return true;
 }
 
-require_once $publicPath . DIRECTORY_SEPARATOR . 'index.php';
+require_once $publicPath.DIRECTORY_SEPARATOR.'index.php';

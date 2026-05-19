@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Database\Factories\UserFactory;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
@@ -14,7 +15,7 @@ use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements FilamentUser, MustVerifyEmailContract
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
+    /** @use HasFactory<UserFactory> */
     use HasFactory, HasRoles, Notifiable, SoftDeletes;
 
     protected $connection = 'tenant';

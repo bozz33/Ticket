@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\TenantSubscriptions\Pages;
 
-use App\Filament\Tenant\Resources\TenantSubscriptions\TenantSubscriptionResource;
 use App\Filament\Support\Pages\ListRecordsPage;
+use App\Filament\Tenant\Resources\TenantSubscriptions\TenantSubscriptionResource;
 
 class ListTenantSubscriptions extends ListRecordsPage
 {

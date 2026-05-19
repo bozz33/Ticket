@@ -4,27 +4,28 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\UpsertOrganizationProfileRequest;
-use App\Services\Public\PublicContentService;
-use App\Services\Tenancy\TenantPublicProfileService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Facades\GlobalCache;
+use Ticket\PublicCatalog\Contracts\PublicContentCatalog;
+use Ticket\Tenancy\Contracts\TenantProfileManager;
 
 class OrganizationProfileController extends Controller
 {
     private const PUBLIC_PROFILE_TTL = 120;
+
     private const PUBLIC_CATALOG_TTL = 120;
 
-    public function show(TenantContext $tenantContext, TenantPublicProfileService $tenantPublicProfileService): JsonResponse
+    public function show(TenantContext $tenantContext, TenantProfileManager $tenantProfileManager): JsonResponse
     {
         return response()->json([
             'tenant' => $tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $tenantPublicProfileService->getOrCreate()->load(['contacts', 'socialLinks']),
+            'data' => $tenantProfileManager->getOrCreate()->load(['contacts', 'socialLinks']),
         ]);
     }
 
-    public function showPublic(TenantContext $tenantContext, TenantPublicProfileService $tenantPublicProfileService): JsonResponse
+    public function showPublic(TenantContext $tenantContext, TenantProfileManager $tenantProfileManager): JsonResponse
     {
         $tenant = $tenantContext->get()?->only(['public_id', 'name', 'slug']);
         $tenantSlug = is_array($tenant) ? ($tenant['slug'] ?? '') : '';
@@ -33,7 +34,7 @@ class OrganizationProfileController extends Controller
             now()->addSeconds(self::PUBLIC_PROFILE_TTL),
             fn (): array => [
                 'tenant' => $tenant,
-                'data' => $tenantPublicProfileService->getPublicViewData($tenant),
+                'data' => $tenantProfileManager->getPublicViewData($tenant),
             ],
         );
 
@@ -45,8 +46,8 @@ class OrganizationProfileController extends Controller
     public function showPublicCatalog(
         Request $request,
         TenantContext $tenantContext,
-        TenantPublicProfileService $tenantPublicProfileService,
-        PublicContentService $publicContentService,
+        TenantProfileManager $tenantProfileManager,
+        PublicContentCatalog $publicContentCatalog,
     ): JsonResponse {
         $filters = $request->only(['module', 'q', 'category', 'city', 'date_from', 'date_to', 'price', 'sort', 'featured']);
         $page = max(1, (int) $request->query('page', 1));
@@ -64,16 +65,16 @@ class OrganizationProfileController extends Controller
                 ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)),
             ),
             now()->addSeconds(self::PUBLIC_CATALOG_TTL),
-            function () use ($tenant, $tenantPublicProfileService, $publicContentService, $filters, $page, $perPage): array {
-                $result = $publicContentService->list($filters, $page, $perPage);
-                $available = $publicContentService->availableFilters($filters['module'] ?? null);
+            function () use ($tenant, $tenantProfileManager, $publicContentCatalog, $filters, $page, $perPage): array {
+                $result = $publicContentCatalog->list($filters, $page, $perPage);
+                $available = $publicContentCatalog->availableFilters($filters['module'] ?? null);
 
                 return [
                     'tenant' => $tenant,
                     'data' => [
-                        'profile' => $tenantPublicProfileService->getPublicViewData($tenant, $result['items']),
+                        'profile' => $tenantProfileManager->getPublicViewData($tenant, $result['items']),
                         'items' => $result['items'],
-                        'stats' => $publicContentService->summaryStats(),
+                        'stats' => $publicContentCatalog->summaryStats(),
                     ],
                     'meta' => [
                         'current_page' => $result['currentPage'],
@@ -94,11 +95,11 @@ class OrganizationProfileController extends Controller
     public function upsert(
         UpsertOrganizationProfileRequest $request,
         TenantContext $tenantContext,
-        TenantPublicProfileService $tenantPublicProfileService,
+        TenantProfileManager $tenantProfileManager,
     ): JsonResponse {
         return response()->json([
             'tenant' => $tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $tenantPublicProfileService->update($request->validated()),
+            'data' => $tenantProfileManager->update($request->validated()),
         ]);
     }
 }

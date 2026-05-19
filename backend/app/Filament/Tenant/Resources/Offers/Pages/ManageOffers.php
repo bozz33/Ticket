@@ -2,9 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Offers\Pages;
 
+use App\Filament\Support\Pages\ManageRecordsPage;
 use App\Filament\Tenant\Resources\Offers\OfferResource;
 use Filament\Actions\CreateAction;
-use App\Filament\Support\Pages\ManageRecordsPage;
 
 class ManageOffers extends ManageRecordsPage
 {

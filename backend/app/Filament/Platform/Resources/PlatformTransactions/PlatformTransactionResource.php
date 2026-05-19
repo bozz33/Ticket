@@ -14,11 +14,12 @@ use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
-use Filament\Schemas\Schema;
 use Filament\Schemas\Components\Section;
+use Filament\Schemas\Schema;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Model;
 use UnitEnum;
 
 class PlatformTransactionResource extends Resource
@@ -142,12 +143,12 @@ class PlatformTransactionResource extends Resource
         return false;
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return false;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }

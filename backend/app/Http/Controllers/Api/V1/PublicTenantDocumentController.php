@@ -3,24 +3,24 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\Tenancy\DocumentService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\Ticketing\Contracts\DocumentCatalog;
 
 class PublicTenantDocumentController extends Controller
 {
-    public function index(Request $request, TenantContext $tenantContext, DocumentService $documentService): JsonResponse
+    public function index(Request $request, TenantContext $tenantContext, DocumentCatalog $documentCatalog): JsonResponse
     {
         return response()->json([
             'tenant' => $tenantContext->get()?->only(['public_id', 'name', 'slug']),
-            'data' => $documentService->listPublic($request->query('resource_type_code')),
+            'data' => $documentCatalog->listPublic($request->query('resource_type_code')),
         ]);
     }
 
-    public function show(string $document, TenantContext $tenantContext, DocumentService $documentService): JsonResponse
+    public function show(string $document, TenantContext $tenantContext, DocumentCatalog $documentCatalog): JsonResponse
     {
-        $record = $documentService->findPublicByIdentifier($document);
+        $record = $documentCatalog->findPublicByIdentifier($document);
 
         abort_if($record === null, 404);
 

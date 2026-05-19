@@ -1,0 +1,14 @@
+{
+    "name": "ticket/ticketing",
+    "type": "library",
+    "description": "Internal ticketing bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Ticketing\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

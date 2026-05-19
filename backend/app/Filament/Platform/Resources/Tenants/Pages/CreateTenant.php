@@ -3,11 +3,11 @@
 namespace App\Filament\Platform\Resources\Tenants\Pages;
 
 use App\Filament\Platform\Resources\Tenants\TenantResource;
-use App\Services\Tenancy\ProvisionTenant;
-use Filament\Notifications\Notification;
 use App\Filament\Support\Pages\CreateRecordPage;
+use Filament\Notifications\Notification;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
+use Ticket\Tenancy\Contracts\TenantProvisioner;
 
 class CreateTenant extends CreateRecordPage
 {
@@ -19,7 +19,7 @@ class CreateTenant extends CreateRecordPage
 
     protected function handleRecordCreation(array $data): Model
     {
-        $result = app(ProvisionTenant::class)->handle($data);
+        $result = app(TenantProvisioner::class)->handle($data);
         $this->tenantAdminCredentials = $result['tenant_admin'];
 
         return $result['tenant'];
@@ -31,10 +31,10 @@ class CreateTenant extends CreateRecordPage
             ->success()
             ->title('Tenant créé')
             ->body(implode(PHP_EOL, [
-                'Email admin: ' . ($this->tenantAdminCredentials['email'] ?? '-'),
-                'Mot de passe: ' . ($this->tenantAdminCredentials['password'] ?? '-'),
-                'Login: ' . ($this->tenantAdminCredentials['login_url'] ?? '-'),
-                'Lien public: ' . ($this->tenantAdminCredentials['public_url'] ?? '-'),
+                'Email admin: '.($this->tenantAdminCredentials['email'] ?? '-'),
+                'Mot de passe: '.($this->tenantAdminCredentials['password'] ?? '-'),
+                'Login: '.($this->tenantAdminCredentials['login_url'] ?? '-'),
+                'Lien public: '.($this->tenantAdminCredentials['public_url'] ?? '-'),
             ]));
     }
 }

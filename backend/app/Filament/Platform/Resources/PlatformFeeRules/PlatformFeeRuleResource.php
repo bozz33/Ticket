@@ -56,6 +56,11 @@ class PlatformFeeRuleResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema
@@ -222,7 +227,7 @@ class PlatformFeeRuleResource extends Resource
                     ->badge(),
                 TextColumn::make('percentage_rate')
                     ->label('Taux')
-                    ->formatStateUsing(fn ($state): string => $state !== null ? number_format((float) $state, 4, ',', ' ') . ' %' : '-'),
+                    ->formatStateUsing(fn ($state): string => $state !== null ? number_format((float) $state, 4, ',', ' ').' %' : '-'),
                 TextColumn::make('fixed_amount')
                     ->label('Fixe')
                     ->numeric(),

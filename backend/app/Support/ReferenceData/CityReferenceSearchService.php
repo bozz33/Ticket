@@ -11,7 +11,7 @@ use Illuminate\Support\Str;
 class CityReferenceSearchService
 {
     /**
-     * @return array<int, \App\Models\City>
+     * @return array<int, City>
      */
     public function search(?string $countryCode = null, ?string $query = null, int $limit = 50, bool $onlyActive = true): array
     {

@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\IncidentLogs\Pages;
 
 use App\Filament\Platform\Resources\IncidentLogs\IncidentLogResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManageIncidentLogs extends ManageRecordsPage
 {

@@ -16,14 +16,12 @@ class PlansTable
     {
         return $table
             ->columns([
-                TextColumn::make('code')->label('Code')->searchable(),
                 TextColumn::make('name')->label('Nom')->searchable()->sortable(),
-                TextColumn::make('price_amount')->label('Prix')->numeric()->sortable(),
-                TextColumn::make('currency_code')->label('Devise'),
+                TextColumn::make('code')->label('Code')->badge()->searchable(),
+                TextColumn::make('price_amount')->label('Prix')->money('XOF', divideBy: 1)->sortable(),
                 TextColumn::make('billing_interval')->label('Intervalle')->badge(),
                 TextColumn::make('trial_days')->label('Essai'),
                 IconColumn::make('is_active')->label('Actif')->boolean(),
-                TextColumn::make('tenant_subscriptions_count')->counts('tenantSubscriptions')->label('Souscriptions'),
             ])
             ->defaultSort('price_amount')
             ->recordActions([

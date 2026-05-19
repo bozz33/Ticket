@@ -36,7 +36,7 @@ class FrontCmsService
 
     public function resolvePublishedPage(string $path): ?FrontPage
     {
-        $normalizedPath = '/' . trim($path, '/');
+        $normalizedPath = '/'.trim($path, '/');
 
         if ($normalizedPath === '//') {
             $normalizedPath = '/';

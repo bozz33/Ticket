@@ -1,0 +1,28 @@
+<?php
+
+namespace App\Http\Requests\Api\V1\Public;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+class PublicPaymentInitializeRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'offer' => ['required', 'string'],
+            'quantity' => ['nullable', 'integer', 'min:1'],
+            'payment_method' => ['nullable', 'string', 'max:80'],
+            'buyer_name' => ['nullable', 'string', 'max:255'],
+            'buyer_email' => ['nullable', 'email:rfc', 'max:255'],
+            'buyer_phone' => ['nullable', 'string', 'max:50'],
+            'content_module' => ['nullable', 'string', 'max:100'],
+            'content_slug' => ['nullable', 'string', 'max:255'],
+            'callback_url' => ['required', 'url', 'max:2048'],
+        ];
+    }
+}

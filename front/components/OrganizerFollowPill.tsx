@@ -10,64 +10,17 @@ type FollowPayload = {
   error?: string;
 };
 
-let accountAuthenticationProbe: Promise<boolean | null> | null = null;
-const organizerFollowProbeCache = new Map<string, Promise<FollowPayload | null>>();
-
-async function resolveAccountAuthenticationState(): Promise<boolean | null> {
-  if (!accountAuthenticationProbe) {
-    accountAuthenticationProbe = fetch("/api/account/me", {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    })
-      .then((response) => {
-        if (response.ok) {
-          return true;
-        }
-
-        if (response.status === 401) {
-          return false;
-        }
-
-        return null;
-      })
-      .catch(() => null);
-  }
-
-  return accountAuthenticationProbe;
-}
-
-async function resolveOrganizerFollowState(slug: string): Promise<FollowPayload | null> {
-  const cacheKey = slug.trim();
-
-  if (!cacheKey) {
-    return null;
-  }
-
-  if (!organizerFollowProbeCache.has(cacheKey)) {
-    organizerFollowProbeCache.set(cacheKey, fetch(`/api/organizers/${encodeURIComponent(cacheKey)}/follow`, {
-      cache: "no-store",
-      headers: {
-        Accept: "application/json",
-      },
-    })
-      .then((response) => response.json().catch(() => null) as Promise<FollowPayload | null>)
-      .catch(() => null));
-  }
-
-  return organizerFollowProbeCache.get(cacheKey) ?? null;
-}
-
 export function OrganizerFollowPill({
   slug,
   initialAuthenticated,
+  initialFollowing = false,
 }: {
   slug: string;
   initialAuthenticated?: boolean;
+  initialFollowing?: boolean;
 }) {
-  const [authenticated, setAuthenticated] = useState(Boolean(initialAuthenticated));
-  const [following, setFollowing] = useState(false);
+  const [authenticated, setAuthenticated] = useState<boolean | undefined>(initialAuthenticated);
+  const [following, setFollowing] = useState(Boolean(initialFollowing));
   const [loading, setLoading] = useState(false);
 
   const redirectHref = useMemo(() => {
@@ -81,48 +34,15 @@ export function OrganizerFollowPill({
   }, [slug]);
 
   useEffect(() => {
-    setAuthenticated(Boolean(initialAuthenticated));
+    setAuthenticated(initialAuthenticated);
   }, [initialAuthenticated]);
 
   useEffect(() => {
-    let active = true;
-
-    async function loadStatus() {
-      try {
-        const accountAuthenticated = initialAuthenticated === undefined
-          ? await resolveAccountAuthenticationState()
-          : initialAuthenticated;
-
-        if (!active) {
-          return;
-        }
-
-        if (accountAuthenticated === false) {
-          setAuthenticated(false);
-          setFollowing(false);
-          return;
-        }
-
-        const payload = await resolveOrganizerFollowState(slug);
-
-        if (!active || !payload) {
-          return;
-        }
-
-        setAuthenticated(Boolean(payload.authenticated));
-        setFollowing(Boolean(payload.following));
-      } catch {}
-    }
-
-    void loadStatus();
-
-    return () => {
-      active = false;
-    };
-  }, [initialAuthenticated, slug]);
+    setFollowing(Boolean(initialFollowing));
+  }, [initialFollowing]);
 
   async function toggleFollow() {
-    if (!authenticated) {
+    if (authenticated === false) {
       setLoading(true);
       window.location.assign(redirectHref);
       return;
@@ -150,7 +70,6 @@ export function OrganizerFollowPill({
         return;
       }
 
-      organizerFollowProbeCache.set(slug, Promise.resolve(payload));
       setFollowing(Boolean(payload.following));
       setAuthenticated(Boolean(payload.authenticated));
     } catch {

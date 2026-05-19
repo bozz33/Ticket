@@ -1,0 +1,14 @@
+{
+    "name": "ticket/notifications",
+    "type": "library",
+    "description": "Internal notifications bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Notifications\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

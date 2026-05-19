@@ -1,0 +1,14 @@
+{
+    "name": "ticket/payments",
+    "type": "library",
+    "description": "Internal payments bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Payments\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

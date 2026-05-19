@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\Users\Pages;
 
-use App\Filament\Tenant\Resources\Users\UserResource;
 use App\Filament\Support\Pages\CreateRecordPage;
+use App\Filament\Tenant\Resources\Users\UserResource;
 use Filament\Support\Enums\Width;
 
 class CreateUser extends CreateRecordPage

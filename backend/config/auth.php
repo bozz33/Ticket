@@ -1,5 +1,8 @@
 <?php
 
+use App\Models\PlatformUser;
+use App\Models\User;
+
 return [
 
     /*
@@ -70,11 +73,11 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_MODEL', App\Models\User::class),
+            'model' => env('AUTH_MODEL', User::class),
         ],
         'platform_users' => [
             'driver' => 'eloquent',
-            'model' => env('AUTH_PLATFORM_MODEL', App\Models\PlatformUser::class),
+            'model' => env('AUTH_PLATFORM_MODEL', PlatformUser::class),
         ],
 
         // 'users' => [

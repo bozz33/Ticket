@@ -3,26 +3,29 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Services\Public\PublicContentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Stancl\Tenancy\Facades\GlobalCache;
+use Ticket\PublicCatalog\Contracts\PublicContentCatalog;
 
 class PublicContentController extends Controller
 {
     private const CONTENT_TTL = 120;
+
     private const FILTERS_TTL = 300;
+
     private const OVERVIEW_TTL = 300;
+
     private const SEARCH_TTL = 60;
 
     public function __construct(
-        private readonly PublicContentService $service,
+        private readonly PublicContentCatalog $service,
     ) {}
 
     public function globalIndex(Request $request): JsonResponse
     {
         $filters = $request->only(['module', 'q', 'category', 'city', 'date_from', 'date_to', 'price', 'sort', 'featured']);
-        $page    = max(1, (int) $request->query('page', 1));
+        $page = max(1, (int) $request->query('page', 1));
         $perPage = min(48, max(1, (int) $request->query('per_page', 12)));
 
         $payload = $this->remember(
@@ -30,7 +33,7 @@ class PublicContentController extends Controller
             ['filters' => $filters, 'page' => $page, 'per_page' => $perPage],
             self::CONTENT_TTL,
             function () use ($filters, $page, $perPage): array {
-                $result  = $this->service->listAcrossTenants($filters, $page, $perPage);
+                $result = $this->service->listAcrossTenants($filters, $page, $perPage);
                 $available = $this->service->availableFiltersAcrossTenants($filters['module'] ?? null);
                 $presentation = $this->service->listingPresentation(
                     is_string($filters['module'] ?? null) ? $filters['module'] : null,
@@ -38,12 +41,12 @@ class PublicContentController extends Controller
                 );
 
                 return [
-                    'data'    => $result['items'],
-                    'meta'    => [
+                    'data' => $result['items'],
+                    'meta' => [
                         'current_page' => $result['currentPage'],
-                        'total'        => $result['total'],
-                        'total_pages'  => $result['totalPages'],
-                        'per_page'     => $perPage,
+                        'total' => $result['total'],
+                        'total_pages' => $result['totalPages'],
+                        'per_page' => $perPage,
                     ],
                     'filters' => $available,
                     'presentation' => $presentation,
@@ -57,7 +60,7 @@ class PublicContentController extends Controller
     public function index(Request $request, string $tenant): JsonResponse
     {
         $filters = $request->only(['module', 'q', 'category', 'city', 'date_from', 'date_to', 'price', 'sort', 'featured']);
-        $page    = max(1, (int) $request->query('page', 1));
+        $page = max(1, (int) $request->query('page', 1));
         $perPage = min(48, max(1, (int) $request->query('per_page', 12)));
 
         $payload = $this->remember(
@@ -65,7 +68,7 @@ class PublicContentController extends Controller
             ['tenant' => $tenant, 'filters' => $filters, 'page' => $page, 'per_page' => $perPage],
             self::CONTENT_TTL,
             function () use ($filters, $page, $perPage): array {
-                $result  = $this->service->list($filters, $page, $perPage);
+                $result = $this->service->list($filters, $page, $perPage);
                 $available = $this->service->availableFilters($filters['module'] ?? null);
                 $presentation = $this->service->listingPresentation(
                     is_string($filters['module'] ?? null) ? $filters['module'] : null,
@@ -73,12 +76,12 @@ class PublicContentController extends Controller
                 );
 
                 return [
-                    'data'    => $result['items'],
-                    'meta'    => [
+                    'data' => $result['items'],
+                    'meta' => [
                         'current_page' => $result['currentPage'],
-                        'total'        => $result['total'],
-                        'total_pages'  => $result['totalPages'],
-                        'per_page'     => $perPage,
+                        'total' => $result['total'],
+                        'total_pages' => $result['totalPages'],
+                        'per_page' => $perPage,
                     ],
                     'filters' => $available,
                     'presentation' => $presentation,

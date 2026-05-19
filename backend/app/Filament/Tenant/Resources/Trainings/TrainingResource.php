@@ -18,8 +18,8 @@ use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -36,13 +36,21 @@ class TrainingResource extends Resource
     use HasPanelPermission;
 
     protected static ?string $model = Training::class;
+
     protected static ?string $permissionPrefix = 'tenant.catalog';
+
     protected static ?string $requiredTenantFeature = 'tenant.training';
+
     protected static string|UnitEnum|null $navigationGroup = 'Modules';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-academic-cap';
+
     protected static ?string $navigationLabel = 'Formations';
+
     protected static ?string $modelLabel = 'Formation';
+
     protected static ?string $pluralModelLabel = 'Formations';
+
     protected static ?string $recordTitleAttribute = 'title';
 
     public static function form(Schema $schema): Schema

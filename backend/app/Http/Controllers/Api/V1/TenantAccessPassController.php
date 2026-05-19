@@ -4,16 +4,16 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Tenancy\AccessPassService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\Ticketing\Contracts\AccessPassCatalog;
 
 class TenantAccessPassController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly AccessPassService $accessPassService,
+        private readonly AccessPassCatalog $accessPassCatalog,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -23,7 +23,7 @@ class TenantAccessPassController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->accessPassService->listForBuyer(
+            'data' => $this->accessPassCatalog->listForBuyer(
                 $user,
                 $request->query('status'),
                 $request->query('type'),
@@ -36,7 +36,7 @@ class TenantAccessPassController extends Controller
         /** @var User $user */
         $user = $request->attributes->get('tenant_user');
 
-        $record = $this->accessPassService->findByIdentifierForBuyer($user, $accessPass);
+        $record = $this->accessPassCatalog->findByIdentifierForBuyer($user, $accessPass);
 
         abort_if($record === null, 404);
 

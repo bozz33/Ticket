@@ -5,7 +5,7 @@ namespace App\Providers\Filament;
 use App\Filament\Tenant\Widgets\TenantOverview;
 use App\Http\Middleware\EnsureTenantCategoriesAreSynced;
 use App\Http\Middleware\InitializeTenancyByRouteParameter;
-use App\Http\Middleware\EnsureTenantSubscriptionIsActive;
+use App\Support\Tenancy\TenantContext;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -29,6 +29,14 @@ class TenantPanelProvider extends PanelProvider
         return $panel
             ->id('tenant')
             ->path('tenants/{tenant}/admin')
+            ->homeUrl(function (): string {
+                $tenant = app(TenantContext::class)->get();
+
+                return $tenant !== null
+                    ? url(sprintf('/tenants/%s/admin', $tenant->slug))
+                    : url('/');
+            })
+            ->databaseNotifications()
             ->authGuard('tenant')
             ->authPasswordBroker('users')
             ->login()
@@ -51,7 +59,6 @@ class TenantPanelProvider extends PanelProvider
                 AddQueuedCookiesToResponse::class,
                 StartSession::class,
                 AuthenticateSession::class,
-                EnsureTenantSubscriptionIsActive::class,
                 ShareErrorsFromSession::class,
                 VerifyCsrfToken::class,
                 SubstituteBindings::class,

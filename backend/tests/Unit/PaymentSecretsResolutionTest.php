@@ -17,7 +17,7 @@ class PaymentSecretsResolutionTest extends TestCase
             'secret_key' => 'database-secret-key',
         ]);
 
-        $service = new PaymentGatewayCredentialResolver();
+        $service = new PaymentGatewayCredentialResolver;
 
         $this->assertSame('env-secret-key', $service->secretKey($gateway));
     }
@@ -31,7 +31,7 @@ class PaymentSecretsResolutionTest extends TestCase
             'secret_key' => 'database-secret-key',
         ]);
 
-        $service = new PaymentGatewayCredentialResolver();
+        $service = new PaymentGatewayCredentialResolver;
 
         $this->assertSame('database-secret-key', $service->secretKey($gateway));
     }
@@ -47,7 +47,7 @@ class PaymentSecretsResolutionTest extends TestCase
             'webhook_secret' => 'database-webhook-secret',
         ]);
 
-        $service = new PaymentGatewayCredentialResolver();
+        $service = new PaymentGatewayCredentialResolver;
 
         $this->assertSame('env-webhook-secret', $service->webhookSecret($gateway));
     }
@@ -63,7 +63,7 @@ class PaymentSecretsResolutionTest extends TestCase
             'webhook_secret' => 'database-webhook-secret',
         ]);
 
-        $service = new PaymentGatewayCredentialResolver();
+        $service = new PaymentGatewayCredentialResolver;
 
         $this->assertSame('database-webhook-secret', $service->webhookSecret($gateway));
     }

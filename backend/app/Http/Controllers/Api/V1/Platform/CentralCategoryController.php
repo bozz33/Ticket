@@ -7,9 +7,9 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Platform\StoreCentralCategoryRequest;
 use App\Models\CentralCategory;
 use App\Models\Tenant;
-use App\Services\Tenancy\SyncCentralCategoriesToTenant;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Ticket\Tenancy\Contracts\TenantReferenceCatalog;
 
 class CentralCategoryController extends Controller
 {
@@ -55,10 +55,10 @@ class CentralCategoryController extends Controller
         ]);
     }
 
-    public function syncTenant(Tenant $tenant, SyncCentralCategoriesToTenant $syncCentralCategoriesToTenant): JsonResponse
+    public function syncTenant(Tenant $tenant, TenantReferenceCatalog $tenantReferenceCatalog): JsonResponse
     {
         return response()->json([
-            'data' => $syncCentralCategoriesToTenant->handle($tenant),
+            'data' => $tenantReferenceCatalog->syncCategories($tenant),
         ]);
     }
 }

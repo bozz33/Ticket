@@ -27,6 +27,7 @@ class PlatformPanelProvider extends PanelProvider
             ->default()
             ->id('platform')
             ->path('platform')
+            ->databaseNotifications()
             ->authGuard('platform')
             ->authPasswordBroker('platform_users')
             ->login()

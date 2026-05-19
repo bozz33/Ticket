@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { normalizeTenantSlug, requireValidTenantSlug } from "@/lib/tenant";
 
 const TOKEN_COOKIE = "_account_token";
 const TENANT_COOKIE = "_account_tenant";
@@ -43,9 +44,7 @@ export async function getDefaultTenantSlug(): Promise<string> {
           default_tenant?: { slug?: string | null } | null;
         };
 
-        return typeof payload.default_tenant?.slug === "string"
-          ? payload.default_tenant.slug.trim()
-          : "";
+        return normalizeTenantSlug(payload.default_tenant?.slug);
       } catch {
         return "";
       }
@@ -64,11 +63,11 @@ export async function getDefaultTenantSlug(): Promise<string> {
 export async function getCookieTenantSlug(): Promise<string> {
   const jar = await cookies();
 
-  return jar.get(TENANT_COOKIE)?.value?.trim() ?? "";
+  return normalizeTenantSlug(jar.get(TENANT_COOKIE)?.value);
 }
 
 export async function getTenantSlug(preferredTenantSlug?: string | null): Promise<string> {
-  const requestedTenantSlug = preferredTenantSlug?.trim() ?? "";
+  const requestedTenantSlug = normalizeTenantSlug(preferredTenantSlug);
 
   if (requestedTenantSlug) {
     return requestedTenantSlug;
@@ -80,7 +79,7 @@ export async function getTenantSlug(preferredTenantSlug?: string | null): Promis
     return cookieTenantSlug;
   }
 
-  const envTenantSlug = process.env.NEXT_PUBLIC_TENANT_SLUG?.trim() ?? "";
+  const envTenantSlug = normalizeTenantSlug(process.env.NEXT_PUBLIC_TENANT_SLUG);
 
   if (envTenantSlug) {
     return envTenantSlug;
@@ -90,7 +89,7 @@ export async function getTenantSlug(preferredTenantSlug?: string | null): Promis
 }
 
 export async function getAccountTenantSlug(preferredTenantSlug?: string | null): Promise<string> {
-  const requestedTenantSlug = preferredTenantSlug?.trim() ?? "";
+  const requestedTenantSlug = normalizeTenantSlug(preferredTenantSlug);
 
   if (requestedTenantSlug) {
     return requestedTenantSlug;
@@ -102,7 +101,7 @@ export async function getAccountTenantSlug(preferredTenantSlug?: string | null):
     return cookieTenantSlug;
   }
 
-  const envTenantSlug = process.env.NEXT_PUBLIC_TENANT_SLUG?.trim() ?? "";
+  const envTenantSlug = normalizeTenantSlug(process.env.NEXT_PUBLIC_TENANT_SLUG);
 
   if (envTenantSlug) {
     return envTenantSlug;
@@ -126,8 +125,10 @@ export async function setAuthCookies(
   tenantSlug: string,
 ): Promise<void> {
   const jar = await cookies();
+  const normalizedTenantSlug = requireValidTenantSlug(tenantSlug);
+
   jar.set(TOKEN_COOKIE, token, COOKIE_OPTIONS);
-  jar.set(TENANT_COOKIE, tenantSlug, COOKIE_OPTIONS);
+  jar.set(TENANT_COOKIE, normalizedTenantSlug, COOKIE_OPTIONS);
 }
 
 export async function clearAuthCookies(): Promise<void> {

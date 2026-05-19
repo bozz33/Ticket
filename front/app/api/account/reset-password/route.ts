@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { requireTenantSlug } from "@/lib/auth";
 import { resetAccountPassword } from "@/lib/data/account";
 import { applyMutationRateLimit, validateMutationOrigin } from "@/lib/request-security";
+import { readJsonRecord, stringField } from "@/lib/server/request";
 
 export async function POST(request: NextRequest) {
   const originError = validateMutationOrigin(request);
@@ -17,7 +18,16 @@ export async function POST(request: NextRequest) {
     return rateLimitError;
   }
 
-  const { email, token, password, passwordConfirmation } = await request.json();
+  const parsed = await readJsonRecord(request);
+
+  if ("response" in parsed) {
+    return parsed.response;
+  }
+
+  const email = stringField(parsed.data, "email");
+  const token = stringField(parsed.data, "token");
+  const password = stringField(parsed.data, "password", false);
+  const passwordConfirmation = stringField(parsed.data, "passwordConfirmation", false);
 
   if (!email || !token || !password || !passwordConfirmation) {
     return NextResponse.json({ error: "Champs requis." }, { status: 400 });

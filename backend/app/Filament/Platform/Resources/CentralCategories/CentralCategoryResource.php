@@ -20,11 +20,17 @@ class CentralCategoryResource extends Resource
     protected static ?string $model = CentralCategory::class;
 
     protected static ?string $permissionPrefix = 'platform.categories';
+
     protected static string|UnitEnum|null $navigationGroup = 'Référentiels';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-squares-2x2';
+
     protected static ?string $navigationLabel = 'Catégories';
+
     protected static ?string $modelLabel = 'Catégorie';
+
     protected static ?string $pluralModelLabel = 'Catégories';
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema

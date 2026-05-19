@@ -1,8 +1,8 @@
 <?php
 
 use Carbon\CarbonImmutable;
-use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\ConnectionInterface;
+use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 
 return new class extends Migration
@@ -244,12 +244,12 @@ return new class extends Migration
             'route_path' => $route,
             'slug' => $slug,
             'template' => 'content_page',
-            'seo_title' => $title . ' — Ticket',
+            'seo_title' => $title.' — Ticket',
             'seo_description' => $body,
             'seo_image_url' => $image,
             'sections' => [
                 [
-                    'key' => $slug . '_hero',
+                    'key' => $slug.'_hero',
                     'type' => 'hero',
                     'eyebrow' => $eyebrow,
                     'title' => $title,
@@ -257,7 +257,7 @@ return new class extends Migration
                     'image_url' => $image,
                 ],
                 [
-                    'key' => $slug . '_intro',
+                    'key' => $slug.'_intro',
                     'type' => 'feature_grid',
                     'eyebrow' => 'Parcours public',
                     'title' => 'Ce que les visiteurs peuvent faire ici',

@@ -46,6 +46,16 @@ class TenantSubscriptionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'id';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema

@@ -20,8 +20,11 @@ class LanguageResource extends Resource
     protected static ?string $model = Language::class;
 
     protected static ?string $permissionPrefix = 'platform.references';
+
     protected static string|UnitEnum|null $navigationGroup = 'Référentiels';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-language';
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema

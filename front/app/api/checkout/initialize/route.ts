@@ -1,6 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAuthToken, requireTenantSlug } from "@/lib/auth";
+import { getAuthToken, getTenantSlug } from "@/lib/auth";
 import { applyMutationRateLimit, validateMutationOrigin } from "@/lib/request-security";
 
 const apiBaseUrl =
@@ -33,10 +33,34 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "API backend non configurée." }, { status: 503 });
   }
 
-  const tenantSlug = await requireTenantSlug();
-  const payload = await request.json();
+  const payload = await request.json().catch(() => null) as {
+    offer?: string;
+    quantity?: number;
+    payment_method?: string;
+    content_module?: string;
+    content_slug?: string;
+    callback_url?: string;
+    tenant?: string;
+  } | null;
 
-  const response = await fetch(`${apiBaseUrl}/api/v1/public/tenants/${tenantSlug}/payments/initialize`, {
+  if (!payload || typeof payload !== "object") {
+    return NextResponse.json({ error: "Payload invalide." }, { status: 400 });
+  }
+
+  if (typeof payload.offer !== "string" || !payload.offer.trim()) {
+    return NextResponse.json({ error: "Offre manquante." }, { status: 422 });
+  }
+
+  const tenantSlug = await getTenantSlug(typeof payload?.tenant === "string" ? payload.tenant : undefined);
+
+  if (!tenantSlug) {
+    return NextResponse.json(
+      { error: "Aucun espace acheteur actif n'est disponible pour ce paiement." },
+      { status: 503 },
+    );
+  }
+
+  const response = await fetch(`${apiBaseUrl}/api/v1/public/tenants/${encodeURIComponent(tenantSlug)}/payments/initialize`, {
     method: "POST",
     cache: "no-store",
     headers: {
@@ -46,7 +70,8 @@ export async function POST(request: NextRequest) {
     },
     body: JSON.stringify({
       offer: payload.offer,
-      quantity: payload.quantity,
+      quantity: Number.isFinite(Number(payload.quantity)) ? Math.max(1, Math.trunc(Number(payload.quantity))) : 1,
+      payment_method: payload.payment_method,
       content_module: payload.content_module,
       content_slug: payload.content_slug,
       callback_url: payload.callback_url,

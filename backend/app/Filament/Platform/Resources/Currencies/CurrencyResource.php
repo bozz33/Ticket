@@ -20,8 +20,11 @@ class CurrencyResource extends Resource
     protected static ?string $model = Currency::class;
 
     protected static ?string $permissionPrefix = 'platform.references';
+
     protected static string|UnitEnum|null $navigationGroup = 'Référentiels';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-banknotes';
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema

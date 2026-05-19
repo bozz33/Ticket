@@ -4,18 +4,18 @@ namespace App\Http\Controllers\Api\V1\Payments;
 
 use App\Http\Controllers\Controller;
 use App\Models\PaymentGateway;
-use App\Services\Payments\PaymentWebhookService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\Payments\Contracts\PaymentWebhookReceiver;
 
 class PaymentWebhookController extends Controller
 {
     public function __invoke(
         Request $request,
         PaymentGateway $gateway,
-        PaymentWebhookService $paymentWebhookService,
+        PaymentWebhookReceiver $paymentWebhookReceiver,
     ): JsonResponse {
-        $log = $paymentWebhookService->receive($gateway, $request);
+        $log = $paymentWebhookReceiver->receive($gateway, $request);
 
         return response()->json([
             'data' => $log,

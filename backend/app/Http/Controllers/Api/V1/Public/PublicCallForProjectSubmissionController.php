@@ -7,10 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Models\CallForProject;
 use App\Models\User;
 use App\Services\Auth\TenantTokenService;
-use App\Services\Public\CallForProjectSubmissionService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\PublicCatalog\Contracts\CallForProjectApplications;
 
 class PublicCallForProjectSubmissionController extends Controller
 {
@@ -23,7 +23,7 @@ class PublicCallForProjectSubmissionController extends Controller
         Request $request,
         string $tenant,
         string $callForProject,
-        CallForProjectSubmissionService $submissionService,
+        CallForProjectApplications $callForProjectApplications,
     ): JsonResponse {
         $record = CallForProject::query()
             ->where('slug', $callForProject)
@@ -57,7 +57,7 @@ class PublicCallForProjectSubmissionController extends Controller
             ], 422);
         }
 
-        $submission = $submissionService->submit($record, $request);
+        $submission = $callForProjectApplications->submit($record, $request);
 
         return response()->json([
             'message' => 'Votre candidature a été enregistrée avec succès.',

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Auth\PlatformLoginRequest;
 use App\Models\PlatformUser;
 use App\Services\Auth\PlatformTokenService;
 use Illuminate\Http\JsonResponse;
@@ -14,13 +15,9 @@ class PlatformAuthController extends Controller
 {
     public function __construct(private readonly PlatformTokenService $tokenService) {}
 
-    public function login(Request $request): JsonResponse
+    public function login(PlatformLoginRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'email' => ['required', 'email'],
-            'password' => ['required', 'string'],
-            'token_name' => ['sometimes', 'string', 'max:100'],
-        ]);
+        $validated = $request->validated();
 
         $user = PlatformUser::query()
             ->where('email', $validated['email'])

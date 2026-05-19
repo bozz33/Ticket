@@ -1,4 +1,4 @@
-import { OrganizerView } from "@/components/RouteViews";
+import { OrganizerView } from "@/components/route/OrganizerRouteViews";
 import { getOrganizerBySlug, getOrganizerCatalogPageData } from "@/lib/data/public";
 import { createMetadata } from "@/lib/metadata";
 

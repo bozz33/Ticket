@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\Roles\Pages;
 
 use App\Filament\Platform\Resources\Roles\RoleResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ListRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ListRoles extends ListRecordsPage
 {

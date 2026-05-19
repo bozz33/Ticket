@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\AccessPasses\Pages;
 
-use App\Filament\Tenant\Resources\AccessPasses\AccessPassResource;
 use App\Filament\Support\Pages\ListRecordsPage;
+use App\Filament\Tenant\Resources\AccessPasses\AccessPassResource;
 use Filament\Actions\Action;
 
 class ListAccessPasses extends ListRecordsPage

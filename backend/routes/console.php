@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\Tenant;
 use App\Support\ReferenceData\CountryReferenceImporter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Ticket\Notifications\Contracts\OutboxDispatcher;
+use Ticket\PublicCatalog\Application\PublicCatalogProjector;
 
 $resolveMigrationPaths = function (string $scope): array {
     $configuration = config("ticket.migration_paths.{$scope}", []);
@@ -70,3 +73,46 @@ Artisan::command('ticket:import-reference-countries {path?}', function (?string 
         $result['active_cities_total'],
     ));
 })->purpose('Import local country and city reference data into the central database');
+
+Artisan::command('ticket:rebuild-public-catalog {tenant? : Tenant slug or public id}', function (?string $tenant = null): int {
+    $projector = app(PublicCatalogProjector::class);
+
+    if (is_string($tenant) && trim($tenant) !== '') {
+        $resolvedTenant = Tenant::query()
+            ->where('slug', $tenant)
+            ->orWhere('public_id', $tenant)
+            ->first();
+
+        if (! $resolvedTenant) {
+            $this->error(sprintf('Tenant [%s] not found.', $tenant));
+
+            return 1;
+        }
+
+        $count = $projector->rebuildTenant($resolvedTenant);
+        $this->info(sprintf('Public catalog projection rebuilt for %s: %d item(s).', $resolvedTenant->slug, $count));
+
+        return 0;
+    }
+
+    $summary = $projector->rebuildAll();
+    $this->info(sprintf(
+        'Public catalog projection rebuilt: %d tenant(s), %d item(s).',
+        $summary['tenants'],
+        $summary['items'],
+    ));
+
+    return 0;
+})->purpose('Rebuild the central public catalog read model');
+
+Artisan::command('ticket:dispatch-outbox {--limit=100 : Maximum messages to dispatch}', function (): int {
+    $summary = app(OutboxDispatcher::class)->dispatchPending((int) $this->option('limit'));
+
+    $this->info(sprintf(
+        'Outbox dispatch completed: %d processed, %d failed.',
+        $summary['processed'],
+        $summary['failed'],
+    ));
+
+    return $summary['failed'] > 0 ? 1 : 0;
+})->purpose('Dispatch pending domain outbox messages');

@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { CheckoutView } from "@/components/RouteViews";
+import { CheckoutView } from "@/components/route/CheckoutRouteViews";
 import { getAuthToken, getTenantSlug } from "@/lib/auth";
 import { getAccountMe } from "@/lib/data/account";
 import { getCheckoutData } from "@/lib/data/public";
@@ -35,8 +35,9 @@ export default async function CheckoutPage({
 
   const search = await searchParams;
   const offer = Array.isArray(search.offer) ? search.offer[0] : search.offer;
+  const tenant = Array.isArray(search.tenant) ? search.tenant[0] : search.tenant;
   const [data, token, tenantSlug] = await Promise.all([
-    getCheckoutData(module, slug, offer),
+    getCheckoutData(module, slug, offer, tenant),
     getAuthToken(),
     getTenantSlug(),
   ]);
@@ -46,7 +47,17 @@ export default async function CheckoutPage({
   }
 
   const accountUser = token ? await getAccountMe(tenantSlug, token) : null;
-  const redirectPath = `/checkout/${module}/${slug}${offer ? `?offer=${encodeURIComponent(offer)}` : ""}`;
+  const checkoutParams = new URLSearchParams();
+
+  if (offer) {
+    checkoutParams.set("offer", offer);
+  }
+
+  if (tenant) {
+    checkoutParams.set("tenant", tenant);
+  }
+
+  const redirectPath = `/checkout/${module}/${slug}${checkoutParams.size > 0 ? `?${checkoutParams.toString()}` : ""}`;
 
   return (
     <CheckoutView
@@ -55,7 +66,6 @@ export default async function CheckoutPage({
       item={data.item}
       loginUrl={`/compte/connexion?redirect=${encodeURIComponent(redirectPath)}`}
       paymentOptions={data.paymentOptions}
-      platform={data.platform}
       selectedOffer={data.selectedOffer}
     />
   );

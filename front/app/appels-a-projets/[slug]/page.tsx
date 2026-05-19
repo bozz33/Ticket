@@ -1,4 +1,4 @@
-import { ModuleDetailView } from "@/components/RouteViews";
+import { ModuleDetailView } from "@/components/route/DetailRouteViews";
 import { getContentDetail, getRelatedContent } from "@/lib/data/public";
 import { createMetadata } from "@/lib/metadata";
 

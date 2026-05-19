@@ -20,10 +20,15 @@ class CentralTagResource extends Resource
     protected static ?string $model = CentralTag::class;
 
     protected static ?string $permissionPrefix = 'platform.tags';
+
     protected static string|UnitEnum|null $navigationGroup = 'Référentiels';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-tag';
+
     protected static ?string $modelLabel = 'Tag central';
+
     protected static ?string $pluralModelLabel = 'Tags centraux';
+
     protected static ?string $recordTitleAttribute = 'name';
 
     public static function form(Schema $schema): Schema

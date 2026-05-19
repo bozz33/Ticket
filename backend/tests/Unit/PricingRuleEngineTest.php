@@ -2,17 +2,17 @@
 
 namespace Tests\Unit;
 
-use App\Enums\CommercialModule;
 use App\Enums\FeeCalculationMode;
 use App\Enums\FeeChargeBearer;
-use App\Models\GatewayFeeRule;
+use App\Models\Event;
 use App\Models\Offer;
 use App\Models\PaymentGateway;
 use App\Models\PayoutPolicy;
-use App\Models\PlatformFeeRule;
+use App\Models\PlatformSetting;
 use App\Models\PlatformTransaction;
 use App\Models\Settlement;
 use App\Models\Tenant;
+use App\Services\FinancePolicyService;
 use App\Services\Payments\PayoutPolicyService;
 use App\Services\Payments\PricingRuleEngine;
 use Illuminate\Database\Schema\Blueprint;
@@ -35,7 +35,7 @@ class PricingRuleEngineTest extends TestCase
         $this->prepareCentralSchema();
     }
 
-    public function test_pricing_rule_engine_applies_gateway_and_platform_rules_with_fee_bearers(): void
+    public function test_pricing_rule_engine_applies_global_finance_policy_for_card_payments(): void
     {
         $tenant = Tenant::withoutEvents(fn () => Tenant::query()->create([
             'public_id' => (string) fake()->uuid(),
@@ -60,35 +60,19 @@ class PricingRuleEngineTest extends TestCase
             'supported_channels' => ['card'],
         ]);
 
-        GatewayFeeRule::query()->create([
-            'payment_gateway_id' => $gateway->getKey(),
-            'name' => 'Paystack CI Card',
-            'country_code' => 'CI',
-            'currency_code' => 'XOF',
-            'payment_channel' => 'card',
-            'charge_bearer' => FeeChargeBearer::Organizer,
-            'fee_mode' => FeeCalculationMode::Percentage,
-            'percentage_rate' => 2.0,
-            'is_active' => true,
-            'priority' => 10,
-        ]);
-
-        PlatformFeeRule::query()->create([
-            'tenant_id' => null,
-            'name' => 'Ticketing Buyer Fee',
-            'module' => CommercialModule::Ticketing,
-            'country_code' => 'CI',
-            'currency_code' => 'XOF',
-            'charge_bearer' => FeeChargeBearer::Buyer,
-            'fee_mode' => FeeCalculationMode::PercentagePlusFixed,
-            'percentage_rate' => 10,
-            'fixed_amount' => 200,
-            'is_active' => true,
-            'priority' => 10,
+        PlatformSetting::query()->create([
+            'group' => FinancePolicyService::SETTING_GROUP,
+            'key' => FinancePolicyService::SETTING_KEY,
+            'value' => [
+                'commission_rate' => 10,
+                'card_fee_per_ticket' => 500,
+            ],
+            'type' => 'json',
+            'is_public' => false,
         ]);
 
         $offer = new Offer([
-            'offerable_type' => \App\Models\Event::class,
+            'offerable_type' => Event::class,
             'price_amount' => 10000,
             'currency_code' => 'XOF',
         ]);
@@ -96,15 +80,45 @@ class PricingRuleEngineTest extends TestCase
         $quote = app(PricingRuleEngine::class)->quote($tenant, $offer, 1, $gateway, 'card');
 
         $this->assertSame(10000, $quote['subtotal']);
-        $this->assertSame(11200, $quote['customer_total']);
-        $this->assertSame(1200, $quote['customer_fee_total']);
-        $this->assertSame(200, $quote['organizer_fee_total']);
-        $this->assertSame(9800, $quote['organizer_net']);
-        $this->assertSame(200, $quote['gateway_fee_amount']);
-        $this->assertSame(1200, $quote['platform_fee_amount']);
+        $this->assertSame(10500, $quote['customer_total']);
+        $this->assertSame(500, $quote['customer_fee_total']);
+        $this->assertSame(1000, $quote['organizer_fee_total']);
+        $this->assertSame(9000, $quote['organizer_net']);
+        $this->assertSame(0, $quote['gateway_fee_amount']);
+        $this->assertSame(1000, $quote['platform_fee_amount']);
         $this->assertSame('card', $quote['payment_channel']);
-        $this->assertSame('buyer', data_get($quote, 'breakdown.platform_fee.charge_bearer'));
-        $this->assertSame('organizer', data_get($quote, 'breakdown.gateway_fee.charge_bearer'));
+        $this->assertSame('organizer', data_get($quote, 'breakdown.platform_fee.charge_bearer'));
+        $this->assertSame('buyer', data_get($quote, 'breakdown.customer_fee.charge_bearer'));
+        $this->assertSame(500, $quote['card_fee_total']);
+    }
+
+    public function test_pricing_rule_engine_defaults_to_zero_when_finance_policy_is_empty(): void
+    {
+        $tenant = Tenant::withoutEvents(fn () => Tenant::query()->create([
+            'public_id' => (string) fake()->uuid(),
+            'name' => 'Tenant Zero Pricing',
+            'slug' => 'tenant-zero-pricing',
+            'status' => 'active',
+            'country_code' => 'CI',
+            'currency_code' => 'XOF',
+            'locale' => 'fr',
+            'timezone' => 'UTC',
+            'database_name' => 'tenant_zero_pricing',
+        ]));
+
+        $offer = new Offer([
+            'offerable_type' => Event::class,
+            'price_amount' => 10000,
+            'currency_code' => 'XOF',
+        ]);
+
+        $quote = app(PricingRuleEngine::class)->quote($tenant, $offer, 2, null, 'orange_money');
+
+        $this->assertSame(20000, $quote['subtotal']);
+        $this->assertSame(20000, $quote['customer_total']);
+        $this->assertSame(0, $quote['customer_fee_total']);
+        $this->assertSame(0, $quote['organizer_fee_total']);
+        $this->assertSame(20000, $quote['organizer_net']);
     }
 
     public function test_payout_policy_service_computes_fee_and_available_balance(): void
@@ -263,6 +277,16 @@ class PricingRuleEngineTest extends TestCase
             $table->json('supported_channels')->nullable();
             $table->boolean('is_active')->default(true);
             $table->json('meta')->nullable();
+            $table->timestamps();
+        });
+
+        Schema::connection('central')->create('platform_settings', function (Blueprint $table): void {
+            $table->id();
+            $table->string('group')->nullable();
+            $table->string('key')->unique();
+            $table->json('value')->nullable();
+            $table->string('type')->default('json');
+            $table->boolean('is_public')->default(false);
             $table->timestamps();
         });
 

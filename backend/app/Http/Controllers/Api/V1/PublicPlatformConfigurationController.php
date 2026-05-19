@@ -7,14 +7,16 @@ use App\Http\Controllers\Controller;
 use App\Models\PlatformTransaction;
 use App\Models\Tenant;
 use App\Services\FeatureFlagService;
-use App\Services\FrontCmsService;
 use App\Services\PlatformSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Cache;
+use Ticket\Payments\Domain\PaymentStatuses;
+use Ticket\PublicCatalog\Contracts\FrontContent;
 
 class PublicPlatformConfigurationController extends Controller
 {
     private const TTL = 300;
+
     private const DEFAULT_MENUS = [
         'header_primary' => [],
         'header_utility' => [],
@@ -26,23 +28,23 @@ class PublicPlatformConfigurationController extends Controller
     public function show(
         PlatformSettingsService $platformSettingsService,
         FeatureFlagService $featureFlagService,
-        FrontCmsService $frontCmsService,
+        FrontContent $frontContent,
     ): JsonResponse {
-        return $this->__invoke($platformSettingsService, $featureFlagService, $frontCmsService);
+        return $this->__invoke($platformSettingsService, $featureFlagService, $frontContent);
     }
 
     public function __invoke(
         PlatformSettingsService $platformSettingsService,
         FeatureFlagService $featureFlagService,
-        FrontCmsService $frontCmsService,
+        FrontContent $frontContent,
     ): JsonResponse {
-        $payload = Cache::remember('public_platform_configuration', now()->addSeconds(self::TTL), function () use ($platformSettingsService, $featureFlagService, $frontCmsService): array {
+        $payload = Cache::remember('public_platform_configuration', now()->addSeconds(self::TTL), function () use ($platformSettingsService, $featureFlagService, $frontContent): array {
             $settings = $platformSettingsService->grouped(publicOnly: true);
-            $menus = array_replace($frontCmsService->defaultMenus(), $frontCmsService->publicMenus());
+            $menus = array_replace($frontContent->defaultMenus(), $frontContent->publicMenus());
             $featureFlags = $featureFlagService->publicFlags();
             $publicUsersCount = (int) PlatformTransaction::query()
                 ->whereIn('type', ['public_checkout', 'gateway_charge'])
-                ->whereIn('status', ['success', 'successful', 'confirmed', 'completed', 'paid'])
+                ->whereIn('status', PaymentStatuses::successful())
                 ->whereRaw("COALESCE(meta->'checkout'->>'buyer_email', meta->'gateway_payload'->'data'->'metadata'->>'buyer_email', meta->'data'->'metadata'->>'buyer_email', '') <> ''")
                 ->selectRaw("COUNT(DISTINCT COALESCE(meta->'checkout'->>'buyer_email', meta->'gateway_payload'->'data'->'metadata'->>'buyer_email', meta->'data'->'metadata'->>'buyer_email')) as aggregate")
                 ->value('aggregate');

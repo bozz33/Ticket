@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\FrontPages\Pages;
 
 use App\Filament\Platform\Resources\FrontPages\FrontPageResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ListRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ListFrontPages extends ListRecordsPage
 {

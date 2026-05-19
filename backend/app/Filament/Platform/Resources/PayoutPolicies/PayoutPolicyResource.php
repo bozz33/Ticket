@@ -209,10 +209,10 @@ class PayoutPolicyResource extends Resource
                     ->numeric(),
                 TextColumn::make('reserve_rate')
                     ->label('Réserve')
-                    ->formatStateUsing(fn ($state): string => number_format((float) $state, 4, ',', ' ') . ' %'),
+                    ->formatStateUsing(fn ($state): string => number_format((float) $state, 4, ',', ' ').' %'),
                 TextColumn::make('payout_delay_days')
                     ->label('Délai')
-                    ->formatStateUsing(fn ($state): string => number_format((int) $state, 0, ',', ' ') . ' j'),
+                    ->formatStateUsing(fn ($state): string => number_format((int) $state, 0, ',', ' ').' j'),
                 TextColumn::make('payout_fee_mode')
                     ->label('Mode frais')
                     ->formatStateUsing(function ($state): string {
@@ -223,7 +223,7 @@ class PayoutPolicyResource extends Resource
                     ->badge(),
                 TextColumn::make('payout_fee_percentage')
                     ->label('Taux frais')
-                    ->formatStateUsing(fn ($state): string => $state !== null ? number_format((float) $state, 4, ',', ' ') . ' %' : '-'),
+                    ->formatStateUsing(fn ($state): string => $state !== null ? number_format((float) $state, 4, ',', ' ').' %' : '-'),
                 IconColumn::make('auto_payout_enabled')
                     ->label('Auto')
                     ->boolean(),

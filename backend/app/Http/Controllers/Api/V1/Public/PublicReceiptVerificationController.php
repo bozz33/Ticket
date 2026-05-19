@@ -3,21 +3,21 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Services\Tenancy\ReceiptService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
+use Ticket\Ticketing\Contracts\ReceiptCatalog;
 
 class PublicReceiptVerificationController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly ReceiptService $receiptService,
+        private readonly ReceiptCatalog $receiptCatalog,
     ) {}
 
     public function show(string $tenant, string $receipt): JsonResponse
     {
-        $record = $this->receiptService->findByIdentifier($receipt);
+        $record = $this->receiptCatalog->findByIdentifier($receipt);
 
         if ($record === null) {
             return response()->json(['message' => 'Reçu introuvable.'], 404);
@@ -65,7 +65,7 @@ class PublicReceiptVerificationController extends Controller
         }
 
         $visible = Str::substr($localPart, 0, min(2, Str::length($localPart)));
-        $masked = $visible . str_repeat('*', max(2, Str::length($localPart) - Str::length($visible)));
+        $masked = $visible.str_repeat('*', max(2, Str::length($localPart) - Str::length($visible)));
 
         return sprintf('%s@%s', $masked, $domain);
     }

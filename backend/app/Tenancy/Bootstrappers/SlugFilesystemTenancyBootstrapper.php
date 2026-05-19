@@ -3,11 +3,11 @@
 namespace App\Tenancy\Bootstrappers;
 
 use App\Models\Tenant;
-use App\Services\Tenancy\TenantStorageManager;
 use App\Support\Tenancy\TenantFilesystemSuffix;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Storage;
 use Stancl\Tenancy\Contracts\TenancyBootstrapper;
+use Ticket\Tenancy\Contracts\TenantStorage;
 
 class SlugFilesystemTenancyBootstrapper implements TenancyBootstrapper
 {
@@ -40,15 +40,15 @@ class SlugFilesystemTenancyBootstrapper implements TenancyBootstrapper
 
         $suffix = TenantFilesystemSuffix::for($tenant);
 
-        app(TenantStorageManager::class)->ensure($tenant);
+        app(TenantStorage::class)->ensure($tenant);
 
         if ($this->app['config']['tenancy.filesystem.suffix_storage_path'] ?? true) {
-            $this->app->useStoragePath($this->originalPaths['storage'] . DIRECTORY_SEPARATOR . $suffix);
+            $this->app->useStoragePath($this->originalPaths['storage'].DIRECTORY_SEPARATOR.$suffix);
         }
 
         if ($this->app['config']['tenancy.filesystem.asset_helper_tenancy'] ?? true) {
             if ($this->originalPaths['asset_url']) {
-                $this->app['config']['app.asset_url'] = ($this->originalPaths['asset_url'] ?? $this->app['config']['app.url']) . "/{$suffix}";
+                $this->app['config']['app.asset_url'] = ($this->originalPaths['asset_url'] ?? $this->app['config']['app.url'])."/{$suffix}";
                 $this->app['url']->setAssetRoot($this->app['config']['app.asset_url']);
             } else {
                 $this->app['url']->setAssetRoot($this->app['url']->route('stancl.tenancy.asset', ['path' => '']));
@@ -69,7 +69,7 @@ class SlugFilesystemTenancyBootstrapper implements TenancyBootstrapper
 
             if (! $finalPrefix) {
                 $finalPrefix = $originalRoot
-                    ? rtrim($originalRoot, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $suffix
+                    ? rtrim($originalRoot, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.$suffix
                     : $suffix;
             }
 

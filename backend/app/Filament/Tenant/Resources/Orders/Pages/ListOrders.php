@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\Orders\Pages;
 
-use App\Filament\Tenant\Resources\Orders\OrderResource;
 use App\Filament\Support\Pages\ListRecordsPage;
+use App\Filament\Tenant\Resources\Orders\OrderResource;
 
 class ListOrders extends ListRecordsPage
 {

@@ -1,0 +1,14 @@
+{
+    "name": "ticket/tenancy",
+    "type": "library",
+    "description": "Internal tenancy bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Tenancy\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

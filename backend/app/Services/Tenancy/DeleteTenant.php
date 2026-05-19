@@ -2,15 +2,6 @@
 
 namespace App\Services\Tenancy;
 
-use App\Models\Tenant;
-use Illuminate\Support\Facades\DB;
+use Ticket\Tenancy\Application\DeleteTenant as BaseDeleteTenant;
 
-class DeleteTenant
-{
-    public function handle(Tenant $tenant): void
-    {
-        DB::connection(config('ticket.central_connection'))->transaction(function () use ($tenant): void {
-            $tenant->forceDelete();
-        });
-    }
-}
+class DeleteTenant extends BaseDeleteTenant {}

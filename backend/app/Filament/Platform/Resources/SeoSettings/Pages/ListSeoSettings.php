@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\SeoSettings\Pages;
 
 use App\Filament\Platform\Resources\SeoSettings\SeoSettingResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ListRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ListSeoSettings extends ListRecordsPage
 {

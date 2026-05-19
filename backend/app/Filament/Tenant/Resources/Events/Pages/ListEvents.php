@@ -2,9 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Events\Pages;
 
+use App\Filament\Support\Pages\ListRecordsPage;
 use App\Filament\Tenant\Resources\Events\EventResource;
 use Filament\Actions\CreateAction;
-use App\Filament\Support\Pages\ListRecordsPage;
 
 class ListEvents extends ListRecordsPage
 {

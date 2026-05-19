@@ -15,7 +15,7 @@ export function QuantityStepper({ min = 1, max = 10, initialValue = 1 }: { min?:
       >
         -
       </button>
-      <input className="quantity-stepper__input" min={min} readOnly type="number" value={value} />
+      <input aria-label="Quantité" className="quantity-stepper__input" min={min} readOnly type="number" value={value} />
       <button
         aria-label="Augmenter la quantité"
         className="quantity-stepper__button"

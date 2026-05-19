@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server";
 
 import { getAuthToken, getDefaultTenantSlug, requireTenantSlug } from "@/lib/auth";
 import { applyMutationRateLimit, validateMutationOrigin } from "@/lib/request-security";
+import { normalizeTenantSlug } from "@/lib/tenant";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
 
@@ -34,7 +35,7 @@ export async function POST(
     );
   }
 
-  let tenantSlug = request.nextUrl.searchParams.get("tenant")?.trim() ?? "";
+  let tenantSlug = normalizeTenantSlug(request.nextUrl.searchParams.get("tenant"));
 
   try {
     tenantSlug = tenantSlug || await getDefaultTenantSlug() || await requireTenantSlug();
@@ -46,7 +47,7 @@ export async function POST(
   const formData = await request.formData();
 
   try {
-    const response = await fetch(`${apiBaseUrl}/api/v1/public/tenants/${tenantSlug}/calls-for-projects/${encodeURIComponent(slug)}/applications`, {
+    const response = await fetch(`${apiBaseUrl}/api/v1/public/tenants/${encodeURIComponent(tenantSlug)}/calls-for-projects/${encodeURIComponent(slug)}/applications`, {
       method: "POST",
       headers: {
         Accept: "application/json",

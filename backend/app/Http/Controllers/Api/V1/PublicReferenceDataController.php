@@ -17,6 +17,7 @@ use Illuminate\Support\Facades\Cache;
 class PublicReferenceDataController extends Controller
 {
     private const REFERENCES_TTL = 3600;
+
     private const CITIES_TTL = 300;
 
     public function __construct(

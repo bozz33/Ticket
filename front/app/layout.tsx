@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { BackToTopButton } from "@/components/BackToTopButton";
 import { Footer } from "@/components/Footer";
 import { Header } from "@/components/Header";
+import { ObservabilityReporter } from "@/components/ObservabilityReporter";
 import { ServiceWorkerRegister } from "@/components/ServiceWorkerRegister";
 import { getPlatformConfiguration } from "@/lib/data/public";
 import { metadataBase } from "@/lib/metadata";
@@ -53,6 +54,7 @@ export default async function RootLayout({
   return (
     <html data-scroll-behavior="smooth" lang="fr">
       <body>
+        <ObservabilityReporter />
         <ServiceWorkerRegister />
         <Header platform={platform} />
         <main>{children}</main>

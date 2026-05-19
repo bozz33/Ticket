@@ -2,10 +2,10 @@
 
 namespace App\Filament\Tenant\Resources\OrganizationProfiles\Pages;
 
+use App\Filament\Support\Pages\ManageRecordsPage;
 use App\Filament\Tenant\Resources\OrganizationProfiles\OrganizationProfileResource;
 use App\Models\OrganizationProfile;
 use Filament\Actions\CreateAction;
-use App\Filament\Support\Pages\ManageRecordsPage;
 
 class ManageOrganizationProfiles extends ManageRecordsPage
 {

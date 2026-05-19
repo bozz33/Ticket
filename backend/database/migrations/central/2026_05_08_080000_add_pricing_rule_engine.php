@@ -213,7 +213,7 @@ return new class extends Migration
                     'tenant_id' => null,
                     'module' => $legacyPolicy->module,
                     'currency_code' => strtoupper((string) ($legacyPolicy->currency_code ?: 'XOF')),
-                    'name' => 'Legacy ' . $legacyPolicy->module,
+                    'name' => 'Legacy '.$legacyPolicy->module,
                 ],
                 [
                     'public_id' => (string) Str::uuid(),

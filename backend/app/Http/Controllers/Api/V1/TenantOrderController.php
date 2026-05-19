@@ -4,16 +4,16 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Tenancy\OrderService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\Ticketing\Contracts\OrderCatalog;
 
 class TenantOrderController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly OrderService $orderService,
+        private readonly OrderCatalog $orderCatalog,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -23,7 +23,7 @@ class TenantOrderController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->orderService->listForBuyer($user, $request->query('status')),
+            'data' => $this->orderCatalog->listForBuyer($user, $request->query('status')),
         ]);
     }
 
@@ -32,7 +32,7 @@ class TenantOrderController extends Controller
         /** @var User $user */
         $user = $request->attributes->get('tenant_user');
 
-        $record = $this->orderService->findByIdentifierForBuyer($user, $order);
+        $record = $this->orderCatalog->findByIdentifierForBuyer($user, $order);
 
         abort_if($record === null, 404);
 

@@ -1,0 +1,2 @@
+export const CARD_IMAGE_FALLBACK =
+  "data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 640 360'%3E%3Crect width='640' height='360' fill='%23111827'/%3E%3Ccircle cx='500' cy='90' r='90' fill='%23d59a36' fill-opacity='0.28'/%3E%3Crect x='56' y='72' width='280' height='160' rx='20' fill='%23ffffff' fill-opacity='0.08'/%3E%3Ctext x='56' y='265' fill='%23ffffff' fill-opacity='0.84' font-family='Arial,sans-serif' font-size='34' font-weight='700'%3ETicket%3C/text%3E%3C/svg%3E";

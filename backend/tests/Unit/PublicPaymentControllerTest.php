@@ -3,21 +3,23 @@
 namespace Tests\Unit;
 
 use App\Http\Controllers\Api\V1\Public\PublicPaymentController;
+use App\Http\Requests\Api\V1\Public\PublicPaymentInitializeRequest;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserApiToken;
 use App\Services\Auth\TenantTokenService;
-use App\Services\Payments\PublicPaymentService;
+use App\Support\Buyers\BuyerAccountReadiness;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Mockery;
 use Tests\TestCase;
+use Ticket\Payments\Contracts\CheckoutManager;
 
 class PublicPaymentControllerTest extends TestCase
 {
     public function test_initialize_blocks_authenticated_buyer_when_account_is_not_ready(): void
     {
-        $buyer = new User();
+        $buyer = new User;
         $buyer->forceFill([
             'id' => 42,
             'name' => 'Buyer Test',
@@ -48,8 +50,8 @@ class PublicPaymentControllerTest extends TestCase
         $tenantContext = Mockery::mock(TenantContext::class);
         $tenantContext->shouldReceive('get')->once()->andReturn($tenant);
 
-        $paymentService = Mockery::mock(PublicPaymentService::class);
-        $paymentService->shouldNotReceive('initialize');
+        $checkoutManager = Mockery::mock(CheckoutManager::class);
+        $checkoutManager->shouldNotReceive('initialize');
 
         $tokenService = Mockery::mock(TenantTokenService::class);
         $apiToken = Mockery::mock(UserApiToken::class)->makePartial();
@@ -61,9 +63,9 @@ class PublicPaymentControllerTest extends TestCase
             ->with('plain-token')
             ->andReturn($apiToken);
 
-        $controller = new PublicPaymentController($tenantContext, $paymentService, $tokenService, app(\App\Support\Buyers\BuyerAccountReadiness::class));
+        $controller = new PublicPaymentController($tenantContext, $checkoutManager, $tokenService, app(BuyerAccountReadiness::class));
 
-        $request = Request::create('/api/v1/public/tenants/demo-tenant/payments/initialize', 'POST', [
+        $request = $this->initializeRequest('demo-tenant', [
             'offer' => 'offer-public-id',
             'quantity' => 2,
             'content_module' => 'evenements',
@@ -83,7 +85,7 @@ class PublicPaymentControllerTest extends TestCase
 
     public function test_initialize_allows_authenticated_buyer_when_account_is_ready(): void
     {
-        $buyer = new User();
+        $buyer = new User;
         $buyer->forceFill([
             'id' => 43,
             'name' => 'Buyer Ready',
@@ -118,8 +120,8 @@ class PublicPaymentControllerTest extends TestCase
 
         $capturedPayload = null;
 
-        $paymentService = Mockery::mock(PublicPaymentService::class);
-        $paymentService->shouldReceive('initialize')
+        $checkoutManager = Mockery::mock(CheckoutManager::class);
+        $checkoutManager->shouldReceive('initialize')
             ->once()
             ->with($tenant, Mockery::on(function (array $payload) use (&$capturedPayload): bool {
                 $capturedPayload = $payload;
@@ -142,9 +144,9 @@ class PublicPaymentControllerTest extends TestCase
             ->with('plain-token')
             ->andReturn($apiToken);
 
-        $controller = new PublicPaymentController($tenantContext, $paymentService, $tokenService, app(\App\Support\Buyers\BuyerAccountReadiness::class));
+        $controller = new PublicPaymentController($tenantContext, $checkoutManager, $tokenService, app(BuyerAccountReadiness::class));
 
-        $request = Request::create('/api/v1/public/tenants/ready-tenant/payments/initialize', 'POST', [
+        $request = $this->initializeRequest('ready-tenant', [
             'offer' => 'offer-public-id',
             'quantity' => 2,
             'content_module' => 'evenements',
@@ -162,5 +164,21 @@ class PublicPaymentControllerTest extends TestCase
         $this->assertSame('ready@example.test', $capturedPayload['buyer_email']);
         $this->assertSame('+2250700000000', $capturedPayload['buyer_phone']);
         $this->assertSame('redirect', $response->getData(true)['data']['mode'] ?? null);
+    }
+
+    private function initializeRequest(string $tenant, array $payload): PublicPaymentInitializeRequest
+    {
+        $baseRequest = Request::create(
+            sprintf('/api/v1/public/tenants/%s/payments/initialize', $tenant),
+            'POST',
+            $payload,
+        );
+
+        $request = PublicPaymentInitializeRequest::createFromBase($baseRequest);
+        $request->setContainer($this->app);
+        $request->setRedirector($this->app->make('redirect'));
+        $request->validateResolved();
+
+        return $request;
     }
 }

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\CallForProject;
 use App\Models\Category;
 use App\Models\City;
+use App\Models\Country;
 use App\Models\CrowdfundingCampaign;
 use App\Models\Event;
 use App\Models\Offer;
@@ -14,20 +15,20 @@ use App\Models\Stand;
 use App\Models\Tenant;
 use App\Models\Training;
 use App\Models\User;
-use App\Support\ReferenceData\CountryReferenceImporter;
 use App\Services\Tenancy\ProvisionTenant;
-use Illuminate\Database\QueryException;
+use App\Support\ReferenceData\CountryReferenceImporter;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Str;
 
-require __DIR__ . '/../vendor/autoload.php';
+require __DIR__.'/../vendor/autoload.php';
 
-$app = require __DIR__ . '/../bootstrap/app.php';
+$app = require __DIR__.'/../bootstrap/app.php';
 $app->make(Kernel::class)->bootstrap();
 
 function output(string $value): void
 {
-    fwrite(STDOUT, $value . PHP_EOL);
+    fwrite(STDOUT, $value.PHP_EOL);
 }
 
 function upsertOffer(string $offerableType, int $offerableId, string $code, array $attributes): void
@@ -50,9 +51,9 @@ output('Running tenant migrations...');
 try {
     $kernel->call('tenants:migrate', ['--force' => true]);
     output(trim($kernel->output()));
-} catch (\Throwable $exception) {
+} catch (Throwable $exception) {
     output('SETUP_ERROR=Database unavailable');
-    output('SETUP_ERROR_DETAIL=' . $exception->getMessage());
+    output('SETUP_ERROR_DETAIL='.$exception->getMessage());
     exit(1);
 }
 
@@ -84,7 +85,7 @@ try {
     $tenant = Tenant::query()->where('slug', $tenantSlug)->first();
 } catch (QueryException $exception) {
     output('SETUP_ERROR=Database unavailable');
-    output('SETUP_ERROR_DETAIL=' . $exception->getMessage());
+    output('SETUP_ERROR_DETAIL='.$exception->getMessage());
     exit(1);
 }
 
@@ -119,10 +120,10 @@ if ($tenant === null) {
     output('Demo tenant already exists, reusing it...');
 }
 
-if (\App\Models\Country::query()->where('is_active', true)->count() === 0) {
-    $referencePath = is_file(__DIR__ . '/../database/data/reference_countries_states_cities.json')
-        ? __DIR__ . '/../database/data/reference_countries_states_cities.json'
-        : __DIR__ . '/../database/data/reference_countries.json';
+if (Country::query()->where('is_active', true)->count() === 0) {
+    $referencePath = is_file(__DIR__.'/../database/data/reference_countries_states_cities.json')
+        ? __DIR__.'/../database/data/reference_countries_states_cities.json'
+        : __DIR__.'/../database/data/reference_countries.json';
 
     if (is_file($referencePath)) {
         output('Importing local country and city references...');
@@ -777,21 +778,21 @@ if ($tenantAdmin === null) {
 
 output('');
 output('SETUP_OK');
-output('TENANT_SLUG=' . $tenant->slug);
-output('TENANT_NAME=' . $tenant->name);
-output('TENANT_LOGIN_URL=' . ($tenantAdmin['login_url'] ?? url(sprintf('/tenants/%s/admin/login', $tenant->slug))));
-output('TENANT_ACCESS_URL=' . ($tenantAdmin['access_url'] ?? url(sprintf('/tenants/%s/admin/login', $tenant->slug))));
-output('ORGANIZER_EMAIL=' . $organizerEmail);
-output('ORGANIZER_PASSWORD=' . $organizerPassword);
-output('BUYER_EMAIL=' . $buyerEmail);
-output('BUYER_PASSWORD=' . $buyerPassword);
-output('EVENT_PAID_URL=' . 'http://127.0.0.1:3000/evenements/summit-demo-paid-2026');
-output('EVENT_FREE_URL=' . 'http://127.0.0.1:3000/evenements/summit-demo-free-2026');
-output('TRAINING_PAID_URL=' . 'http://127.0.0.1:3000/formations/masterclass-payante-demo-2026');
-output('TRAINING_FREE_URL=' . 'http://127.0.0.1:3000/formations/atelier-gratuit-demo-2026');
-output('STAND_PAID_URL=' . 'http://127.0.0.1:3000/stands/stand-payant-demo-2026');
-output('STAND_FREE_URL=' . 'http://127.0.0.1:3000/stands/stand-gratuit-demo-2026');
-output('CALL_PAID_URL=' . 'http://127.0.0.1:3000/appels-a-projets/appel-innovation-paid-2026');
-output('CALL_FREE_URL=' . 'http://127.0.0.1:3000/appels-a-projets/appel-innovation-free-2026');
-output('CROWD_PAID_URL=' . 'http://127.0.0.1:3000/crowdfunding/campagne-payante-demo-2026');
-output('CROWD_FREE_URL=' . 'http://127.0.0.1:3000/crowdfunding/campagne-gratuite-demo-2026');
+output('TENANT_SLUG='.$tenant->slug);
+output('TENANT_NAME='.$tenant->name);
+output('TENANT_LOGIN_URL='.($tenantAdmin['login_url'] ?? url(sprintf('/tenants/%s/admin/login', $tenant->slug))));
+output('TENANT_ACCESS_URL='.($tenantAdmin['access_url'] ?? url(sprintf('/tenants/%s/admin/login', $tenant->slug))));
+output('ORGANIZER_EMAIL='.$organizerEmail);
+output('ORGANIZER_PASSWORD='.$organizerPassword);
+output('BUYER_EMAIL='.$buyerEmail);
+output('BUYER_PASSWORD='.$buyerPassword);
+output('EVENT_PAID_URL='.'http://127.0.0.1:3000/evenements/summit-demo-paid-2026');
+output('EVENT_FREE_URL='.'http://127.0.0.1:3000/evenements/summit-demo-free-2026');
+output('TRAINING_PAID_URL='.'http://127.0.0.1:3000/formations/masterclass-payante-demo-2026');
+output('TRAINING_FREE_URL='.'http://127.0.0.1:3000/formations/atelier-gratuit-demo-2026');
+output('STAND_PAID_URL='.'http://127.0.0.1:3000/stands/stand-payant-demo-2026');
+output('STAND_FREE_URL='.'http://127.0.0.1:3000/stands/stand-gratuit-demo-2026');
+output('CALL_PAID_URL='.'http://127.0.0.1:3000/appels-a-projets/appel-innovation-paid-2026');
+output('CALL_FREE_URL='.'http://127.0.0.1:3000/appels-a-projets/appel-innovation-free-2026');
+output('CROWD_PAID_URL='.'http://127.0.0.1:3000/crowdfunding/campagne-payante-demo-2026');
+output('CROWD_FREE_URL='.'http://127.0.0.1:3000/crowdfunding/campagne-gratuite-demo-2026');

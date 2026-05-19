@@ -3,6 +3,7 @@ import { type NextRequest, NextResponse } from "next/server";
 import { getAuthToken, requireTenantSlug } from "@/lib/auth";
 import { getAccountMe, updateAccountMe } from "@/lib/data/account";
 import { applyMutationRateLimit, validateMutationOrigin } from "@/lib/request-security";
+import { readJsonRecord, stringField } from "@/lib/server/request";
 
 export async function GET() {
   const token = await getAuthToken();
@@ -55,7 +56,22 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({ error: error instanceof Error ? error.message : "Tenant non configuré." }, { status: 500 });
   }
 
-  const payload = await request.json();
+  const parsed = await readJsonRecord(request);
+
+  if ("response" in parsed) {
+    return parsed.response;
+  }
+
+  const payload = {
+    name: stringField(parsed.data, "name"),
+    first_name: stringField(parsed.data, "first_name") || null,
+    last_name: stringField(parsed.data, "last_name") || null,
+    email: stringField(parsed.data, "email"),
+    phone: stringField(parsed.data, "phone") || null,
+    locale: stringField(parsed.data, "locale") || null,
+    timezone: stringField(parsed.data, "timezone") || null,
+  };
+
   const result = await updateAccountMe(tenantSlug, token, payload);
 
   if (!result) {

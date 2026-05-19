@@ -8,15 +8,14 @@ use App\Filament\Platform\Resources\Refunds\Pages\ListRefunds;
 use App\Models\PlatformTransaction;
 use App\Models\Refund;
 use App\Models\Tenant;
-use App\Services\Payments\RefundService;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
 use Filament\Actions\Action;
 use Filament\Facades\Filament;
-use Filament\Notifications\Notification;
 use Filament\Forms\Components\Placeholder;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
+use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -24,6 +23,9 @@ use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
+use Ticket\Payments\Contracts\RefundManager;
+use Ticket\Payments\Domain\PaymentStatuses;
 use UnitEnum;
 
 class RefundResource extends Resource
@@ -64,6 +66,7 @@ class RefundResource extends Resource
                         ->label('Prévisualisation')
                         ->content(function ($get): string {
                             $transactionId = (int) ($get('platform_transaction_id') ?? 0);
+                            $reasonCode = (string) ($get('reason_code') ?? 'manual_refund');
 
                             if ($transactionId <= 0) {
                                 return 'Choisissez une transaction pour voir le calcul du remboursement.';
@@ -76,18 +79,20 @@ class RefundResource extends Resource
                             }
 
                             try {
-                                $quote = app(RefundService::class)->quote($transaction);
+                                $quote = app(RefundManager::class)->quote($transaction, $reasonCode);
                             } catch (\Throwable $exception) {
                                 return $exception->getMessage();
                             }
 
                             return sprintf(
-                                'Client: %s %s | Organisateur: %s %s | Plateforme absorbée: %s %s',
+                                'Client: %s %s | Organisateur: %s %s | Plateforme absorbée: %s %s | Frais client remboursés: %s %s',
                                 number_format((int) ($quote['customer_refund_amount'] ?? 0), 0, ',', ' '),
                                 $quote['currency_code'] ?? 'XOF',
                                 number_format((int) ($quote['organizer_reversal_amount'] ?? 0), 0, ',', ' '),
                                 $quote['currency_code'] ?? 'XOF',
                                 number_format((int) ($quote['platform_absorption_amount'] ?? 0), 0, ',', ' '),
+                                $quote['currency_code'] ?? 'XOF',
+                                number_format((int) ($quote['customer_fee_refunded'] ?? 0), 0, ',', ' '),
                                 $quote['currency_code'] ?? 'XOF',
                             );
                         })
@@ -98,6 +103,7 @@ class RefundResource extends Resource
                             'event_cancelled' => 'Événement annulé',
                             'event_rescheduled' => 'Report incompatible',
                             'duplicate_charge' => 'Débit en doublon',
+                            'technical_issue' => 'Erreur technique confirmée',
                             'customer_request' => 'Demande client validée',
                             'fraud_prevention' => 'Prévention fraude',
                             'manual_refund' => 'Remboursement manuel',
@@ -175,14 +181,14 @@ class RefundResource extends Resource
                     ->requiresConfirmation()
                     ->visible(function (Refund $record): bool {
                         $user = Filament::auth()->user();
-                        $canUpdate = $user?->isSuperAdmin()
-                            || ($user?->can('platform.refunds.update') ?? false);
+                        $canUpdate = (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin())
+                            || (method_exists($user, 'can') && $user->can('platform.refunds.update'));
 
                         return $canUpdate
                             && in_array($record->status, [RefundStatus::Pending, RefundStatus::Processing], true);
                     })
                     ->action(function (Refund $record): void {
-                        $refund = app(RefundService::class)->sync($record);
+                        $refund = app(RefundManager::class)->sync($record);
 
                         Notification::make()
                             ->title('Remboursement synchronisé')
@@ -206,12 +212,12 @@ class RefundResource extends Resource
         ];
     }
 
-    public static function canEdit(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canEdit(Model $record): bool
     {
         return false;
     }
 
-    public static function canDelete(\Illuminate\Database\Eloquent\Model $record): bool
+    public static function canDelete(Model $record): bool
     {
         return false;
     }
@@ -230,7 +236,7 @@ class RefundResource extends Resource
     {
         return PlatformTransaction::query()
             ->where('direction', 'credit')
-            ->whereIn('status', ['success', 'successful', 'confirmed', 'completed', 'paid'])
+            ->whereIn('status', PaymentStatuses::successful())
             ->whereDoesntHave('refunds', fn (Builder $query) => $query->whereIn('status', [
                 RefundStatus::Pending->value,
                 RefundStatus::Processing->value,

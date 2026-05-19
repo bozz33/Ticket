@@ -2,12 +2,14 @@
 
 namespace App\Filament\Tenant\Resources\Settlements\Pages;
 
-use App\Filament\Tenant\Resources\Settlements\SettlementResource;
-use App\Services\Payments\PayoutPolicyService;
-use App\Support\Tenancy\TenantContext;
 use App\Filament\Support\Pages\CreateRecordPage;
-use Illuminate\Validation\ValidationException;
+use App\Filament\Tenant\Resources\Settlements\SettlementResource;
+use App\Support\Tenancy\TenantContext;
+use Filament\Notifications\Notification;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
+use Ticket\Payments\Contracts\PayoutManager;
+use Ticket\Payments\Contracts\SettlementWorkflow;
 
 class CreateSettlement extends CreateRecordPage
 {
@@ -39,7 +41,7 @@ class CreateSettlement extends CreateRecordPage
             ]);
         }
 
-        $payoutPreview = app(PayoutPolicyService::class)->computePayout(
+        $payoutPreview = app(PayoutManager::class)->computePayout(
             $tenant,
             $amount,
             strtoupper((string) ($data['currency_code'] ?? $tenant->currency_code ?? 'XOF')),
@@ -48,7 +50,7 @@ class CreateSettlement extends CreateRecordPage
         return [
             ...$data,
             'tenant_id' => $tenant->getKey(),
-            'reference' => 'SET-' . now()->format('ymd') . '-' . Str::upper(Str::random(6)),
+            'reference' => 'SET-'.now()->format('ymd').'-'.Str::upper(Str::random(6)),
             'status' => 'pending',
             'period_end' => now()->toDateString(),
             'gross_amount' => $amount,
@@ -63,10 +65,28 @@ class CreateSettlement extends CreateRecordPage
             'pricing_snapshot' => $payoutPreview,
             'meta' => array_merge((array) ($data['meta'] ?? []), [
                 'requested_from' => 'tenant_panel',
+                'requested_by' => [
+                    'id' => auth('tenant')->id(),
+                    'name' => auth('tenant')->user()?->name,
+                    'email' => auth('tenant')->user()?->email,
+                ],
                 'available_balance_at_request' => $availableBalance,
                 'available_balance_breakdown' => $availableBalanceSummary,
                 'payout_preview' => $payoutPreview,
             ]),
         ];
+    }
+
+    protected function afterCreate(): void
+    {
+        app(SettlementWorkflow::class)->notifyPlatformOfRequest($this->record);
+    }
+
+    protected function getCreatedNotification(): ?Notification
+    {
+        return Notification::make()
+            ->success()
+            ->title('Demande envoyée')
+            ->body('Votre demande de reversement a été transmise au super-admin pour validation.');
     }
 }

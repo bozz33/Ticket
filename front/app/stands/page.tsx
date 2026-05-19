@@ -1,5 +1,5 @@
 import { getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
-import { ModuleListingView } from "@/components/RouteViews";
+import { ModuleListingView } from "@/components/route/PublicListingViews";
 import { getContentByModule } from "@/lib/data/public";
 import { normalizeSearchParams } from "@/lib/utils";
 

@@ -1,5 +1,6 @@
 const CACHE_NAME = "ticket-pwa-v2";
 const OFFLINE_URL = "/offline.html";
+const PRIVATE_PATH_PREFIXES = ["/api/", "/compte", "/checkout", "/verifier"];
 const SHELL_ASSETS = [
   "/",
   "/manifest.webmanifest",
@@ -23,27 +24,48 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+function isPrivatePath(pathname) {
+  return PRIVATE_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(prefix));
+}
+
+function isCacheableStaticRequest(request, url) {
+  if (url.origin !== self.location.origin || isPrivatePath(url.pathname)) {
+    return false;
+  }
+
+  return (
+    url.pathname.startsWith("/_next/static/") ||
+    url.pathname.startsWith("/icon") ||
+    url.pathname === "/manifest.webmanifest" ||
+    ["font", "image", "script", "style"].includes(request.destination)
+  );
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
+  const url = new URL(request.url);
 
   if (request.method !== "GET") {
+    return;
+  }
+
+  if (url.origin !== self.location.origin || isPrivatePath(url.pathname)) {
     return;
   }
 
   if (request.mode === "navigate") {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
-          return response;
-        })
         .catch(async () => {
           const cache = await caches.open(CACHE_NAME);
-          return (await cache.match(request)) || (await cache.match(OFFLINE_URL));
+          return (await cache.match(OFFLINE_URL)) || Response.error();
         }),
     );
 
+    return;
+  }
+
+  if (!isCacheableStaticRequest(request, url)) {
     return;
   }
 
@@ -55,11 +77,14 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(request)
         .then((response) => {
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
+          if (response.ok && response.type === "basic") {
+            const clone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone)).catch(() => {});
+          }
+
           return response;
         })
-        .catch(() => caches.match(OFFLINE_URL));
+        .catch(async () => (await caches.match(OFFLINE_URL)) || Response.error());
     }),
   );
 });

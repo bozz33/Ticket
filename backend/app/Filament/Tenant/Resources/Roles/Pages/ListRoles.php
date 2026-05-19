@@ -2,9 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Roles\Pages;
 
+use App\Filament\Support\Pages\ListRecordsPage;
 use App\Filament\Tenant\Resources\Roles\RoleResource;
 use Filament\Actions\CreateAction;
-use App\Filament\Support\Pages\ListRecordsPage;
 
 class ListRoles extends ListRecordsPage
 {

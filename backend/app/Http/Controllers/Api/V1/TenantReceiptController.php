@@ -4,16 +4,16 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Services\Tenancy\ReceiptService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\Ticketing\Contracts\ReceiptCatalog;
 
 class TenantReceiptController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly ReceiptService $receiptService,
+        private readonly ReceiptCatalog $receiptCatalog,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -23,7 +23,7 @@ class TenantReceiptController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->receiptService->listForBuyer($user, $request->query('status')),
+            'data' => $this->receiptCatalog->listForBuyer($user, $request->query('status')),
         ]);
     }
 
@@ -32,7 +32,7 @@ class TenantReceiptController extends Controller
         /** @var User $user */
         $user = $request->attributes->get('tenant_user');
 
-        $record = $this->receiptService->findByIdentifierForBuyer($user, $receipt);
+        $record = $this->receiptCatalog->findByIdentifierForBuyer($user, $receipt);
 
         abort_if($record === null, 404);
 

@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\FrontMenus\Pages;
 
 use App\Filament\Platform\Resources\FrontMenus\FrontMenuResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ListRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ListFrontMenus extends ListRecordsPage
 {

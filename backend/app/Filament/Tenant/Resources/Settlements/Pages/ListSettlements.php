@@ -2,9 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\Settlements\Pages;
 
+use App\Filament\Support\Pages\ListRecordsPage;
 use App\Filament\Tenant\Resources\Settlements\SettlementResource;
 use Filament\Actions\CreateAction;
-use App\Filament\Support\Pages\ListRecordsPage;
 
 class ListSettlements extends ListRecordsPage
 {

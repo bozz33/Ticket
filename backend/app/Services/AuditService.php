@@ -42,6 +42,7 @@ class AuditService
         foreach ($payload as $key => $value) {
             if (in_array((string) $key, $sensitiveKeys, true)) {
                 $payload[$key] = '[redacted]';
+
                 continue;
             }
 

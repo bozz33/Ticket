@@ -2,15 +2,13 @@
 
 namespace App\Filament\Pages;
 
-use App\Filament\Platform\Resources\GatewayFeeRules\GatewayFeeRuleResource;
 use App\Filament\Platform\Resources\PayoutPolicies\PayoutPolicyResource;
-use App\Filament\Platform\Resources\PlatformFeeRules\PlatformFeeRuleResource;
+use App\Filament\Platform\Resources\PlatformSettings\PlatformSettingResource;
 use App\Filament\Platform\Resources\PlatformTransactions\PlatformTransactionResource;
 use App\Filament\Platform\Resources\Refunds\RefundResource;
 use App\Filament\Platform\Resources\Settlements\SettlementResource;
-use App\Models\GatewayFeeRule;
 use App\Models\PayoutPolicy;
-use App\Models\PlatformFeeRule;
+use App\Services\FinancePolicyService;
 use Filament\Facades\Filament;
 use Filament\Pages\Page;
 
@@ -18,7 +16,7 @@ class FinanceConfiguration extends Page
 {
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-adjustments-horizontal';
 
-    protected static ?string $navigationLabel = 'Configuration finance';
+    protected static ?string $navigationLabel = 'Politique financière';
 
     protected static string|\UnitEnum|null $navigationGroup = 'Finance plateforme';
 
@@ -44,8 +42,7 @@ class FinanceConfiguration extends Page
         }
 
         foreach ([
-            'platform.gateway_fee_rules.view',
-            'platform.platform_fee_rules.view',
+            'platform.platform_settings.view',
             'platform.payout_policies.view',
             'platform.refunds.view',
             'platform.settlements.view',
@@ -61,21 +58,18 @@ class FinanceConfiguration extends Page
 
     public function getHeading(): string
     {
-        return 'Configuration finance plateforme';
+        return 'Politique financière plateforme';
     }
 
     public function getSubheading(): ?string
     {
-        return 'Votre configuration active peut retenir une commission organisateur, absorber les frais gateway et piloter le net reversé sans bricolage manuel.';
+        return 'Pilotez un modèle simple: commission organisateur configurable, frais carte par ticket configurables, et frais gateway absorbés par la plateforme.';
     }
 
     protected function getViewData(): array
     {
-        $activeCommissionRule = PlatformFeeRule::query()
-            ->where('is_active', true)
-            ->orderBy('priority')
-            ->first();
-
+        $financeSetting = app(FinancePolicyService::class)->ensureSetting();
+        $financePolicy = app(FinancePolicyService::class)->current();
         $activePayoutPolicy = PayoutPolicy::query()
             ->where('is_active', true)
             ->orderBy('priority')
@@ -83,35 +77,25 @@ class FinanceConfiguration extends Page
 
         return [
             'summary' => [
-                'commission_rate' => $activeCommissionRule?->percentage_rate,
-                'commission_bearer' => $activeCommissionRule?->charge_bearer?->value ?? $activeCommissionRule?->charge_bearer,
-                'commission_mode' => $activeCommissionRule?->fee_mode?->value ?? $activeCommissionRule?->fee_mode,
+                'commission_rate' => $financePolicy['commission_rate'],
+                'card_fee_per_ticket' => $financePolicy['card_fee_per_ticket'],
                 'payout_fee_mode' => $activePayoutPolicy?->payout_fee_mode?->value ?? $activePayoutPolicy?->payout_fee_mode,
                 'payout_fee_percentage' => $activePayoutPolicy?->payout_fee_percentage,
                 'payout_fee_fixed' => $activePayoutPolicy?->payout_fee_fixed,
             ],
             'cards' => [
                 [
-                    'title' => 'Frais gateway',
-                    'description' => 'Définissez les frais Paystack et autres providers par pays, devise, canal, taxation et porteur des frais. Pour votre modèle actuel, ils peuvent être absorbés par la plateforme.',
-                    'url' => GatewayFeeRuleResource::getUrl('index'),
+                    'title' => 'Politique financière',
+                    'description' => 'Définissez le taux de commission organisateur et les frais carte par ticket. Laisser vide revient à 0 frais et 0 commission.',
+                    'url' => PlatformSettingResource::getUrl('edit', ['record' => $financeSetting]),
                     'stats' => [
-                        'Actives' => GatewayFeeRule::query()->where('is_active', true)->count(),
-                        'Total' => GatewayFeeRule::query()->count(),
-                    ],
-                ],
-                [
-                    'title' => 'Commissions plateforme',
-                    'description' => 'Pilotez la commission appliquée aux organisateurs selon le module, le tenant, le pays et la devise. Votre règle cible actuelle: 10% sur les ventes.',
-                    'url' => PlatformFeeRuleResource::getUrl('index'),
-                    'stats' => [
-                        'Actives' => PlatformFeeRule::query()->where('is_active', true)->count(),
-                        'Total' => PlatformFeeRule::query()->count(),
+                        'Commission' => $financePolicy['commission_rate'] > 0 ? number_format((float) $financePolicy['commission_rate'], 2, ',', ' ').' %' : '0 %',
+                        'Carte / ticket' => $financePolicy['card_fee_per_ticket'] > 0 ? number_format((int) $financePolicy['card_fee_per_ticket'], 0, ',', ' ').' FCFA' : '0 FCFA',
                     ],
                 ],
                 [
                     'title' => 'Politiques de reversement',
-                    'description' => 'Configurez minimum de reversement, réserve, délai, frais de payout, automatisation et validation manuelle. Dans votre modèle, aucun frais supplémentaire ne doit être ajouté ici.',
+                    'description' => 'Configurez minimum de reversement, réserve, délai et validation. Aucun frais gateway ou commission additionnelle ne doit être reparamétré ici.',
                     'url' => PayoutPolicyResource::getUrl('index'),
                     'stats' => [
                         'Actives' => PayoutPolicy::query()->where('is_active', true)->count(),
@@ -125,7 +109,7 @@ class FinanceConfiguration extends Page
                 ],
                 [
                     'title' => 'Remboursements',
-                    'description' => 'Déclenchez et suivez les remboursements en gardant l’historique financier et le calcul des frais.',
+                    'description' => 'Déclenchez et suivez les remboursements en tenant compte du supplément carte non remboursable sauf erreur technique ou doublon.',
                     'url' => RefundResource::getUrl('index'),
                 ],
                 [
@@ -134,6 +118,7 @@ class FinanceConfiguration extends Page
                     'url' => PlatformTransactionResource::getUrl('index'),
                 ],
             ],
+            'finance_setting_updated_at' => $financeSetting->updated_at,
         ];
     }
 }

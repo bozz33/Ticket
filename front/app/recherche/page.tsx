@@ -1,5 +1,5 @@
 import { getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
-import { SearchResultsView } from "@/components/RouteViews";
+import { SearchResultsView } from "@/components/route/PublicListingViews";
 import { getSearchPageData } from "@/lib/data/public";
 
 export const revalidate = 60;

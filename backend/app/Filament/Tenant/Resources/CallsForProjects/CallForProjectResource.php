@@ -18,10 +18,10 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Hidden;
-use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
@@ -38,14 +38,23 @@ class CallForProjectResource extends Resource
     use HasPanelPermission;
 
     protected static ?string $model = CallForProject::class;
+
     protected static ?string $permissionPrefix = 'tenant.catalog';
+
     protected static ?string $requiredTenantFeature = 'tenant.calls_for_projects';
+
     protected static string|UnitEnum|null $navigationGroup = 'Modules';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';
+
     protected static ?string $navigationLabel = 'Appels à projets';
+
     protected static ?string $modelLabel = 'Appel à projets';
+
     protected static ?string $pluralModelLabel = 'Appels à projets';
+
     protected static ?string $recordTitleAttribute = 'title';
+
     protected static ?string $slug = 'calls-for-projects';
 
     public static function form(Schema $schema): Schema

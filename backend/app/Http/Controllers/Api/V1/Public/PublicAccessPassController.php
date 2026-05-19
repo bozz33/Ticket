@@ -3,20 +3,20 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Services\Tenancy\AccessPassService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
+use Ticket\Ticketing\Contracts\AccessPassCatalog;
 
 class PublicAccessPassController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly AccessPassService $accessPassService,
+        private readonly AccessPassCatalog $accessPassCatalog,
     ) {}
 
     public function show(string $tenant, string $code): JsonResponse
     {
-        $pass = $this->accessPassService->findByCode($code);
+        $pass = $this->accessPassCatalog->findByCode($code);
 
         if ($pass === null) {
             return response()->json(['message' => 'Pass introuvable.'], 404);

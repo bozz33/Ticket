@@ -3,18 +3,20 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
-use App\Services\Tenancy\AccessPassCheckinService;
-use App\Services\Tenancy\AccessPassService;
+use App\Http\Requests\Api\V1\RevokeAccessPassRequest;
+use App\Models\AccessPass;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\Ticketing\Contracts\AccessPassCatalog;
+use Ticket\Ticketing\Contracts\AccessPassCheckin;
 
 class TenantAccessPassCheckinController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly AccessPassService $accessPassService,
-        private readonly AccessPassCheckinService $checkinService,
+        private readonly AccessPassCatalog $accessPassCatalog,
+        private readonly AccessPassCheckin $accessPassCheckin,
     ) {}
 
     public function preview(Request $request, string $tenant, string $accessPass): JsonResponse
@@ -23,7 +25,7 @@ class TenantAccessPassCheckinController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->checkinService->preview($pass, $request),
+            'data' => $this->accessPassCheckin->preview($pass, $request),
         ]);
     }
 
@@ -33,7 +35,7 @@ class TenantAccessPassCheckinController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->checkinService->consume($pass, $request),
+            'data' => $this->accessPassCheckin->consume($pass, $request),
         ]);
     }
 
@@ -43,21 +45,19 @@ class TenantAccessPassCheckinController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->checkinService->reset($pass, $request),
+            'data' => $this->accessPassCheckin->reset($pass, $request),
         ]);
     }
 
-    public function revoke(Request $request, string $tenant, string $accessPass): JsonResponse
+    public function revoke(RevokeAccessPassRequest $request, string $tenant, string $accessPass): JsonResponse
     {
-        $validated = $request->validate([
-            'reason' => ['sometimes', 'string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         $pass = $this->resolvePass($accessPass);
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->checkinService->revoke($pass, $request, $validated['reason'] ?? ''),
+            'data' => $this->accessPassCheckin->revoke($pass, $request, $validated['reason'] ?? ''),
         ]);
     }
 
@@ -67,13 +67,13 @@ class TenantAccessPassCheckinController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->checkinService->reactivate($pass, $request),
+            'data' => $this->accessPassCheckin->reactivate($pass, $request),
         ]);
     }
 
-    private function resolvePass(string $identifier): \App\Models\AccessPass
+    private function resolvePass(string $identifier): AccessPass
     {
-        $pass = $this->accessPassService->findByIdentifier($identifier);
+        $pass = $this->accessPassCatalog->findByIdentifier($identifier);
 
         abort_if($pass === null, 404, 'Pass introuvable.');
 

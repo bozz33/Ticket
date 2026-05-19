@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\Users\Pages;
 
-use App\Filament\Tenant\Resources\Users\UserResource;
 use App\Filament\Support\Pages\EditRecordPage;
+use App\Filament\Tenant\Resources\Users\UserResource;
 use Filament\Support\Enums\Width;
 
 class EditUser extends EditRecordPage

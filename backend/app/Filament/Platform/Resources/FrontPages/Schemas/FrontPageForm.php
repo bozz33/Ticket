@@ -8,8 +8,8 @@ use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -58,7 +58,7 @@ class FrontPageForm
                         ->live(onBlur: true)
                         ->afterStateUpdated(function ($state, callable $set): void {
                             $slug = trim((string) $state, '/');
-                            $set('route_path', $slug === '' ? '/' : '/' . $slug);
+                            $set('route_path', $slug === '' ? '/' : '/'.$slug);
                         })
                         ->columnSpan(2),
                     TextInput::make('route_path')

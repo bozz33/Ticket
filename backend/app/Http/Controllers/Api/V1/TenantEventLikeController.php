@@ -5,17 +5,17 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Models\Event;
 use App\Models\User;
-use App\Services\Tenancy\EventLikeService;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Ticket\Ticketing\Contracts\EventEngagement;
 
 class TenantEventLikeController extends Controller
 {
     public function __construct(
         private readonly TenantContext $tenantContext,
-        private readonly EventLikeService $eventLikeService,
+        private readonly EventEngagement $eventEngagement,
     ) {}
 
     public function show(Request $request, string $tenant, string $event): JsonResponse
@@ -28,7 +28,7 @@ class TenantEventLikeController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->eventLikeService->summary($user, $record),
+            'data' => $this->eventEngagement->summary($user, $record),
         ]);
     }
 
@@ -40,7 +40,7 @@ class TenantEventLikeController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->eventLikeService->summaries(
+            'data' => $this->eventEngagement->summaries(
                 $user,
                 is_array($identifiers) ? $identifiers : [$identifiers],
             ),
@@ -57,7 +57,7 @@ class TenantEventLikeController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->eventLikeService->like($user, $record),
+            'data' => $this->eventEngagement->like($user, $record),
             'message' => 'Événement ajouté à vos favoris.',
         ]);
     }
@@ -72,7 +72,7 @@ class TenantEventLikeController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->eventLikeService->unlike($user, $record),
+            'data' => $this->eventEngagement->unlike($user, $record),
             'message' => 'Événement retiré de vos favoris.',
         ]);
     }

@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\Trainings\Pages;
 
-use App\Filament\Tenant\Resources\Trainings\TrainingResource;
 use App\Filament\Support\Pages\EditRecordPage;
+use App\Filament\Tenant\Resources\Trainings\TrainingResource;
 use Filament\Support\Enums\Width;
 
 class EditTraining extends EditRecordPage

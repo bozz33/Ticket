@@ -13,6 +13,7 @@ const STATUS_LABELS: Record<OrderStatus, string> = {
   pending: "En attente",
   confirmed: "Confirmee",
   cancelled: "Annulee",
+  refund_pending: "Remboursement en cours",
   refunded: "Remboursee",
 };
 

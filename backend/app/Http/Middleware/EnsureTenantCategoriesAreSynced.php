@@ -2,11 +2,11 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\Tenancy\SyncCentralCategoriesToTenant;
 use App\Support\Tenancy\TenantContext;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Ticket\Tenancy\Contracts\TenantReferenceCatalog;
 
 class EnsureTenantCategoriesAreSynced
 {
@@ -15,7 +15,7 @@ class EnsureTenantCategoriesAreSynced
         $tenant = app(TenantContext::class)->get();
 
         if ($tenant !== null) {
-            app(SyncCentralCategoriesToTenant::class)->handle($tenant);
+            app(TenantReferenceCatalog::class)->syncCategories($tenant);
         }
 
         return $next($request);

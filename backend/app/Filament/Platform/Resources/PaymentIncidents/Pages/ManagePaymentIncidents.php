@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\PaymentIncidents\Pages;
 
 use App\Filament\Platform\Resources\PaymentIncidents\PaymentIncidentResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManagePaymentIncidents extends ManageRecordsPage
 {

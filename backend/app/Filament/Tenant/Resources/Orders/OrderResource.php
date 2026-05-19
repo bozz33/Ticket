@@ -6,7 +6,6 @@ use App\Enums\OrderStatus;
 use App\Filament\Tenant\Resources\Orders\Pages\ListOrders;
 use App\Models\Order;
 use App\Support\Filament\Concerns\HasPanelPermission;
-use App\Support\Tenancy\TenantContext;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;

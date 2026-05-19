@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Str;
+use Pdo\Mysql;
 
 return [
 
@@ -59,7 +60,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -79,7 +80,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 
@@ -101,7 +102,7 @@ return [
             'search_path' => env('CENTRAL_DB_SCHEMA', env('DB_SCHEMA', 'public')),
             'sslmode' => env('CENTRAL_DB_SSLMODE', env('DB_SSLMODE', 'prefer')),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('CENTRAL_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('CENTRAL_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
             ]) : [],
         ],
 
@@ -123,7 +124,7 @@ return [
             'search_path' => env('TENANT_DB_SCHEMA', env('DB_SCHEMA', 'public')),
             'sslmode' => env('TENANT_DB_SSLMODE', env('DB_SSLMODE', 'prefer')),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('TENANT_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('TENANT_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
             ]) : [],
         ],
 
@@ -145,7 +146,7 @@ return [
             'search_path' => env('TENANT_DB_SCHEMA', env('DB_SCHEMA', 'public')),
             'sslmode' => env('TENANT_DB_SSLMODE', env('DB_SSLMODE', 'prefer')),
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('TENANT_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
+                (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('TENANT_MYSQL_ATTR_SSL_CA', env('MYSQL_ATTR_SSL_CA')),
             ]) : [],
         ],
 

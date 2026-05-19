@@ -10,8 +10,8 @@ use BackedEnum;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\Select;
-use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
+use Filament\Forms\Components\TextInput;
 use Filament\Resources\Resource;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -26,14 +26,23 @@ class CallForProjectSubmissionResource extends Resource
     use HasPanelPermission;
 
     protected static ?string $model = CallForProjectSubmission::class;
+
     protected static ?string $permissionPrefix = 'tenant.catalog';
+
     protected static ?string $requiredTenantFeature = 'tenant.calls_for_projects';
+
     protected static string|UnitEnum|null $navigationGroup = 'Modules';
+
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-inbox-stack';
+
     protected static ?string $navigationLabel = 'Candidatures';
+
     protected static ?string $modelLabel = 'Candidature';
+
     protected static ?string $pluralModelLabel = 'Candidatures';
+
     protected static ?string $recordTitleAttribute = 'applicant_name';
+
     protected static ?string $slug = 'call-for-project-submissions';
 
     public static function form(Schema $schema): Schema

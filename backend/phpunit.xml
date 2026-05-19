@@ -7,6 +7,11 @@
     <testsuites>
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
+            <directory>packages/payments/tests/Unit</directory>
+            <directory>packages/notifications/tests/Unit</directory>
+            <directory>packages/public-catalog/tests/Unit</directory>
+            <directory>packages/tenancy/tests/Unit</directory>
+            <directory>packages/ticketing/tests/Unit</directory>
         </testsuite>
         <testsuite name="Feature">
             <directory>tests/Feature</directory>

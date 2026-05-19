@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\PlatformTransactions\Pages;
 
 use App\Filament\Platform\Resources\PlatformTransactions\PlatformTransactionResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManagePlatformTransactions extends ManageRecordsPage
 {

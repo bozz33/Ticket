@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\PlatformAuditLogs\Pages;
 
 use App\Filament\Platform\Resources\PlatformAuditLogs\PlatformAuditLogResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManagePlatformAuditLogs extends ManageRecordsPage
 {

@@ -11,7 +11,7 @@ use Livewire\Features\SupportRedirects\Redirector;
 
 class FilamentLoginResponse implements LoginResponseContract
 {
-    public function toResponse($request): RedirectResponse | Redirector
+    public function toResponse($request): RedirectResponse|Redirector
     {
         if (Filament::getCurrentPanel()?->getId() !== 'tenant') {
             return redirect()->intended(Filament::getUrl());

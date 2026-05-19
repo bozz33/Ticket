@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\PaymentGateways\Pages;
 
 use App\Filament\Platform\Resources\PaymentGateways\PaymentGatewayResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManagePaymentGateways extends ManageRecordsPage
 {

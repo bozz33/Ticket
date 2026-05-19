@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\PlatformSupportTickets\Pages;
 
 use App\Filament\Platform\Resources\PlatformSupportTickets\PlatformSupportTicketResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManagePlatformSupportTickets extends ManageRecordsPage
 {

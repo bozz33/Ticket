@@ -7,22 +7,19 @@ use App\Enums\AccessPassType;
 use App\Filament\Tenant\Resources\AccessPasses\Pages\ListAccessPasses;
 use App\Filament\Tenant\Resources\AccessPasses\Pages\VerifyAccessPasses;
 use App\Models\AccessPass;
-use App\Services\Tenancy\AccessPassCheckinService;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
-use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Actions\Action as TableAction;
-use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Http\Request;
+use Ticket\Ticketing\Contracts\AccessPassCheckin;
 use UnitEnum;
 
 class AccessPassResource extends Resource
@@ -108,7 +105,7 @@ class AccessPassResource extends Resource
                     ->visible(fn (AccessPass $record): bool => $record->status === AccessPassStatus::Active)
                     ->requiresConfirmation()
                     ->action(function (AccessPass $record): void {
-                        $checkin = app(AccessPassCheckinService::class);
+                        $checkin = app(AccessPassCheckin::class);
                         $result = $checkin->consume($record, request());
 
                         if ($result['access_granted']) {
@@ -125,7 +122,7 @@ class AccessPassResource extends Resource
                     ->visible(fn (AccessPass $record): bool => $record->status === AccessPassStatus::Used)
                     ->requiresConfirmation()
                     ->action(function (AccessPass $record): void {
-                        $checkin = app(AccessPassCheckinService::class);
+                        $checkin = app(AccessPassCheckin::class);
                         $checkin->reset($record, request());
                         Notification::make()->success()->title('Pass réinitialisé')->send();
                     }),
@@ -142,7 +139,7 @@ class AccessPassResource extends Resource
                             ->maxLength(255),
                     ])
                     ->action(function (AccessPass $record, array $data): void {
-                        $checkin = app(AccessPassCheckinService::class);
+                        $checkin = app(AccessPassCheckin::class);
                         $checkin->revoke($record, request(), $data['reason'] ?? '');
                         Notification::make()->success()->title('Pass révoqué')->send();
                     }),
@@ -154,7 +151,7 @@ class AccessPassResource extends Resource
                     ->visible(fn (AccessPass $record): bool => $record->status === AccessPassStatus::Revoked)
                     ->requiresConfirmation()
                     ->action(function (AccessPass $record): void {
-                        $checkin = app(AccessPassCheckinService::class);
+                        $checkin = app(AccessPassCheckin::class);
                         $checkin->reactivate($record, request());
                         Notification::make()->success()->title('Pass réactivé')->send();
                     }),

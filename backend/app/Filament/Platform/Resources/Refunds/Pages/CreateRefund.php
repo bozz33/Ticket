@@ -3,13 +3,14 @@
 namespace App\Filament\Platform\Resources\Refunds\Pages;
 
 use App\Filament\Platform\Resources\Refunds\RefundResource;
+use App\Filament\Support\Pages\CreateRecordPage;
 use App\Models\PlatformTransaction;
+use App\Models\PlatformUser;
 use App\Models\Refund;
-use App\Services\Payments\RefundService;
 use Filament\Facades\Filament;
 use Filament\Notifications\Notification;
-use App\Filament\Support\Pages\CreateRecordPage;
 use Filament\Support\Enums\Width;
+use Ticket\Payments\Contracts\RefundManager;
 
 class CreateRefund extends CreateRecordPage
 {
@@ -21,10 +22,10 @@ class CreateRefund extends CreateRecordPage
     {
         $transaction = PlatformTransaction::query()->findOrFail((int) $data['platform_transaction_id']);
 
-        /** @var \App\Models\PlatformUser|null $actor */
+        /** @var PlatformUser|null $actor */
         $actor = Filament::auth()->user();
 
-        return app(RefundService::class)->create($transaction, [
+        return app(RefundManager::class)->create($transaction, [
             'reason_code' => $data['reason_code'] ?? 'manual_refund',
             'reason' => $data['reason'] ?? '',
         ], $actor);

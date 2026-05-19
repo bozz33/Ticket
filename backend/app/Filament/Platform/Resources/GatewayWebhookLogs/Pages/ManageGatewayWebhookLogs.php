@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\GatewayWebhookLogs\Pages;
 
 use App\Filament\Platform\Resources\GatewayWebhookLogs\GatewayWebhookLogResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ManageRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ManageGatewayWebhookLogs extends ManageRecordsPage
 {

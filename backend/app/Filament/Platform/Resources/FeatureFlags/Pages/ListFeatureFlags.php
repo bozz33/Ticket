@@ -3,8 +3,8 @@
 namespace App\Filament\Platform\Resources\FeatureFlags\Pages;
 
 use App\Filament\Platform\Resources\FeatureFlags\FeatureFlagResource;
-use Filament\Actions\CreateAction;
 use App\Filament\Support\Pages\ListRecordsPage;
+use Filament\Actions\CreateAction;
 
 class ListFeatureFlags extends ListRecordsPage
 {

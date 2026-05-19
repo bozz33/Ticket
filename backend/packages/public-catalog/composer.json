@@ -1,0 +1,14 @@
+{
+    "name": "ticket/public-catalog",
+    "type": "library",
+    "description": "Internal public catalog bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\PublicCatalog\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

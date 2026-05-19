@@ -4,10 +4,10 @@ namespace App\Filament\Platform\Resources\Tenants\Pages;
 
 use App\Enums\SubscriptionStatus;
 use App\Filament\Platform\Resources\Tenants\TenantResource;
+use App\Filament\Support\Pages\EditRecordPage;
 use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Filament\Support\Pages\EditRecordPage;
 use Filament\Support\Enums\Width;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;

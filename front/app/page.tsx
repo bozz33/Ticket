@@ -1,5 +1,5 @@
 import { getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
-import { HomeView } from "@/components/RouteViews";
+import { HomeView } from "@/components/route/HomeRouteViews";
 import { getHomePageData } from "@/lib/data/public";
 
 export const revalidate = 120;

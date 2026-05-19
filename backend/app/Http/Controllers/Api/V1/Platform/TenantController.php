@@ -5,9 +5,9 @@ namespace App\Http\Controllers\Api\V1\Platform;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Platform\StoreTenantRequest;
 use App\Models\Tenant;
-use App\Services\Tenancy\ManageTenantLifecycle;
-use App\Services\Tenancy\ProvisionTenant;
 use Illuminate\Http\JsonResponse;
+use Ticket\Tenancy\Contracts\TenantLifecycleManager;
+use Ticket\Tenancy\Contracts\TenantProvisioner;
 
 class TenantController extends Controller
 {
@@ -23,9 +23,9 @@ class TenantController extends Controller
         ]);
     }
 
-    public function store(StoreTenantRequest $request, ProvisionTenant $provisionTenant): JsonResponse
+    public function store(StoreTenantRequest $request, TenantProvisioner $tenantProvisioner): JsonResponse
     {
-        $result = $provisionTenant->handle($request->validated());
+        $result = $tenantProvisioner->handle($request->validated());
 
         return response()->json([
             'data' => $result['tenant'],
@@ -40,24 +40,24 @@ class TenantController extends Controller
         ]);
     }
 
-    public function activate(Tenant $tenant, ManageTenantLifecycle $manageTenantLifecycle): JsonResponse
+    public function activate(Tenant $tenant, TenantLifecycleManager $tenantLifecycleManager): JsonResponse
     {
         return response()->json([
-            'data' => $manageTenantLifecycle->activate($tenant),
+            'data' => $tenantLifecycleManager->activate($tenant),
         ]);
     }
 
-    public function suspend(Tenant $tenant, ManageTenantLifecycle $manageTenantLifecycle): JsonResponse
+    public function suspend(Tenant $tenant, TenantLifecycleManager $tenantLifecycleManager): JsonResponse
     {
         return response()->json([
-            'data' => $manageTenantLifecycle->suspend($tenant),
+            'data' => $tenantLifecycleManager->suspend($tenant),
         ]);
     }
 
-    public function archive(Tenant $tenant, ManageTenantLifecycle $manageTenantLifecycle): JsonResponse
+    public function archive(Tenant $tenant, TenantLifecycleManager $tenantLifecycleManager): JsonResponse
     {
         return response()->json([
-            'data' => $manageTenantLifecycle->archive($tenant),
+            'data' => $tenantLifecycleManager->archive($tenant),
         ]);
     }
 }

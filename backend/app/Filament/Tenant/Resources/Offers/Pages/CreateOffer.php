@@ -2,8 +2,8 @@
 
 namespace App\Filament\Tenant\Resources\Offers\Pages;
 
-use App\Filament\Tenant\Resources\Offers\OfferResource;
 use App\Filament\Support\Pages\CreateRecordPage;
+use App\Filament\Tenant\Resources\Offers\OfferResource;
 use Filament\Support\Enums\Width;
 
 class CreateOffer extends CreateRecordPage

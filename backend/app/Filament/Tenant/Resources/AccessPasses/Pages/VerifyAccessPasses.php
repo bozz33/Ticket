@@ -4,12 +4,12 @@ namespace App\Filament\Tenant\Resources\AccessPasses\Pages;
 
 use App\Filament\Tenant\Resources\AccessPasses\AccessPassResource;
 use App\Models\AccessPass;
-use App\Services\Tenancy\AccessPassCheckinService;
-use App\Services\Tenancy\AccessPassService;
 use Carbon\CarbonInterface;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\Page;
 use Filament\Support\Enums\Width;
+use Ticket\Ticketing\Contracts\AccessPassCatalog;
+use Ticket\Ticketing\Contracts\AccessPassCheckin;
 
 class VerifyAccessPasses extends Page
 {
@@ -30,43 +30,43 @@ class VerifyAccessPasses extends Page
      */
     public ?array $scanState = null;
 
-    public function preview(AccessPassService $accessPassService, AccessPassCheckinService $checkinService): void
+    public function preview(AccessPassCatalog $accessPassCatalog, AccessPassCheckin $accessPassCheckin): void
     {
-        $pass = $this->resolvePass($accessPassService);
+        $pass = $this->resolvePass($accessPassCatalog);
 
         if (! $pass) {
             return;
         }
 
-        $result = $checkinService->preview($pass, request());
+        $result = $accessPassCheckin->preview($pass, request());
 
         $this->hydrateState($pass, $result, 'preview');
         $this->notifyForResult($result, 'Prévisualisation effectuée');
     }
 
-    public function consume(AccessPassService $accessPassService, AccessPassCheckinService $checkinService): void
+    public function consume(AccessPassCatalog $accessPassCatalog, AccessPassCheckin $accessPassCheckin): void
     {
-        $pass = $this->resolvePass($accessPassService);
+        $pass = $this->resolvePass($accessPassCatalog);
 
         if (! $pass) {
             return;
         }
 
-        $result = $checkinService->consume($pass, request());
+        $result = $accessPassCheckin->consume($pass, request());
 
         $this->hydrateState($pass, $result, 'consume');
         $this->notifyForResult($result, 'Contrôle effectué');
     }
 
-    public function resetPass(AccessPassService $accessPassService, AccessPassCheckinService $checkinService): void
+    public function resetPass(AccessPassCatalog $accessPassCatalog, AccessPassCheckin $accessPassCheckin): void
     {
-        $pass = $this->resolvePass($accessPassService);
+        $pass = $this->resolvePass($accessPassCatalog);
 
         if (! $pass) {
             return;
         }
 
-        $result = $checkinService->reset($pass, request());
+        $result = $accessPassCheckin->reset($pass, request());
 
         $this->hydrateState($pass, $result, 'reset');
         $this->notifyForResult($result, 'Pass réinitialisé');
@@ -91,7 +91,7 @@ class VerifyAccessPasses extends Page
         ];
     }
 
-    private function resolvePass(AccessPassService $accessPassService): ?AccessPass
+    private function resolvePass(AccessPassCatalog $accessPassCatalog): ?AccessPass
     {
         $this->validate([
             'identifier' => ['required', 'string', 'max:4000'],
@@ -100,7 +100,7 @@ class VerifyAccessPasses extends Page
         $normalizedIdentifier = $this->normalizeIdentifier((string) $this->identifier);
         $this->identifier = $normalizedIdentifier;
 
-        $pass = $accessPassService->findByIdentifier($normalizedIdentifier);
+        $pass = $accessPassCatalog->findByIdentifier($normalizedIdentifier);
 
         if (! $pass) {
             $this->scanState = null;
@@ -118,7 +118,7 @@ class VerifyAccessPasses extends Page
     }
 
     /**
-     * @param array<string, mixed> $result
+     * @param  array<string, mixed>  $result
      */
     private function hydrateState(AccessPass $pass, array $result, string $action): void
     {
@@ -154,7 +154,7 @@ class VerifyAccessPasses extends Page
     }
 
     /**
-     * @param array<string, mixed> $result
+     * @param  array<string, mixed>  $result
      */
     private function notifyForResult(array $result, string $title): void
     {

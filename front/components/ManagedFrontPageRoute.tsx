@@ -26,6 +26,14 @@ export async function getManagedPageMetadata(
   path: string,
   fallback: { title: string; description: string },
 ): Promise<Metadata> {
+  if (process.env.NODE_ENV === "development") {
+    return createMetadata({
+      title: fallback.title,
+      description: fallback.description,
+      path,
+    });
+  }
+
   const page = await getFrontPageData(path);
 
   return createMetadata({

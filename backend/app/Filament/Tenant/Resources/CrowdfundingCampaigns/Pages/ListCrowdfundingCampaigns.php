@@ -2,9 +2,9 @@
 
 namespace App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages;
 
+use App\Filament\Support\Pages\ListRecordsPage;
 use App\Filament\Tenant\Resources\CrowdfundingCampaigns\CrowdfundingCampaignResource;
 use Filament\Actions\CreateAction;
-use App\Filament\Support\Pages\ListRecordsPage;
 
 class ListCrowdfundingCampaigns extends ListRecordsPage
 {

@@ -4,10 +4,10 @@ namespace App\Filament\Tenant\Widgets;
 
 use App\Models\PlatformTransaction;
 use App\Models\Settlement;
-use App\Models\TenantSubscription;
 use App\Support\Tenancy\TenantContext;
 use Filament\Widgets\StatsOverviewWidget;
 use Filament\Widgets\StatsOverviewWidget\Stat;
+use Ticket\Payments\Domain\PaymentStatuses;
 
 class TenantOverview extends StatsOverviewWidget
 {
@@ -17,7 +17,6 @@ class TenantOverview extends StatsOverviewWidget
 
         if ($tenant === null) {
             return [
-                Stat::make('Souscription active', 'Aucune'),
                 Stat::make('Transactions', '0'),
                 Stat::make('Demandes de reversement', '0'),
                 Stat::make('Commission du mois', '0 FCFA'),
@@ -28,18 +27,11 @@ class TenantOverview extends StatsOverviewWidget
         $startOfMonth = now()->startOfMonth();
         $endOfMonth = now()->endOfMonth();
 
-        $activeSubscription = TenantSubscription::query()
-            ->with('plan')
-            ->where('tenant_id', $tenant->getKey())
-            ->whereIn('status', ['active', 'trialing'])
-            ->latest('started_at')
-            ->first();
-
         $transactionsQuery = PlatformTransaction::query()->where('tenant_id', $tenant->getKey());
         $monthlyTransactionsQuery = PlatformTransaction::query()
             ->where('tenant_id', $tenant->getKey())
             ->whereBetween('occurred_at', [$startOfMonth, $endOfMonth])
-            ->whereIn('status', ['success', 'successful', 'confirmed', 'completed', 'paid']);
+            ->whereIn('status', PaymentStatuses::successful());
 
         $settlementsQuery = Settlement::query()->where('tenant_id', $tenant->getKey());
 
@@ -59,12 +51,10 @@ class TenantOverview extends StatsOverviewWidget
         $transactionCount = (int) (clone $transactionsQuery)->count();
 
         return [
-            Stat::make('Souscription active', $activeSubscription?->plan?->name ?? 'Aucune')
-                ->description($activeSubscription?->status?->value ?? 'inactive'),
             Stat::make('Transactions', number_format($transactionCount, 0, ',', ' ')),
             Stat::make('Demandes de reversement', number_format($pendingSettlements, 0, ',', ' ')),
-            Stat::make('Commission du mois', number_format($monthlyCommission, 0, ',', ' ') . ' FCFA'),
-            Stat::make('Solde net du mois', number_format($monthlyNet, 0, ',', ' ') . ' FCFA'),
+            Stat::make('Commission du mois', number_format($monthlyCommission, 0, ',', ' ').' FCFA'),
+            Stat::make('Solde net du mois', number_format($monthlyNet, 0, ',', ' ').' FCFA'),
         ];
     }
 }
