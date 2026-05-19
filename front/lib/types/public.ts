@@ -67,6 +67,26 @@ export interface PublicReferenceCity {
   };
 }
 
+export interface EventTicketTier {
+  id: string;
+  title: string;
+  subtitle?: string | null;
+  type: string;
+  price: number;
+  currency?: string | null;
+  remaining?: number | null;
+  quantityLabel?: string | null;
+  availabilityStatus: "available" | "low_stock" | "sold_out" | "sales_not_started" | "sales_ended" | "inactive";
+  availabilityLabel: string;
+  isAvailable: boolean;
+  isSoldOut: boolean;
+  minPerOrder: number;
+  maxPerOrder: number;
+  ctaLabel: string;
+  perks: string[];
+  offerId?: string | null;
+}
+
 export interface CallForProjectApplicationOption {
   value: string;
   label: string;
@@ -178,6 +198,7 @@ export interface PublicContent {
   speakers: PersonEntry[];
   stats: StatEntry[];
   tiers: OfferTier[];
+  tickets?: EventTicketTier[];
   timeline: TimelineEntry[];
   faq: FaqEntry[];
   program: string[];

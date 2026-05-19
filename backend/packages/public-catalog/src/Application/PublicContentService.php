@@ -7,9 +7,12 @@ use App\Models\CallForProject;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\CrowdfundingCampaign;
+use App\Models\Event;
+use App\Models\EventTicket;
 use App\Models\Offer;
 use App\Models\Stand;
 use App\Models\Tenant;
+use App\Services\Ticketing\EventTicketAvailabilityService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
@@ -23,6 +26,7 @@ class PublicContentService
     public function __construct(
         private readonly CallForProjectApplicationFormService $callForProjectApplicationFormService,
         private readonly PublicCatalogModules $modules,
+        private readonly EventTicketAvailabilityService $eventTicketAvailabilityService,
         private readonly ?PublicCatalogProjectionReader $projectionReader = null,
     ) {}
 
@@ -610,6 +614,7 @@ class PublicContentService
 
         if ($module === 'evenements') {
             $base[] = 'dates';
+            $base['tickets'] = fn ($q) => $q->where('is_active', true)->orderBy('sort_order');
         }
 
         return $base;
@@ -773,6 +778,8 @@ class PublicContentService
         $category = $model->category;
         $org = $model->organizationProfile;
         $offers = $model->relationLoaded('offers') ? $model->offers : collect();
+        $tickets = $model instanceof Event && $model->relationLoaded('tickets') ? $model->tickets : collect();
+        $sellableItems = $tickets->isNotEmpty() ? $tickets : $offers;
         $meta = (array) ($model->meta ?? []);
         $presentation = $this->modules->presentation($module);
 
@@ -780,7 +787,7 @@ class PublicContentService
         $title = ($model instanceof Stand) ? $model->name : $model->title;
 
         // Pricing
-        $minPrice = $offers->min('price_amount') ?? ($model instanceof Stand ? $model->price_amount : 0) ?? 0;
+        $minPrice = $sellableItems->min('price_amount') ?? ($model instanceof Stand ? $model->price_amount : 0) ?? 0;
         $isFree = ($minPrice === 0);
         $badges = collect(array_merge([
             $isFree ? 'Gratuit' : 'Payant',
@@ -793,6 +800,7 @@ class PublicContentService
 
         // Currency — fall back to offers, then tenant, then org metadata
         $currency = $model->currency_code
+            ?? $tickets->first()?->currency_code
             ?? $offers->first()?->currency_code
             ?? tenant()?->currency_code
             ?? data_get($org?->meta, 'currency_code')
@@ -811,9 +819,10 @@ class PublicContentService
         $country = $model->country_code ?? '';
 
         // Remaining seats
-        $totalQty = $offers->sum('quantity_total');
-        $soldQty = $offers->sum('quantity_sold');
-        $remaining = $totalQty > 0 ? ($totalQty - $soldQty) : null;
+        $totalQty = $sellableItems->sum('quantity_total');
+        $soldQty = $sellableItems->sum('quantity_sold');
+        $reservedQty = $tickets->sum('quantity_reserved');
+        $remaining = $totalQty > 0 ? ($totalQty - $soldQty - $reservedQty) : null;
 
         // Organizer
         $organizers = $org
@@ -865,6 +874,7 @@ class PublicContentService
             'speakers' => (array) ($meta['speakers'] ?? []),
             'stats' => (array) ($meta['stats'] ?? []),
             'tiers' => $offers->map(fn ($o) => $this->transformOffer($o))->values()->all(),
+            'tickets' => $tickets->map(fn ($ticket) => $this->transformEventTicket($ticket))->values()->all(),
             'timeline' => (array) ($meta['timeline'] ?? []),
             'faq' => (array) ($meta['faq'] ?? []),
             'program' => (array) ($meta['program'] ?? []),
@@ -930,6 +940,33 @@ class PublicContentService
             'quantityLabel' => $remaining !== null ? "{$remaining} restante(s)" : null,
             'ctaLabel' => $meta['ctaLabel'] ?? 'Réserver',
             'perks' => (array) ($meta['perks'] ?? []),
+        ];
+    }
+
+    private function transformEventTicket(EventTicket $ticket): array
+    {
+        $meta = (array) ($ticket->meta ?? []);
+        $availability = $this->eventTicketAvailabilityService->snapshot($ticket);
+        $bounds = $this->eventTicketAvailabilityService->purchasableQuantityBounds($ticket);
+
+        return [
+            'id' => $ticket->public_id,
+            'title' => $ticket->name,
+            'subtitle' => $ticket->description,
+            'type' => $ticket->ticket_type,
+            'price' => $ticket->price_amount,
+            'currency' => $ticket->currency_code,
+            'remaining' => $availability['remaining'],
+            'quantityLabel' => $availability['remaining'] !== null ? sprintf('%d restante(s)', $availability['remaining']) : null,
+            'availabilityStatus' => $availability['status'],
+            'availabilityLabel' => $availability['label'],
+            'isAvailable' => $availability['is_available'],
+            'isSoldOut' => $availability['is_sold_out'],
+            'minPerOrder' => $bounds['min'],
+            'maxPerOrder' => $bounds['max'],
+            'ctaLabel' => $meta['ctaLabel'] ?? 'Réserver',
+            'perks' => (array) ($meta['perks'] ?? []),
+            'offerId' => $ticket->offer?->public_id,
         ];
     }
 }
