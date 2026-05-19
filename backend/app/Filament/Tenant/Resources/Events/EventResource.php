@@ -6,6 +6,7 @@ use App\Enums\CategoryScope;
 use App\Filament\Tenant\Resources\Events\Pages\CreateEvent;
 use App\Filament\Tenant\Resources\Events\Pages\EditEvent;
 use App\Filament\Tenant\Resources\Events\Pages\ListEvents;
+use App\Filament\Tenant\Resources\Events\RelationManagers\EventTicketsRelationManager;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\Event;
@@ -181,6 +182,13 @@ class EventResource extends Resource
             'index' => ListEvents::route('/'),
             'create' => CreateEvent::route('/create'),
             'edit' => EditEvent::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            EventTicketsRelationManager::class,
         ];
     }
 
