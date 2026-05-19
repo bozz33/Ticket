@@ -92,6 +92,8 @@ class ApiArchitectureTest extends TestCase
         $this->assertArrayHasKey('/api/v1/health', $document['paths']);
         $this->assertArrayHasKey('/api/v1/platform/auth/login', $document['paths']);
         $this->assertArrayHasKey('/api/v1/public/content', $document['paths']);
+        $this->assertArrayHasKey('/api/v1/public/tenants/{tenant}/forms/{formDefinition}', $document['paths']);
+        $this->assertArrayHasKey('/api/v1/public/tenants/{tenant}/forms/{formDefinition}/submissions', $document['paths']);
         $this->assertArrayHasKey('/api/v1/tenants/{tenant}/auth/login', $document['paths']);
     }
 

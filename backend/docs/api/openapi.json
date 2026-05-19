@@ -2513,6 +2513,133 @@
         }
       }
     },
+    "/api/v1/public/tenants/{tenant}/forms/{formDefinition}": {
+      "get": {
+        "tags": [
+          "Public Tenant"
+        ],
+        "summary": "App\\Http\\Controllers\\Api\\V1\\Public\\PublicFormSubmissionController@show",
+        "operationId": "get_api_v1_public_tenants_tenant_forms_formDefinition",
+        "parameters": [
+          {
+            "name": "tenant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "formDefinition",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        }
+      }
+    },
+    "/api/v1/public/tenants/{tenant}/forms/{formDefinition}/submissions": {
+      "post": {
+        "tags": [
+          "Public Tenant"
+        ],
+        "summary": "App\\Http\\Controllers\\Api\\V1\\Public\\PublicFormSubmissionController@submit",
+        "operationId": "post_api_v1_public_tenants_tenant_forms_formDefinition_submissions",
+        "parameters": [
+          {
+            "name": "tenant",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "formDefinition",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiSuccess"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Unauthenticated"
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "422": {
+            "$ref": "#/components/responses/ValidationError"
+          },
+          "429": {
+            "$ref": "#/components/responses/RateLimited"
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "responses": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                },
+                "required": [
+                  "responses"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/public/tenants/{tenant}/content/{module}/{slug}": {
       "get": {
         "tags": [
