@@ -160,6 +160,26 @@ export interface CallForProjectApplicationForm {
   };
 }
 
+export interface PublicDynamicForm {
+  id: string;
+  title: string;
+  description?: string;
+  submit_label?: string;
+  success_message?: string;
+  schema: {
+    fields: Array<{
+      key: string;
+      type: string;
+      label?: string;
+      help_text?: string;
+      required?: boolean;
+      visible?: boolean;
+      options?: Array<{ value: string; label: string }> | Record<string, string>;
+    }>;
+  };
+  settings?: Record<string, unknown>;
+}
+
 export interface PublicContent {
   id: string;
   module: ModuleRoute;
@@ -210,6 +230,7 @@ export interface PublicContent {
   capacity?: number;
   remainingSeats?: number;
   applicationForm?: CallForProjectApplicationForm | null;
+  dynamicForm?: PublicDynamicForm | null;
 }
 
 export interface PlatformConfiguration {

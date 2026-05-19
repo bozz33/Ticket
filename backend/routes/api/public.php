@@ -46,10 +46,10 @@ Route::middleware(['initialize.tenant.route'])->group(function (): void {
         ->middleware('throttle:public-pass-lookup');
     Route::get('/public/tenants/{tenant}/content', [PublicContentController::class, 'index']);
     Route::get('/public/tenants/{tenant}/content/filters', [PublicContentController::class, 'filters']);
-    Route::get('/public/tenants/{tenant}/content/{module}/{slug}', [PublicContentController::class, 'show']);
     Route::get('/public/tenants/{tenant}/forms/{formDefinition}', [PublicFormSubmissionController::class, 'show']);
     Route::post('/public/tenants/{tenant}/forms/{formDefinition}/submissions', [PublicFormSubmissionController::class, 'submit'])
         ->middleware('throttle:public-call-for-project-apply');
+    Route::get('/public/tenants/{tenant}/content/{module}/{slug}', [PublicContentController::class, 'show']);
     Route::post('/public/tenants/{tenant}/calls-for-projects/{callForProject}/applications', PublicCallForProjectSubmissionController::class)
         ->middleware('throttle:public-call-for-project-apply');
     Route::get('/public/tenants/{tenant}/payment-options', [PublicPaymentController::class, 'options']);

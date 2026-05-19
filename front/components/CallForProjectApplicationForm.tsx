@@ -7,9 +7,18 @@ import { ApplicationPaymentOptions } from "./call-for-project-application/Applic
 import { ApplicationProgress } from "./call-for-project-application/ApplicationProgress";
 import { ApplicationStepPanel } from "./call-for-project-application/ApplicationStepPanel";
 import { ApplicationSummary } from "./call-for-project-application/ApplicationSummary";
+import { DynamicCallForProjectApplicationForm } from "./call-for-project-application/DynamicCallForProjectApplicationForm";
 import { useApplicationFormController } from "./call-for-project-application/useApplicationFormController";
 
 export function CallForProjectApplicationForm({ item }: { item: PublicContent }) {
+  if (item.dynamicForm) {
+    return <DynamicCallForProjectApplicationForm item={item} />;
+  }
+
+  return <LegacyCallForProjectApplicationForm item={item} />;
+}
+
+function LegacyCallForProjectApplicationForm({ item }: { item: PublicContent }) {
   const {
     currentStep,
     currentStepCompletedCount,

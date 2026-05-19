@@ -9,6 +9,7 @@ use App\Models\City;
 use App\Models\CrowdfundingCampaign;
 use App\Models\Event;
 use App\Models\EventTicket;
+use App\Models\FormDefinition;
 use App\Models\Offer;
 use App\Models\Stand;
 use App\Models\Tenant;
@@ -888,6 +889,33 @@ class PublicContentService
             'applicationForm' => $model instanceof CallForProject
                 ? $this->callForProjectApplicationFormService->schemaFor($model)
                 : null,
+            'dynamicForm' => $model instanceof CallForProject
+                ? $this->dynamicFormFor($model)
+                : null,
+        ];
+    }
+
+    private function dynamicFormFor(CallForProject $callForProject): ?array
+    {
+        $form = FormDefinition::query()
+            ->where('owner_type', CallForProject::class)
+            ->where('owner_id', $callForProject->getKey())
+            ->where('status', 'published')
+            ->latest('updated_at')
+            ->first();
+
+        if (! $form) {
+            return null;
+        }
+
+        return [
+            'id' => $form->public_id,
+            'title' => $form->title,
+            'description' => $form->description,
+            'submit_label' => $form->submit_label,
+            'success_message' => $form->success_message,
+            'schema' => $form->schema ?? ['fields' => []],
+            'settings' => $form->settings ?? [],
         ];
     }
 

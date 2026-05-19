@@ -12,8 +12,10 @@ class PublicFormSubmissionController extends Controller
 {
     public function __construct(private readonly PublicFormSubmissionService $submissions) {}
 
-    public function show(FormDefinition $formDefinition): JsonResponse
+    public function show(string $tenant, string $formDefinition): JsonResponse
     {
+        $formDefinition = $this->resolveFormDefinition($formDefinition);
+
         abort_unless($formDefinition->status === 'published', 404);
 
         return response()->json([
@@ -29,8 +31,9 @@ class PublicFormSubmissionController extends Controller
         ]);
     }
 
-    public function submit(FormDefinition $formDefinition, Request $request): JsonResponse
+    public function submit(string $tenant, string $formDefinition, Request $request): JsonResponse
     {
+        $formDefinition = $this->resolveFormDefinition($formDefinition);
         $submission = $this->submissions->submit($formDefinition, $request);
 
         return response()->json([
@@ -40,5 +43,13 @@ class PublicFormSubmissionController extends Controller
                 'submitted_at' => $submission->submitted_at?->toIso8601String(),
             ],
         ], 201);
+    }
+
+    private function resolveFormDefinition(string $formDefinition): FormDefinition
+    {
+        return FormDefinition::query()
+            ->where('public_id', $formDefinition)
+            ->orWhere('id', $formDefinition)
+            ->firstOrFail();
     }
 }
