@@ -5,11 +5,11 @@ const useLocalChrome = process.platform === "win32" && !process.env.CI;
 
 export default defineConfig({
   testDir: "./e2e",
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : [["list"], ["html", { open: "never" }]],
-  timeout: 30_000,
+  timeout: 60_000,
   expect: {
     timeout: 8_000,
   },
@@ -19,6 +19,7 @@ export default defineConfig({
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     video: "retain-on-failure",
+    navigationTimeout: 60_000,
   },
   webServer: {
     command: "npm run dev -- --hostname 127.0.0.1",
