@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Support\Arr;
 
 class Event extends Model
 {
@@ -74,5 +75,28 @@ class Event extends Model
     public function likes(): HasMany
     {
         return $this->hasMany(EventLike::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::saved(function (Event $event): void {
+            $schedule = (array) Arr::get($event->meta ?? [], 'schedule', []);
+            $startsAt = $schedule['starts_at'] ?? null;
+
+            if (blank($startsAt)) {
+                return;
+            }
+
+            $event->dates()->updateOrCreate(
+                ['sort_order' => 0],
+                [
+                    'starts_at' => $startsAt,
+                    'ends_at' => $schedule['ends_at'] ?? null,
+                    'timezone' => $event->timezone ?: 'UTC',
+                    'is_all_day' => false,
+                    'meta' => [],
+                ],
+            );
+        });
     }
 }

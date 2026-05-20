@@ -17,6 +17,8 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Ticket\PublicCatalog\Domain\PublicCatalogModules;
 use Ticket\Ticketing\Contracts\EventTicketInventory;
 
@@ -831,7 +833,7 @@ class PublicContentService
             : [];
 
         // Cover image (not on all models — stored in meta as fallback)
-        $coverImageUrl = $model->cover_image_url ?? $meta['cover_image_url'] ?? '';
+        $coverImageUrl = $this->publicImageUrl($model->cover_image_url ?? $meta['cover_image_url'] ?? '');
 
         return [
             'id' => $model->public_id,
@@ -999,5 +1001,16 @@ class PublicContentService
             'perks' => (array) ($meta['perks'] ?? []),
             'offerId' => $ticket->offer?->public_id,
         ];
+    }
+
+    private function publicImageUrl(?string $path): string
+    {
+        $path = trim((string) $path);
+
+        if ($path === '' || Str::startsWith($path, ['http://', 'https://', 'data:', '/'])) {
+            return $path;
+        }
+
+        return Storage::disk('public')->url($path);
     }
 }

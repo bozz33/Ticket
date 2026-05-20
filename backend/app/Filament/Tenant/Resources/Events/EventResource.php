@@ -9,6 +9,7 @@ use App\Filament\Tenant\Resources\Events\Pages\ListEvents;
 use App\Filament\Tenant\Resources\Events\RelationManagers\EventTicketsRelationManager;
 use App\Models\Category;
 use App\Models\City;
+use App\Models\Country;
 use App\Models\Event;
 use App\Models\PublicStatus;
 use App\Support\Filament\Concerns\HasPanelPermission;
@@ -18,8 +19,7 @@ use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
-use Filament\Forms\Components\KeyValue;
-use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -87,15 +87,35 @@ class EventResource extends Resource
                     Textarea::make('description')->label('Description')->rows(5)->columnSpanFull(),
                     TextInput::make('timezone')->label('Timezone')->default('UTC')->maxLength(100),
                     TextInput::make('currency_code')->label('Devise')->default('XOF')->maxLength(3),
-                    TextInput::make('country_code')->label('Pays')->maxLength(2),
+                    Select::make('country_code')
+                        ->label('Pays')
+                        ->options(fn (): array => Country::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'iso2')->all())
+                        ->searchable()
+                        ->preload()
+                        ->live()
+                        ->afterStateUpdated(fn ($set) => $set('city_id', null)),
                     Select::make('city_id')
                         ->label('Ville')
-                        ->options(fn (): array => City::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())
+                        ->options(fn ($get): array => City::query()
+                            ->where('is_active', true)
+                            ->when($get('country_code'), fn ($query, string $countryCode) => $query->whereHas('country', fn ($countryQuery) => $countryQuery->where('iso2', $countryCode)))
+                            ->orderBy('sort_order')
+                            ->orderBy('name')
+                            ->pluck('name', 'id')
+                            ->all())
                         ->searchable()
                         ->preload(),
                     TextInput::make('venue_name')->label('Lieu')->maxLength(255),
                     TextInput::make('venue_address')->label('Adresse du lieu')->maxLength(255),
-                    TextInput::make('cover_image_url')->label('Image couverture')->url()->maxLength(255),
+                    FileUpload::make('cover_image_url')
+                        ->label('Image mise en avant')
+                        ->image()
+                        ->disk('public')
+                        ->directory('tenant/events/featured')
+                        ->visibility('public')
+                        ->maxSize(2048)
+                        ->imageEditor()
+                        ->columnSpanFull(),
                     Toggle::make('is_active')->label('Actif')->default(true),
                     DateTimePicker::make('published_at')
                         ->label('Publié le')
@@ -103,22 +123,16 @@ class EventResource extends Resource
                         ->default(now())
                         ->disabled()
                         ->dehydrated(),
-                    KeyValue::make('meta')->label('Métadonnées')->columnSpanFull(),
                 ])->columns(2),
                 Section::make('Dates')->schema([
-                    Repeater::make('dates')
-                        ->relationship('dates')
-                        ->schema([
-                            DateTimePicker::make('starts_at')->label('Début')->required(),
-                            DateTimePicker::make('ends_at')->label('Fin'),
-                            TextInput::make('timezone')->label('Timezone')->maxLength(100),
-                            Toggle::make('is_all_day')->label('Toute la journée')->default(false),
-                            TextInput::make('sort_order')->label('Ordre')->numeric()->default(0),
-                            KeyValue::make('meta')->label('Meta')->columnSpanFull(),
-                        ])
-                        ->columns(2)
-                        ->columnSpanFull(),
-                ]),
+                    DateTimePicker::make('meta.schedule.starts_at')
+                        ->label('Début')
+                        ->required()
+                        ->default(fn (?Event $record): mixed => $record?->dates()->first()?->starts_at),
+                    DateTimePicker::make('meta.schedule.ends_at')
+                        ->label('Fin')
+                        ->default(fn (?Event $record): mixed => $record?->dates()->first()?->ends_at),
+                ])->columns(2),
             ]);
     }
 
