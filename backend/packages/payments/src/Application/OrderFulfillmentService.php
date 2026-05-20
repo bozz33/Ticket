@@ -5,6 +5,7 @@ namespace Ticket\Payments\Application;
 use App\Enums\AccessPassType;
 use App\Enums\OrderStatus;
 use App\Models\AccessPass;
+use App\Models\CrowdfundingCampaign;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\Receipt;
@@ -136,7 +137,9 @@ class OrderFulfillmentService
 
             $this->ensureReceipt($order);
 
-            if (! $isCrowdfunding) {
+            if ($isCrowdfunding) {
+                $this->updateCrowdfundingProgress($offer, $grossAmount, $quantity, $order->wasRecentlyCreated);
+            } else {
                 $this->ensureAccessPasses($order, $offer, $offerableType, array_merge($metadata, [
                     'orderable_type' => $orderableType,
                     'orderable_id' => $orderableId,
@@ -148,6 +151,19 @@ class OrderFulfillmentService
 
             return $order->fresh(['receipt', 'accessPasses']);
         });
+    }
+
+    private function updateCrowdfundingProgress(?Offer $offer, int $grossAmount, int $quantity, bool $isNewOrder): void
+    {
+        if (! $isNewOrder || ! $offer instanceof Offer || $offer->offerable_type !== CrowdfundingCampaign::class) {
+            return;
+        }
+
+        CrowdfundingCampaign::query()
+            ->whereKey($offer->offerable_id)
+            ->increment('raised_amount', max(0, $grossAmount));
+
+        $offer->increment('quantity_sold', max(1, $quantity));
     }
 
     private function ensureReceipt(Order $order): void

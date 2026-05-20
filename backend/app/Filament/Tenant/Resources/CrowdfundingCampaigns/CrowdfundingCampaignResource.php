@@ -6,6 +6,7 @@ use App\Enums\CategoryScope;
 use App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages\CreateCrowdfundingCampaign;
 use App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages\EditCrowdfundingCampaign;
 use App\Filament\Tenant\Resources\CrowdfundingCampaigns\Pages\ListCrowdfundingCampaigns;
+use App\Filament\Tenant\Resources\CrowdfundingCampaigns\RelationManagers\ContributionOffersRelationManager;
 use App\Models\Category;
 use App\Models\CrowdfundingCampaign;
 use App\Models\PublicStatus;
@@ -107,6 +108,13 @@ class CrowdfundingCampaignResource extends Resource
             'index' => ListCrowdfundingCampaigns::route('/'),
             'create' => CreateCrowdfundingCampaign::route('/create'),
             'edit' => EditCrowdfundingCampaign::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            ContributionOffersRelationManager::class,
         ];
     }
 

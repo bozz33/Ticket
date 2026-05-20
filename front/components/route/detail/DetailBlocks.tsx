@@ -19,6 +19,9 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
     ? `?offer=%s&tenant=${encodeURIComponent(item.organizerSlug)}`
     : "?offer=%s";
   const hasEventTickets = item.module === "evenements" && (item.tickets?.length ?? 0) > 0;
+  const isCrowdfunding = item.module === "crowdfunding";
+  const offerEyebrow = isCrowdfunding ? "Contribution" : "Offres";
+  const offerTitle = isCrowdfunding ? "Choisissez un palier de soutien" : defaults.offerTitle;
 
   return (
     <>
@@ -59,7 +62,7 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
 
       {!hasEventTickets && item.tiers.length > 0 ? (
         <section className="detail-block">
-          <SectionHeader eyebrow="Offres" title={defaults.offerTitle} />
+          <SectionHeader eyebrow={offerEyebrow} title={offerTitle} />
 
           <div className="offer-grid">
             {item.tiers.map((tier) => (

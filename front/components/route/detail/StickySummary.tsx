@@ -14,6 +14,10 @@ export function StickySummary({ item }: { item: PublicContent }) {
     ? `/appels-a-projets/${item.slug}/postuler`
     : null;
   const eventTickets = item.module === "evenements" ? (item.tickets ?? []) : [];
+  const isCrowdfunding = item.module === "crowdfunding";
+  const progressCurrent = item.progressCurrent ?? 0;
+  const progressTarget = item.progressTarget ?? 0;
+  const progressPercent = progressTarget > 0 ? Math.min(100, Math.round((progressCurrent / progressTarget) * 100)) : 0;
 
   return (
     <aside className="sticky-panel">
@@ -24,10 +28,18 @@ export function StickySummary({ item }: { item: PublicContent }) {
           <strong>{organizerName}</strong>
         </span>
       </Link>
-      <div className="sticky-panel__price">
-        <span>A partir de</span>
-        <strong>{item.isFree ? "Gratuit" : formatMoney(item.priceFrom, item.currency)}</strong>
-      </div>
+      {isCrowdfunding ? (
+        <div className="sticky-panel__price">
+          <span>Collecté</span>
+          <strong>{formatMoney(progressCurrent, item.currency)}</strong>
+          {progressTarget > 0 ? <small>Objectif {formatMoney(progressTarget, item.currency)} · {progressPercent}%</small> : null}
+        </div>
+      ) : (
+        <div className="sticky-panel__price">
+          <span>A partir de</span>
+          <strong>{item.isFree ? "Gratuit" : formatMoney(item.priceFrom, item.currency)}</strong>
+        </div>
+      )}
       <ul className="facts-list">
         <li>
           <strong>Date</strong>
@@ -84,8 +96,8 @@ export function StickySummary({ item }: { item: PublicContent }) {
         </div>
       ) : null}
       <div className="detail-trust-box">
-        <strong>{applicationHref ? "Candidature securisee" : "Checkout securise"}</strong>
-        <p>{applicationHref ? "Formulaire public valide cote serveur, villes et pays locaux, pieces jointes controlees." : "Confirmation, verification paiement et recapitulatif centralises pour chaque commande."}</p>
+        <strong>{applicationHref ? "Candidature securisee" : isCrowdfunding ? "Contribution securisee" : "Checkout securise"}</strong>
+        <p>{applicationHref ? "Formulaire public valide cote serveur, villes et pays locaux, pieces jointes controlees." : isCrowdfunding ? "Paiement verifie, recu genere et progression de collecte mise a jour automatiquement." : "Confirmation, verification paiement et recapitulatif centralises pour chaque commande."}</p>
       </div>
       <ShareLinks item={item} />
     </aside>
