@@ -16,15 +16,28 @@ export function DynamicCallForProjectApplicationForm({ item }: { item: PublicCon
   const formId = form.id;
 
   async function submitDynamicForm(responses: Record<string, unknown>) {
-    const jsonResponses = Object.fromEntries(
-      Object.entries(responses).filter(([, value]) => !(value instanceof File)),
-    );
+    const formData = new FormData();
+
+    Object.entries(responses).forEach(([key, value]) => {
+      if (value instanceof File) {
+        formData.append(`files[${key}]`, value);
+
+        return;
+      }
+
+      if (Array.isArray(value)) {
+        value.forEach((entry) => formData.append(`responses[${key}][]`, String(entry)));
+
+        return;
+      }
+
+      formData.append(`responses[${key}]`, String(value ?? ""));
+    });
 
     const response = await fetch(
       `/api/public/forms/${encodeURIComponent(formId)}/submissions?tenant=${encodeURIComponent(item.organizerSlug)}`,
       {
-        body: JSON.stringify({ responses: jsonResponses }),
-        headers: { "Content-Type": "application/json" },
+        body: formData,
         method: "POST",
       },
     );

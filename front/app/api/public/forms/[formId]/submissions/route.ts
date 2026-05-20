@@ -36,17 +36,21 @@ export async function POST(
 
   const token = await getAuthToken();
   const { formId } = await context.params;
-  const payload = await request.json().catch(() => ({}));
+  const contentType = request.headers.get("content-type") ?? "";
+  const isMultipart = contentType.includes("multipart/form-data");
+  const body = isMultipart
+    ? await request.formData()
+    : JSON.stringify(await request.json().catch(() => ({})));
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/v1/public/tenants/${encodeURIComponent(tenantSlug)}/forms/${encodeURIComponent(formId)}/submissions`, {
       method: "POST",
       headers: {
         Accept: "application/json",
-        "Content-Type": "application/json",
+        ...(isMultipart ? {} : { "Content-Type": "application/json" }),
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(payload),
+      body,
     });
 
     const responsePayload = await response.json().catch(() => ({ message: "Réponse serveur invalide." }));

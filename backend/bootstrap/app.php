@@ -10,6 +10,7 @@ use App\Http\Middleware\InitializeTenancyByRouteParameter;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
+use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -37,6 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.subscription.active' => EnsureTenantSubscriptionIsActive::class,
             'signed' => ValidateSignature::class,
         ]);
+    })
+    ->withSchedule(function (Schedule $schedule): void {
+        $schedule->command('ticket:release-expired-ticket-reservations --all-tenants --minutes=20 --limit=250')
+            ->everyFiveMinutes();
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

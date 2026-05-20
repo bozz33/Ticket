@@ -8,8 +8,10 @@ use App\Services\Forms\DynamicFormValidator;
 use App\Services\Forms\PublicFormSubmissionService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
@@ -72,9 +74,39 @@ class PublicFormSubmissionServiceTest extends TestCase
         $this->service()->submit($form, Request::create('/forms', 'POST', ['responses' => []]));
     }
 
+    public function test_it_stores_uploaded_files_for_file_fields(): void
+    {
+        Storage::fake('local');
+
+        $form = FormDefinition::query()->create([
+            'name' => 'with-file',
+            'title' => 'Avec fichier',
+            'status' => 'published',
+            'schema' => [
+                'fields' => [
+                    ['key' => 'full_name', 'type' => 'text', 'label' => 'Nom complet', 'required' => true],
+                    ['key' => 'portfolio', 'type' => 'file', 'label' => 'Portfolio', 'required' => true],
+                ],
+            ],
+        ]);
+
+        $request = Request::create('/forms', 'POST', [
+            'responses' => ['full_name' => 'Grace Hopper'],
+        ], [], [
+            'files' => ['portfolio' => UploadedFile::fake()->create('portfolio.pdf', 128, 'application/pdf')],
+        ]);
+
+        $submission = $this->service()->submit($form, $request);
+
+        $this->assertSame('Grace Hopper', $submission->data['full_name']);
+        $this->assertArrayHasKey('portfolio', $submission->files);
+        $this->assertSame('portfolio.pdf', $submission->files['portfolio']['original_name']);
+        Storage::disk('local')->assertExists($submission->files['portfolio']['path']);
+    }
+
     private function service(): PublicFormSubmissionService
     {
-        return new PublicFormSubmissionService(new DynamicFormValidator());
+        return new PublicFormSubmissionService(new DynamicFormValidator);
     }
 
     private function prepareTenantSchema(): void

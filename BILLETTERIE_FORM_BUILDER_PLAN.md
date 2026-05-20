@@ -632,6 +632,7 @@ be27673 feat: add event ticketing frontend components
 b7fe68e feat: add reusable dynamic form frontend module
 9cc3f79 feat: integrate dynamic forms into call for project applications
 a93801f docs: document dynamic form public API contract
+c6398fc feat: introduce ticket-first modular checkout
 ```
 
 ### Billetterie événement
@@ -683,6 +684,8 @@ front/app/api/public/forms/[formId]/submissions/route.ts
 
 Si un `FormDefinition` publié est lié à un appel à projets, le front utilise `DynamicFormRenderer`.
 Sinon, l'ancien wizard de candidature reste utilisé.
+- resource Filament de consultation des `FormSubmission` ;
+- stockage persistant des fichiers soumis via formulaire dynamique sur le disque local tenant-aware.
 
 ### Contrats et tests validés
 
@@ -715,18 +718,18 @@ Le contrat OpenAPI documente maintenant les endpoints publics du form builder.
 - les signatures du contrôleur incluent le paramètre `{tenant}` pour éviter une mauvaise injection de paramètres ;
 - le build Next utilise `npm run build:ci`, car le projet force `next build --webpack` avec Next 16 ;
 - `optimize:clear` est nécessaire après modification des routes Laravel si un cache de routes est présent.
+- les réservations tickets expirées peuvent être libérées par `ticket:release-expired-ticket-reservations` ;
+- le scheduler Laravel exécute la libération multi-tenant toutes les cinq minutes.
 
 ### Restant réel
 
 Les éléments suivants restent des évolutions futures, non indispensables au fonctionnement actuel :
 
-- checkout polymorphique natif `orderable_type` / `orderable_id` ;
-- achat direct de `EventTicket` sans adaptateur `Offer` ;
+- achat direct de `EventTicket` sans adaptateur technique `Offer` ;
 - suppression progressive des anciens chemins événementiels basés sur `Offer` ;
-- gestion avancée des fichiers dans le form builder dynamique ;
 - conditions d'affichage de champs ;
 - workflow de review/scoring des soumissions ;
-- stockage persistant des fichiers soumis via formulaire dynamique.
+- endpoints publics explicites de réservation/libération si l'on veut exposer le panier temporaire avant l'initialisation paiement.
 
 ## Décision finale
 

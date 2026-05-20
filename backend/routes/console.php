@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\TenantStatus;
 use App\Models\Tenant;
 use App\Support\ReferenceData\CountryReferenceImporter;
 use Illuminate\Foundation\Inspiring;
@@ -120,18 +121,70 @@ Artisan::command('ticket:backfill-event-tickets', function (): int {
     return 0;
 })->purpose('Create dedicated event tickets from legacy event offers in the current tenant database');
 
-Artisan::command('ticket:release-expired-ticket-reservations {--minutes=20 : Reservation age before release} {--limit=100 : Maximum transactions to inspect}', function (): int {
-    $summary = app(EventTicketInventory::class)->releaseExpiredReservations(
-        max(1, (int) $this->option('minutes')),
-        max(1, (int) $this->option('limit')),
-    );
+Artisan::command('ticket:release-expired-ticket-reservations {--tenant= : Tenant slug or public id} {--all-tenants : Process all active tenants} {--minutes=20 : Reservation age before release} {--limit=100 : Maximum reservations to inspect per tenant}', function (): int {
+    $minutes = max(1, (int) $this->option('minutes'));
+    $limit = max(1, (int) $this->option('limit'));
+    $tenantIdentifier = trim((string) $this->option('tenant'));
 
-    $this->info(sprintf(
-        'Expired ticket reservation release completed: %d processed, %d released, %d skipped.',
-        $summary['processed'],
-        $summary['released'],
-        $summary['skipped'],
-    ));
+    $release = function (?Tenant $tenant = null) use ($minutes, $limit): array {
+        $summary = app(EventTicketInventory::class)->releaseExpiredReservations($minutes, $limit);
+
+        $this->info(sprintf(
+            '%sExpired ticket reservation release completed: %d processed, %d released, %d skipped.',
+            $tenant ? "[{$tenant->slug}] " : '',
+            $summary['processed'],
+            $summary['released'],
+            $summary['skipped'],
+        ));
+
+        return $summary;
+    };
+
+    if ($tenantIdentifier !== '') {
+        $tenant = Tenant::query()
+            ->where('slug', $tenantIdentifier)
+            ->orWhere('public_id', $tenantIdentifier)
+            ->first();
+
+        if (! $tenant instanceof Tenant) {
+            $this->error(sprintf('Tenant [%s] not found.', $tenantIdentifier));
+
+            return 1;
+        }
+
+        $tenant->run(fn () => $release($tenant));
+
+        return 0;
+    }
+
+    if ((bool) $this->option('all-tenants')) {
+        $totals = ['processed' => 0, 'released' => 0, 'skipped' => 0, 'tenants' => 0];
+
+        Tenant::query()
+            ->where('status', TenantStatus::Active)
+            ->orderBy('id')
+            ->get()
+            ->each(function (Tenant $tenant) use (&$totals, $release): void {
+                $summary = $tenant->run(fn () => $release($tenant));
+
+                $totals['tenants']++;
+                $totals['processed'] += (int) $summary['processed'];
+                $totals['released'] += (int) $summary['released'];
+                $totals['skipped'] += (int) $summary['skipped'];
+            });
+
+        $this->info(sprintf(
+            'All tenants completed: %d tenants, %d processed, %d released, %d skipped.',
+            $totals['tenants'],
+            $totals['processed'],
+            $totals['released'],
+            $totals['skipped'],
+        ));
+
+        return 0;
+    }
+
+    $release();
 
     return 0;
 })->purpose('Release expired pending reservations for event tickets');
