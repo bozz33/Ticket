@@ -707,6 +707,7 @@ Frontend :
 - `features/ticketing` expose les composants de billetterie ;
 - `features/checkout` expose les primitives client/data du checkout ;
 - les anciens chemins `components/*` restent compatibles pendant la migration.
+- les imports critiques checkout/ticketing des vues publiques passent progressivement par `features/*`.
 
 ### Contrats et tests validés
 
@@ -751,6 +752,10 @@ DELETE /api/v1/public/tenants/{tenant}/ticket-reservations/{reservation}
 ```
 
 - l'initialisation paiement peut consommer une réservation existante via `ticket_reservation`, ce qui évite la double réservation.
+- un compteur front affiche le temps restant du hold ticket avant expiration ;
+- le fallback public des likes utilise maintenant une revalidation courte au lieu de `no-store`, comme le fallback public des abonnements organisateur ;
+- les filtres catalogue restent pilotés par URL et pagination serveur, sans rechargement complet du catalogue côté navigateur ;
+- la resource Filament `CallForProjectSubmissionResource` a été allégée avec classes dédiées `Schemas` et `Tables`.
 
 ### Restant réel
 
@@ -758,7 +763,7 @@ Les éléments suivants restent des évolutions futures, non indispensables au f
 
 - suppression progressive des anciens chemins événementiels basés sur `Offer` ;
 - migration progressive des imports front vers `features/*` ;
-- extraction future des resources Filament vers Schemas/Tables dédiées pour suivre un style très grand projet.
+- extraction progressive des autres resources Filament vers Schemas/Tables dédiées pour suivre un style très grand projet.
 
 ## Décision finale
 

@@ -9,7 +9,7 @@ export async function reserveSelectedEventTicket({
   selectedOffer: PublicContent["tiers"][number];
   quantity: number;
   tenant?: string;
-}): Promise<{ reservationId?: string; notice?: string; error?: string }> {
+}): Promise<{ expiresAt?: string | null; reservationId?: string; notice?: string; error?: string }> {
   if (selectedOffer.source !== "event_ticket") {
     return {};
   }
@@ -29,6 +29,7 @@ export async function reserveSelectedEventTicket({
   }
 
   return {
+    expiresAt: reservation.expires_at ?? null,
     reservationId: reservation.id,
     notice: reservation.expires_at
       ? `Ticket réservé jusqu'à ${new Date(reservation.expires_at).toLocaleTimeString()}.`

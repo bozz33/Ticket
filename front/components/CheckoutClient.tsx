@@ -33,7 +33,7 @@ export function CheckoutClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
-
+  const [reservationExpiresAt, setReservationExpiresAt] = useState<string | null>(null);
   const organizerName = item.organizers[0]?.name ?? "Organisateur";
   const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const quantityBounds = paymentOptions?.quantity ?? { min: 1, max: 10 };
@@ -65,7 +65,6 @@ export function CheckoutClient({
       initialPaymentOptions.checkout_item?.id ??
       initialPaymentOptions.ticket?.id ??
       initialPaymentOptions.offer.id;
-
     pricingCache.current.set(`${initialCheckoutItemId}:${initialPaymentOptions.pricing.quantity}:${selectedPaymentMethod}`, initialPaymentOptions);
   }
   async function refreshPricing(nextQuantity: number) {
@@ -82,7 +81,6 @@ export function CheckoutClient({
       setError(null);
       return;
     }
-
     setLoadingPricing(true);
     setError(null);
 
@@ -133,6 +131,7 @@ export function CheckoutClient({
     setSubmitting(true);
     setError(null);
     setNotice(null);
+    setReservationExpiresAt(null);
 
     try {
       const callbackUrl = buildCheckoutCallbackUrl(item, selectedOffer);
@@ -149,11 +148,11 @@ export function CheckoutClient({
       }
 
       const ticketReservationId = reservation.reservationId;
-
       if (reservation.notice) {
         setNotice(reservation.notice);
       }
 
+      setReservationExpiresAt(reservation.expiresAt ?? null);
       const result = await initializeCheckoutPayment({
         ...getCheckoutInitializationIds(selectedOffer),
         quantity,
@@ -216,6 +215,7 @@ export function CheckoutClient({
           organizerImage={organizerImage}
           organizerName={organizerName}
           pricing={pricing}
+          reservationExpiresAt={reservationExpiresAt}
           selectedOffer={selectedOffer}
           submitting={submitting}
           onSubmit={() => {

@@ -2,6 +2,7 @@
 
 import type { CheckoutPaymentOptions, PublicContent } from "@/lib/types";
 import { formatMoney } from "@/lib/utils";
+import { ReservationCountdown } from "./ReservationCountdown";
 
 type CheckoutSummaryProps = {
   dateLabel: string;
@@ -12,6 +13,7 @@ type CheckoutSummaryProps = {
   organizerImage: string;
   organizerName: string;
   pricing: CheckoutPaymentOptions["pricing"];
+  reservationExpiresAt: string | null;
   selectedOffer: PublicContent["tiers"][number] | null;
   submitting: boolean;
   onSubmit: () => void;
@@ -26,6 +28,7 @@ export function CheckoutSummary({
   organizerImage,
   organizerName,
   pricing,
+  reservationExpiresAt,
   selectedOffer,
   submitting,
   onSubmit,
@@ -107,6 +110,7 @@ export function CheckoutSummary({
           {submitting ? "Initialisation..." : pricing.total === 0 ? "Confirmer la réservation" : "Continuer vers le paiement"}
         </button>
 
+        <ReservationCountdown expiresAt={reservationExpiresAt} />
         {notice ? <p className="booking-summary__notice">{notice}</p> : null}
         {error ? <p className="booking-summary__error">{error}</p> : null}
       </div>

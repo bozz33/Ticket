@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 
-import { CheckoutClient } from "@/components/CheckoutClient";
+import { CheckoutClient } from "@/features/checkout";
 import type {
   AccountUser,
   CheckoutPaymentOptions,

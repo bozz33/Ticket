@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { SectionHeader } from "@/components/route/SectionHeader";
-import { TicketTierList } from "@/components/ticketing";
+import { TicketTierList } from "@/features/ticketing";
 import type { PublicContent } from "@/lib/types";
 import { formatMoney } from "@/lib/utils";
 

@@ -6,6 +6,8 @@ import { normalizeTenantSlug } from "@/lib/tenant";
 
 import { apiBaseUrl, normalizedNumber } from "./common";
 
+const PUBLIC_LIKES_REVALIDATE = 120;
+
 type EventLikeContext = { params: Promise<{ tenant: string; slug: string }> };
 
 async function getPublicLikes(tenant: string, slug: string): Promise<number> {
@@ -17,10 +19,11 @@ async function getPublicLikes(tenant: string, slug: string): Promise<number> {
     const response = await fetch(
       `${apiBaseUrl}/api/v1/public/tenants/${encodeURIComponent(tenant)}/content/evenements/${encodeURIComponent(slug)}`,
       {
-        cache: "no-store",
+        cache: "force-cache",
         headers: {
           Accept: "application/json",
         },
+        next: { revalidate: PUBLIC_LIKES_REVALIDATE },
       },
     );
 

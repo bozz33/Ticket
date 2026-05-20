@@ -17,7 +17,7 @@
     "contract:api": "node scripts/front-openapi-contract.mjs",
     "smoke:http": "node scripts/front-http-smoke.mjs",
     "e2e": "playwright test",
-    "e2e:smoke": "playwright test e2e/public-smoke.spec.ts e2e/account-auth.spec.ts",
+    "e2e:smoke": "playwright test e2e/public-smoke.spec.ts e2e/account-auth.spec.ts e2e/checkout-cart.spec.ts",
     "e2e:report": "playwright show-report",
     "test": "node tests/front-security.test.mjs",
     "quality": "npm run lint && npm run a11y && npm run perf:budget && npm run contract:api && npm run typecheck && npm test"

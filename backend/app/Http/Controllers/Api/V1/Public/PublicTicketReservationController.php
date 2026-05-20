@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Exceptions\BuyerAccountActionBlockedException;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\V1\Public\PublicTicketReservationStoreRequest;
 use App\Models\TicketReservation;
 use App\Models\User;
 use App\Services\Auth\TenantTokenService;
@@ -25,7 +26,7 @@ class PublicTicketReservationController extends Controller
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}
 
-    public function store(Request $request, string $tenant): JsonResponse
+    public function store(PublicTicketReservationStoreRequest $request, string $tenant): JsonResponse
     {
         $tenantModel = $this->tenantContext->get();
 
@@ -42,10 +43,7 @@ class PublicTicketReservationController extends Controller
             ], 401);
         }
 
-        $validated = $request->validate([
-            'ticket' => ['required', 'string', 'max:80'],
-            'quantity' => ['nullable', 'integer', 'min:1'],
-        ]);
+        $validated = $request->validated();
 
         try {
             $this->buyerAccountReadiness->assertReadyForSensitiveAction($buyer, 'réserver');
