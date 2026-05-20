@@ -50,20 +50,20 @@ class PublicPaymentService
         $offer = $item->pricingOffer;
         $bounds = $this->checkoutItems->quantityBounds($item);
         $quantity = min(max($requestedQuantity, $bounds['min']), $bounds['max']);
-        $gateway = $offer->price_amount > 0
-            ? $this->pricingRuleEngine->resolveGatewayForCurrency((string) $offer->currency_code, $paymentMethod)
+        $gateway = $item->unitAmount > 0
+            ? $this->pricingRuleEngine->resolveGatewayForCurrency((string) $item->currencyCode, $paymentMethod)
             : null;
-        $pricing = $this->pricingRuleEngine->quote($tenant, $offer, $quantity, $gateway, $paymentMethod);
+        $pricing = $this->pricingRuleEngine->quoteCheckoutItem($tenant, $item, $quantity, $gateway, $paymentMethod);
 
         return [
             'methods' => $this->buildPaymentMethods($gateway, $pricing['total'] <= 0),
             'pricing' => $pricing,
             'quantity' => $bounds,
             'offer' => [
-                'id' => $offer->public_id,
-                'title' => $offer->name,
-                'currency' => $offer->currency_code,
-                'unit_amount' => $offer->price_amount,
+                'id' => $offer?->public_id ?? $item->publicId,
+                'title' => $offer?->name ?? $item->title,
+                'currency' => $offer?->currency_code ?? $item->currencyCode,
+                'unit_amount' => $offer?->price_amount ?? $item->unitAmount,
             ],
             'checkout_item' => [
                 'type' => $item->type,
@@ -97,25 +97,27 @@ class PublicPaymentService
             throw new RuntimeException('Adresse email requise pour le paiement.');
         }
 
-        $this->assertBuyerCanPurchase($tenant, $offer, $buyerEmail, $buyerUserId, $quantity);
+        $this->assertBuyerCanPurchase($tenant, $item, $buyerEmail, $buyerUserId, $quantity);
 
         $paymentMethod = trim((string) ($payload['payment_method'] ?? ''));
-        $gateway = $offer->price_amount > 0
-            ? $this->pricingRuleEngine->resolveGatewayForCurrency((string) $offer->currency_code, $paymentMethod)
+        $gateway = $item->unitAmount > 0
+            ? $this->pricingRuleEngine->resolveGatewayForCurrency((string) $item->currencyCode, $paymentMethod)
             : null;
-        $pricing = $this->pricingRuleEngine->quote($tenant, $offer, $quantity, $gateway, $paymentMethod);
+        $pricing = $this->pricingRuleEngine->quoteCheckoutItem($tenant, $item, $quantity, $gateway, $paymentMethod);
         $reference = $this->generateReference($pricing['total'] <= 0 ? 'FREE' : 'PAY', (string) $pricing['currency']);
-        $module = $this->moduleFromOfferableType((string) $offer->offerable_type);
+        $module = $offer instanceof Offer
+            ? $this->moduleFromOfferableType((string) $offer->offerable_type)
+            : ($item->is('event_ticket') ? CommercialModule::Ticketing->value : CommercialModule::Ticketing->value);
         $reservation = null;
         $transaction = null;
 
         $metadata = array_merge([
             'tenant_slug' => $tenant->slug,
             'tenant_public_id' => $tenant->public_id,
-            'offer_id' => $offer->id,
-            'offer_public_id' => $offer->public_id,
-            'offerable_type' => $offer->offerable_type,
-            'offer_title' => $offer->name,
+            'offer_id' => $offer?->id,
+            'offer_public_id' => $offer?->public_id,
+            'offerable_type' => $offer?->offerable_type,
+            'offer_title' => $offer?->name,
             'checkout_item_type' => $item->type,
             'checkout_item_public_id' => $item->publicId,
             'checkout_item_title' => $item->title,
@@ -178,8 +180,8 @@ class PublicPaymentService
             Log::channel((string) config('ticket.logging.payments_channel', 'payments'))->info('public_checkout_initialized', [
                 'tenant_id' => $tenant->getKey(),
                 'transaction_reference' => $reference,
-                'offer_public_id' => $offer->public_id,
-                'offer_title' => $offer->name,
+                'offer_public_id' => $offer?->public_id,
+                'offer_title' => $offer?->name ?? $item->title,
                 'checkout_item_type' => $item->type,
                 'checkout_item_public_id' => $item->publicId,
                 'quantity' => $quantity,
@@ -202,7 +204,7 @@ class PublicPaymentService
                     'tenant_id' => $tenant->getKey(),
                     'transaction_reference' => $reference,
                     'order_reference' => $order?->reference,
-                    'offer_public_id' => $offer->public_id,
+                    'offer_public_id' => $offer?->public_id,
                     'checkout_item_type' => $item->type,
                     'checkout_item_public_id' => $item->publicId,
                     'quantity' => $quantity,
@@ -222,7 +224,7 @@ class PublicPaymentService
             }
 
             return match ($gateway->code) {
-                'paystack' => $this->initializePaystack($transaction, $gateway, $offer, $pricing, $metadata),
+                'paystack' => $this->initializePaystack($transaction, $gateway, $item, $pricing, $metadata),
                 default => throw new RuntimeException('Gateway de paiement non prise en charge.'),
             };
         } catch (\Throwable $exception) {
@@ -299,7 +301,7 @@ class PublicPaymentService
     private function initializePaystack(
         PlatformTransaction $transaction,
         PaymentGateway $gateway,
-        Offer $offer,
+        CheckoutItem $item,
         array $pricing,
         array $metadata,
     ): array {
@@ -351,8 +353,8 @@ class PublicPaymentService
             'meta' => array_merge((array) $transaction->meta, [
                 'checkout' => $metadata,
                 'offer' => [
-                    'public_id' => $offer->public_id,
-                    'name' => $offer->name,
+                    'public_id' => $item->pricingOffer?->public_id,
+                    'name' => $item->pricingOffer?->name ?? $item->title,
                 ],
                 'gateway_amount' => [
                     'subunit_amount' => $gatewayAmount,
@@ -548,11 +550,17 @@ class PublicPaymentService
 
     private function assertBuyerCanPurchase(
         Tenant $tenant,
-        Offer $offer,
+        CheckoutItem $item,
         string $buyerEmail,
         ?int $buyerUserId,
         int $quantity,
     ): void {
+        $offer = $item->pricingOffer;
+
+        if (! $offer instanceof Offer) {
+            return;
+        }
+
         $maxPerAccount = (int) ($offer->max_per_account ?: 0);
 
         if ($maxPerAccount <= 0) {

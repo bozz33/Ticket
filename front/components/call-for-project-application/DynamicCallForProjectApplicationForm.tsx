@@ -13,8 +13,6 @@ export function DynamicCallForProjectApplicationForm({ item }: { item: PublicCon
     return null;
   }
 
-  const formId = form.id;
-
   async function submitDynamicForm(responses: Record<string, unknown>) {
     const formData = new FormData();
 
@@ -35,7 +33,7 @@ export function DynamicCallForProjectApplicationForm({ item }: { item: PublicCon
     });
 
     const response = await fetch(
-      `/api/public/forms/${encodeURIComponent(formId)}/submissions?tenant=${encodeURIComponent(item.organizerSlug)}`,
+      `/api/public/call-for-projects/${encodeURIComponent(item.slug)}/apply?tenant=${encodeURIComponent(item.organizerSlug)}`,
       {
         body: formData,
         method: "POST",

@@ -164,11 +164,14 @@ class EventTicketOfferSyncServiceTest extends TestCase
         ])->refresh();
 
         $resolver = app(CheckoutItemResolver::class);
+        $offerCountBeforeResolve = Offer::query()->count();
         $item = $resolver->resolve($ticket->public_id, 'event_ticket');
 
         $this->assertInstanceOf(CheckoutItem::class, $item);
         $this->assertSame('event_ticket', $item->type);
         $this->assertSame($ticket->public_id, $item->publicId);
+        $this->assertNull($item->pricingOffer);
+        $this->assertSame($offerCountBeforeResolve, Offer::query()->count());
 
         $reservation = $resolver->reserve($item, 2, [
             'transaction_reference' => 'PAY-TEST-001',

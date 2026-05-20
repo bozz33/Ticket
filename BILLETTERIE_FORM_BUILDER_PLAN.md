@@ -588,10 +588,9 @@ Pour le form builder :
 
 ### Lot 6 : form builder backend
 
-- `FormDefinition` ;
-- `FormSubmission` ;
-- service de schéma ;
-- validation serveur ;
+- entités génériques `FormDefinition` et `FormSubmission` ;
+- validation serveur de schéma ;
+- API publique de formulaire ;
 - resource Filament ;
 - tests.
 
@@ -643,7 +642,7 @@ Implémenté :
 - modèle `EventTicket` ;
 - relation `Event::tickets()` ;
 - service `EventTicketAvailabilityService` ;
-- synchronisation `EventTicket` vers `Offer` via `EventTicketOfferSyncService` ;
+- synchronisation legacy `EventTicket` vers `Offer` via `EventTicketOfferSyncService` pour migration/backfill uniquement ;
 - commande de backfill `ticket:backfill-event-tickets` ;
 - resource Filament `EventTicketResource` ;
 - relation manager sous événement ;
@@ -651,7 +650,7 @@ Implémenté :
 - composants front `components/ticketing` ;
 - badges de disponibilité et CTA désactivés pour les tickets indisponibles.
 
-Le flux checkout continue à utiliser `Offer` comme adaptateur de paiement pendant la transition.
+Le flux checkout événement résout désormais `EventTicket` directement, quote le prix depuis le ticket et ne crée plus d'`Offer` technique pendant la résolution checkout.
 
 ### Form builder
 
@@ -684,7 +683,10 @@ front/app/api/public/forms/[formId]/submissions/route.ts
 
 Si un `FormDefinition` publié est lié à un appel à projets, le front utilise `DynamicFormRenderer`.
 Sinon, l'ancien wizard de candidature reste utilisé.
-- resource Filament de consultation des `FormSubmission` ;
+- pour les appels à projets, `DynamicFormRenderer` sert uniquement au rendu et à la collecte des champs ;
+- la soumission d'une candidature reste stockée dans le domaine métier `CallForProjectSubmission` ;
+- `FormSubmission` reste réservé aux formulaires génériques hors domaine métier spécifique ;
+- resource Filament de consultation des `FormSubmission` génériques ;
 - stockage persistant des fichiers soumis via formulaire dynamique sur le disque local tenant-aware.
 
 ### Contrats et tests validés
@@ -725,7 +727,6 @@ Le contrat OpenAPI documente maintenant les endpoints publics du form builder.
 
 Les éléments suivants restent des évolutions futures, non indispensables au fonctionnement actuel :
 
-- achat direct de `EventTicket` sans adaptateur technique `Offer` ;
 - suppression progressive des anciens chemins événementiels basés sur `Offer` ;
 - conditions d'affichage de champs ;
 - workflow de review/scoring des soumissions ;

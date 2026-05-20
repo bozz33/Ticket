@@ -21,6 +21,7 @@ use App\Models\Training;
 use App\Services\FinancePolicyService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Ticket\Payments\Domain\CheckoutItem;
 
 class PricingRuleEngine
 {
@@ -39,6 +40,41 @@ class PricingRuleEngine
         $currencyCode = strtoupper((string) ($offer->currency_code ?: $tenant->currency_code ?: 'XOF'));
         $countryCode = strtoupper((string) ($tenant->country_code ?: 'CI'));
         $module = $this->moduleFromOffer($offer);
+        $paymentChannel = $this->normalizePaymentChannel($paymentMethod);
+
+        if ($subtotal === 0) {
+            return $this->buildFreeQuote($currencyCode, $quantity, $module);
+        }
+
+        $pricing = $this->financePolicyService->buildPricingSnapshot(
+            subtotal: $subtotal,
+            quantity: $quantity,
+            currencyCode: $currencyCode,
+            module: $module->value,
+            paymentMethod: $paymentMethod,
+        );
+
+        $pricing['country_code'] = $countryCode;
+        $pricing['payment_channel'] = $paymentChannel;
+
+        return $pricing;
+    }
+
+    public function quoteCheckoutItem(
+        Tenant $tenant,
+        CheckoutItem $item,
+        int $quantity,
+        ?PaymentGateway $gateway = null,
+        ?string $paymentMethod = null,
+    ): array {
+        if ($item->pricingOffer instanceof Offer) {
+            return $this->quote($tenant, $item->pricingOffer, $quantity, $gateway, $paymentMethod);
+        }
+
+        $subtotal = max(0, $item->unitAmount) * max(1, $quantity);
+        $currencyCode = strtoupper((string) ($item->currencyCode ?: $tenant->currency_code ?: 'XOF'));
+        $countryCode = strtoupper((string) ($tenant->country_code ?: 'CI'));
+        $module = CommercialModule::Ticketing;
         $paymentChannel = $this->normalizePaymentChannel($paymentMethod);
 
         if ($subtotal === 0) {

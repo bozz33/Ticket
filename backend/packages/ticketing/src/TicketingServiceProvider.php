@@ -48,7 +48,6 @@ class TicketingServiceProvider extends ServiceProvider
         $this->app->bind(EventTicketOfferBridge::class, EventTicketOfferBridgeService::class);
         $this->app->bind(CheckoutItemResolver::class, fn (): TicketingCheckoutItemResolver => new TicketingCheckoutItemResolver(
             $this->app->make(EventTicketInventory::class),
-            $this->app->make(EventTicketOfferBridge::class),
             $this->app->make(OfferCheckoutItemResolver::class),
         ));
         $this->app->bind(DocumentCatalog::class, LaravelDocumentCatalog::class);

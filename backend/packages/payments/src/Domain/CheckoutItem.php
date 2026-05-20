@@ -12,7 +12,7 @@ class CheckoutItem
         public readonly string $title,
         public readonly int $unitAmount,
         public readonly ?string $currencyCode,
-        public readonly Offer $pricingOffer,
+        public readonly ?Offer $pricingOffer = null,
         public readonly ?string $orderableType = null,
         public readonly ?int $orderableId = null,
         public readonly array $metadata = [],

@@ -3,7 +3,6 @@
 namespace Ticket\Ticketing\Infrastructure\Laravel;
 
 use App\Models\EventTicket;
-use App\Models\Offer;
 use App\Models\TicketReservation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -12,13 +11,11 @@ use Ticket\Payments\Domain\CheckoutItem;
 use Ticket\Payments\Domain\CheckoutReservation;
 use Ticket\Payments\Infrastructure\Laravel\OfferCheckoutItemResolver;
 use Ticket\Ticketing\Contracts\EventTicketInventory;
-use Ticket\Ticketing\Contracts\EventTicketOfferBridge;
 
 class TicketingCheckoutItemResolver implements CheckoutItemResolver
 {
     public function __construct(
         private readonly EventTicketInventory $inventory,
-        private readonly EventTicketOfferBridge $bridge,
         private readonly OfferCheckoutItemResolver $offers,
     ) {}
 
@@ -151,17 +148,12 @@ class TicketingCheckoutItemResolver implements CheckoutItemResolver
 
     private function ticketItem(EventTicket $ticket): CheckoutItem
     {
-        $offer = $ticket->offer instanceof Offer
-            ? $ticket->offer
-            : $this->bridge->sync($ticket->fresh(['event', 'offer', 'ticketCategory']));
-
         return new CheckoutItem(
             type: 'event_ticket',
             publicId: $ticket->public_id,
             title: $ticket->name,
             unitAmount: $ticket->price_amount,
             currencyCode: $ticket->currency_code,
-            pricingOffer: $offer,
             orderableType: EventTicket::class,
             orderableId: $ticket->getKey(),
             metadata: [
@@ -181,7 +173,7 @@ class TicketingCheckoutItemResolver implements CheckoutItemResolver
             return null;
         }
 
-        return EventTicket::query()->with(['offer', 'ticketCategory'])->find($item->orderableId);
+        return EventTicket::query()->with(['ticketCategory'])->find($item->orderableId);
     }
 
     private function createReservation(EventTicket $ticket, int $quantity, array $context): ?TicketReservation
