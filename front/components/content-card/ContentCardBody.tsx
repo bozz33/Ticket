@@ -52,6 +52,17 @@ export function ContentCardBody({ item, model }: ContentCardBodyProps) {
             {item.isFree ? "Gratuit" : formatMoney(item.priceFrom, item.currency)}
           </strong>
         </div>
+        {item.module === "evenements" && typeof item.remainingSeats === "number" ? (
+          <div className="content-card__detail-item">
+            <span className="content-card__detail-icon">
+              <CardIcon name="ticket" />
+            </span>
+            <strong>
+              <span>Places</span>
+              {item.remainingSeats > 0 ? `${item.remainingSeats} restantes` : "Épuisé"}
+            </strong>
+          </div>
+        ) : null}
       </div>
 
       <Link className="button button--full content-card__primary-cta" href={model.detailHref}>

@@ -7,6 +7,7 @@ use App\Filament\Tenant\Resources\EventTickets\Pages\EditEventTicket;
 use App\Filament\Tenant\Resources\EventTickets\Pages\ListEventTickets;
 use App\Models\Event;
 use App\Models\EventTicket;
+use App\Models\EventTicketCategory;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
 use Filament\Actions\BulkActionGroup;
@@ -61,6 +62,12 @@ class EventTicketResource extends Resource
                         ->searchable()
                         ->preload()
                         ->required(),
+                    Select::make('ticket_category_id')
+                        ->label('Catégorie de ticket')
+                        ->helperText('Permet de regrouper les tickets côté billetterie: Standard, VIP, Early Bird, Presse...')
+                        ->options(fn (): array => EventTicketCategory::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())
+                        ->searchable()
+                        ->preload(),
                 ]),
                 Section::make('Ticket')->schema([
                     TextInput::make('name')->label('Nom')->required()->maxLength(255),
@@ -91,6 +98,7 @@ class EventTicketResource extends Resource
             ->columns([
                 TextColumn::make('name')->label('Ticket')->searchable(),
                 TextColumn::make('event.title')->label('Événement')->searchable(),
+                TextColumn::make('ticketCategory.name')->label('Catégorie')->badge(),
                 TextColumn::make('ticket_type')->label('Type')->badge(),
                 TextColumn::make('price_amount')->label('Prix')->numeric(),
                 TextColumn::make('quantity_total')->label('Stock')->numeric(),

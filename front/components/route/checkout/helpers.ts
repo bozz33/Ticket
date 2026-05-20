@@ -1,3 +1,4 @@
+import { getCheckoutSelectionParamName } from "@/lib/checkout/selection";
 import type { PublicContent } from "@/lib/types";
 
 export function buildPaymentReference(
@@ -25,7 +26,7 @@ export function buildPaymentQuery(
   const params = new URLSearchParams();
 
   if (selectedOffer?.id) {
-    params.set("offer", selectedOffer.id);
+    params.set(getCheckoutSelectionParamName(selectedOffer), selectedOffer.id);
   }
 
   params.set("tx", paymentReference);

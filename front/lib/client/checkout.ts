@@ -5,7 +5,8 @@ import type {
 } from "@/lib/types";
 
 type CheckoutInitializationInput = {
-  offer: string;
+  offer?: string;
+  ticket?: string;
   quantity: number;
   payment_method?: string;
   content_module: ModuleRoute;
@@ -22,13 +23,14 @@ type ApiEnvelope<T> = {
 };
 
 export async function getCheckoutPaymentOptions(
-  offerId: string,
+  checkoutItemId: string,
   quantity = 1,
   paymentMethod?: string,
   tenantSlug?: string,
+  selectionType: "offer" | "ticket" = "offer",
 ): Promise<CheckoutPaymentOptions | null> {
   const params = new URLSearchParams({
-    offer: offerId,
+    [selectionType]: checkoutItemId,
     quantity: String(quantity),
   });
 

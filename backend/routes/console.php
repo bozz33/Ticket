@@ -1,12 +1,13 @@
 <?php
 
 use App\Models\Tenant;
-use App\Services\Ticketing\EventTicketOfferSyncService;
 use App\Support\ReferenceData\CountryReferenceImporter;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Ticket\Notifications\Contracts\OutboxDispatcher;
 use Ticket\PublicCatalog\Application\PublicCatalogProjector;
+use Ticket\Ticketing\Contracts\EventTicketInventory;
+use Ticket\Ticketing\Contracts\EventTicketOfferBridge;
 
 $resolveMigrationPaths = function (string $scope): array {
     $configuration = config("ticket.migration_paths.{$scope}", []);
@@ -107,7 +108,7 @@ Artisan::command('ticket:rebuild-public-catalog {tenant? : Tenant slug or public
 })->purpose('Rebuild the central public catalog read model');
 
 Artisan::command('ticket:backfill-event-tickets', function (): int {
-    $summary = app(EventTicketOfferSyncService::class)->backfillFromEventOffers();
+    $summary = app(EventTicketOfferBridge::class)->backfillFromEventOffers();
 
     $this->info(sprintf(
         'Event ticket backfill completed: %d created, %d already linked, %d skipped.',
@@ -118,6 +119,22 @@ Artisan::command('ticket:backfill-event-tickets', function (): int {
 
     return 0;
 })->purpose('Create dedicated event tickets from legacy event offers in the current tenant database');
+
+Artisan::command('ticket:release-expired-ticket-reservations {--minutes=20 : Reservation age before release} {--limit=100 : Maximum transactions to inspect}', function (): int {
+    $summary = app(EventTicketInventory::class)->releaseExpiredReservations(
+        max(1, (int) $this->option('minutes')),
+        max(1, (int) $this->option('limit')),
+    );
+
+    $this->info(sprintf(
+        'Expired ticket reservation release completed: %d processed, %d released, %d skipped.',
+        $summary['processed'],
+        $summary['released'],
+        $summary['skipped'],
+    ));
+
+    return 0;
+})->purpose('Release expired pending reservations for event tickets');
 
 Artisan::command('ticket:dispatch-outbox {--limit=100 : Maximum messages to dispatch}', function (): int {
     $summary = app(OutboxDispatcher::class)->dispatchPending((int) $this->option('limit'));

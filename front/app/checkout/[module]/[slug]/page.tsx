@@ -35,9 +35,10 @@ export default async function CheckoutPage({
 
   const search = await searchParams;
   const offer = Array.isArray(search.offer) ? search.offer[0] : search.offer;
+  const ticket = Array.isArray(search.ticket) ? search.ticket[0] : search.ticket;
   const tenant = Array.isArray(search.tenant) ? search.tenant[0] : search.tenant;
   const [data, token, tenantSlug] = await Promise.all([
-    getCheckoutData(module, slug, offer, tenant),
+    getCheckoutData(module, slug, ticket ?? offer, tenant),
     getAuthToken(),
     getTenantSlug(),
   ]);
@@ -51,6 +52,10 @@ export default async function CheckoutPage({
 
   if (offer) {
     checkoutParams.set("offer", offer);
+  }
+
+  if (ticket) {
+    checkoutParams.set("ticket", ticket);
   }
 
   if (tenant) {

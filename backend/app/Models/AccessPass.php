@@ -8,6 +8,7 @@ use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class AccessPass extends Model
 {
@@ -20,6 +21,8 @@ class AccessPass extends Model
         'access_code',
         'order_id',
         'offer_id',
+        'passable_type',
+        'passable_id',
         'holder_user_id',
         'type',
         'status',
@@ -52,6 +55,11 @@ class AccessPass extends Model
     public function offer(): BelongsTo
     {
         return $this->belongsTo(Offer::class);
+    }
+
+    public function passable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function holder(): BelongsTo

@@ -3,14 +3,10 @@
 import { useMemo, useRef, useState } from "react";
 
 import { getCheckoutPaymentOptions, initializeCheckoutPayment } from "@/lib/client/checkout";
+import { getCheckoutInitializationIds, getCheckoutSelectionParamName } from "@/lib/checkout/selection";
 import { CheckoutStage } from "@/components/checkout-client/CheckoutStage";
 import { CheckoutSummary } from "@/components/checkout-client/CheckoutSummary";
-import type {
-  AccountUser,
-  CheckoutPaymentOptions,
-  ModuleRoute,
-  PublicContent,
-} from "@/lib/types";
+import type { AccountUser, CheckoutPaymentOptions, ModuleRoute, PublicContent } from "@/lib/types";
 
 export function CheckoutClient({
   item,
@@ -55,20 +51,22 @@ export function CheckoutClient({
 
   const missingCheckoutFields = useMemo(() => {
     const missing: string[] = [];
-
     if (!buyerEmail) {
       missing.push("adresse e-mail");
     }
-
     if (!buyerPhone) {
       missing.push("numéro de téléphone");
     }
-
     return missing;
   }, [buyerEmail, buyerPhone]);
 
   if (initialPaymentOptions && pricingCache.current.size === 0) {
-    pricingCache.current.set(`${initialPaymentOptions.offer.id}:${initialPaymentOptions.pricing.quantity}:${selectedPaymentMethod}`, initialPaymentOptions);
+    const initialCheckoutItemId =
+      initialPaymentOptions.checkout_item?.id ??
+      initialPaymentOptions.ticket?.id ??
+      initialPaymentOptions.offer.id;
+
+    pricingCache.current.set(`${initialCheckoutItemId}:${initialPaymentOptions.pricing.quantity}:${selectedPaymentMethod}`, initialPaymentOptions);
   }
 
   async function refreshPricing(nextQuantity: number) {
@@ -95,6 +93,7 @@ export function CheckoutClient({
         nextQuantity,
         selectedPaymentMethod,
         item.organizerSlug,
+        getCheckoutSelectionParamName(selectedOffer),
       );
 
       if (nextOptions) {
@@ -116,7 +115,7 @@ export function CheckoutClient({
     const successUrl = new URL(`/checkout/${item.module}/${item.slug}/succes`, window.location.origin);
 
     if (selectedOffer?.id) {
-      successUrl.searchParams.set("offer", selectedOffer.id);
+      successUrl.searchParams.set(getCheckoutSelectionParamName(selectedOffer), selectedOffer.id);
     }
 
     if (item.organizerSlug) {
@@ -131,6 +130,11 @@ export function CheckoutClient({
   async function handleSubmit() {
     if (!selectedOffer?.id) {
       setError("Aucune offre sélectionnée.");
+      return;
+    }
+
+    if (selectedOffer.source === "event_ticket" && selectedOffer.isAvailable === false) {
+      setError(selectedOffer.availabilityLabel ?? "Ce ticket est indisponible.");
       return;
     }
 
@@ -150,14 +154,14 @@ export function CheckoutClient({
 
     try {
       const callbackUrl = new URL(`/checkout/${item.module}/${item.slug}/succes`, window.location.origin);
-      callbackUrl.searchParams.set("offer", selectedOffer.id);
+      callbackUrl.searchParams.set(getCheckoutSelectionParamName(selectedOffer), selectedOffer.id);
 
       if (item.organizerSlug) {
         callbackUrl.searchParams.set("tenant", item.organizerSlug);
       }
 
       const result = await initializeCheckoutPayment({
-        offer: selectedOffer.id,
+        ...getCheckoutInitializationIds(selectedOffer),
         quantity,
         payment_method: selectedPaymentMethod,
         content_module: item.module as ModuleRoute,
@@ -220,5 +224,4 @@ export function CheckoutClient({
       </div>
     </section>
   );
-
 }

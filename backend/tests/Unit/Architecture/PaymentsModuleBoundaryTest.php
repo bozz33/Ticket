@@ -6,6 +6,7 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Tests\TestCase;
+use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Contracts\CheckoutManager;
 use Ticket\Payments\Contracts\PaymentWebhookReceiver;
 use Ticket\Payments\Contracts\PayoutManager;
@@ -19,6 +20,7 @@ class PaymentsModuleBoundaryTest extends TestCase
     public function test_payments_contracts_are_bound_in_the_container(): void
     {
         foreach ([
+            CheckoutItemResolver::class,
             CheckoutManager::class,
             PaymentWebhookReceiver::class,
             PricingEngine::class,

@@ -2,11 +2,13 @@
 
 namespace App\Filament\Tenant\Resources\Events\RelationManagers;
 
+use App\Models\EventTicketCategory;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\KeyValue;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -32,6 +34,12 @@ class EventTicketsRelationManager extends RelationManager
         return $schema
             ->components([
                 Section::make('Ticket')->schema([
+                    Select::make('ticket_category_id')
+                        ->label('Catégorie de ticket')
+                        ->helperText('Classement métier du ticket: Standard, VIP, Early Bird, Presse...')
+                        ->options(fn (): array => EventTicketCategory::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())
+                        ->searchable()
+                        ->preload(),
                     TextInput::make('name')->label('Nom')->required()->maxLength(255),
                     TextInput::make('code')->label('Code')->maxLength(100)->unique(ignoreRecord: true),
                     TextInput::make('ticket_type')->label('Type')->default('standard')->required()->maxLength(100),
@@ -59,6 +67,7 @@ class EventTicketsRelationManager extends RelationManager
             ->recordTitleAttribute('name')
             ->columns([
                 TextColumn::make('name')->label('Ticket')->searchable(),
+                TextColumn::make('ticketCategory.name')->label('Catégorie')->badge(),
                 TextColumn::make('ticket_type')->label('Type')->badge(),
                 TextColumn::make('price_amount')->label('Prix')->numeric(),
                 TextColumn::make('quantity_total')->label('Stock')->numeric(),

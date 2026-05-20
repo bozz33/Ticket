@@ -3,10 +3,11 @@
 namespace App\Models;
 
 use App\Models\Concerns\HasPublicId;
-use App\Services\Ticketing\EventTicketOfferSyncService;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Ticket\Ticketing\Contracts\EventTicketOfferBridge;
 
 class EventTicket extends Model
 {
@@ -18,6 +19,7 @@ class EventTicket extends Model
     protected $fillable = [
         'public_id',
         'event_id',
+        'ticket_category_id',
         'offer_id',
         'name',
         'code',
@@ -67,7 +69,7 @@ class EventTicket extends Model
                 return;
             }
 
-            app(EventTicketOfferSyncService::class)->sync($ticket->fresh(['event', 'offer']));
+            app(EventTicketOfferBridge::class)->sync($ticket->fresh(['event', 'offer', 'ticketCategory']));
         });
     }
 
@@ -79,5 +81,15 @@ class EventTicket extends Model
     public function offer(): BelongsTo
     {
         return $this->belongsTo(Offer::class);
+    }
+
+    public function ticketCategory(): BelongsTo
+    {
+        return $this->belongsTo(EventTicketCategory::class, 'ticket_category_id');
+    }
+
+    public function reservations(): HasMany
+    {
+        return $this->hasMany(TicketReservation::class);
     }
 }

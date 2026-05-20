@@ -34,19 +34,23 @@ class PublicPaymentController extends Controller
             return response()->json(['message' => 'Tenant introuvable.'], 404);
         }
 
-        $offer = (string) $request->query('offer', '');
+        $ticket = trim((string) $request->query('ticket', ''));
+        $offer = trim((string) $request->query('offer', ''));
+        $checkoutItemIdentifier = $ticket !== '' ? $ticket : $offer;
+        $checkoutItemType = $ticket !== '' ? 'event_ticket' : ($offer !== '' ? 'offer' : null);
         $paymentMethod = (string) $request->query('payment_method', '');
 
-        if ($offer === '') {
-            return response()->json(['message' => 'Offre requise.'], 422);
+        if ($checkoutItemIdentifier === '') {
+            return response()->json(['message' => 'Offre ou ticket requis.'], 422);
         }
 
         try {
             $data = $tenantModel->run(fn () => $this->checkoutManager->options(
                 $tenantModel,
-                $offer,
+                $checkoutItemIdentifier,
                 max(1, (int) $request->query('quantity', 1)),
                 $paymentMethod !== '' ? $paymentMethod : null,
+                $checkoutItemType,
             ));
 
             return response()->json([

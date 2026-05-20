@@ -18,9 +18,10 @@ function parseQuantity(value: string | null): number {
 export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams;
   const offer = searchParams.get("offer")?.trim() ?? "";
+  const ticket = searchParams.get("ticket")?.trim() ?? "";
 
-  if (!offer) {
-    return NextResponse.json({ error: "Offre manquante." }, { status: 422 });
+  if (!offer && !ticket) {
+    return NextResponse.json({ error: "Offre ou ticket manquant." }, { status: 422 });
   }
 
   const tenantSlug = await getTenantSlug(searchParams.get("tenant"));
@@ -30,10 +31,11 @@ export async function GET(request: NextRequest) {
   }
 
   const paymentOptions = await getCheckoutPaymentOptions(
-    offer,
+    ticket || offer,
     parseQuantity(searchParams.get("quantity")),
     searchParams.get("payment_method")?.trim() || undefined,
     tenantSlug,
+    ticket ? "ticket" : "offer",
   );
 
   if (!paymentOptions) {

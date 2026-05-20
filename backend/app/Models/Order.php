@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class Order extends Model
 {
@@ -21,6 +22,8 @@ class Order extends Model
         'reference',
         'transaction_reference',
         'offer_id',
+        'orderable_type',
+        'orderable_id',
         'status',
         'quantity',
         'unit_amount',
@@ -65,6 +68,11 @@ class Order extends Model
     public function offer(): BelongsTo
     {
         return $this->belongsTo(Offer::class);
+    }
+
+    public function orderable(): MorphTo
+    {
+        return $this->morphTo();
     }
 
     public function buyer(): BelongsTo

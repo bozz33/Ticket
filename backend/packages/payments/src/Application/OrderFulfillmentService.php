@@ -11,11 +11,16 @@ use App\Models\Receipt;
 use App\Support\References\ReferenceGenerator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+use Ticket\Payments\Contracts\CheckoutItemResolver;
 
 class OrderFulfillmentService
 {
+    private const EVENT_TICKET_MODEL = 'App\\Models\\EventTicket';
+
     public function __construct(
         private readonly ReferenceGenerator $referenceGenerator,
+        private readonly CheckoutItemResolver $checkoutItems,
     ) {}
 
     /**
@@ -30,6 +35,12 @@ class OrderFulfillmentService
         $isCrowdfunding = str_ends_with($offerableType, 'CrowdfundingCampaign');
 
         $offerId = (int) Arr::get($metadata, 'offer_id', 0);
+        $eventTicketId = (int) Arr::get($metadata, 'event_ticket_id', 0);
+        $orderableType = (string) Arr::get($metadata, 'orderable_type', '');
+        $orderableId = (int) Arr::get($metadata, 'orderable_id', 0);
+        $checkoutItemType = (string) Arr::get($metadata, 'checkout_item_type', '');
+        $checkoutItemPublicId = (string) Arr::get($metadata, 'checkout_item_public_id', '');
+        $checkoutItemTitle = (string) Arr::get($metadata, 'checkout_item_title', '');
         $quantity = max(1, (int) Arr::get($metadata, 'quantity', 1));
         $grossAmount = (int) Arr::get($payload, 'data.amount', 0);
         $currencyCode = strtoupper((string) Arr::get($payload, 'data.currency', 'XOF'));
@@ -45,6 +56,16 @@ class OrderFulfillmentService
         $offer = $offerId > 0 ? Offer::query()->find($offerId) : null;
         $unitAmount = $offer !== null ? $offer->price_amount : (int) ($grossAmount / max(1, $quantity));
 
+        if ($orderableType === '' && $orderableId <= 0 && $eventTicketId > 0) {
+            $orderableType = self::EVENT_TICKET_MODEL;
+            $orderableId = $eventTicketId;
+        }
+
+        if ($orderableType === '' && $orderableId <= 0 && $offer instanceof Offer) {
+            $orderableType = Offer::class;
+            $orderableId = (int) $offer->getKey();
+        }
+
         $connectionName = config('ticket.tenant_connection', 'tenant');
 
         return DB::connection($connectionName)->transaction(function () use (
@@ -52,6 +73,11 @@ class OrderFulfillmentService
             $offer,
             $offerId,
             $offerableType,
+            $orderableType,
+            $orderableId,
+            $checkoutItemType,
+            $checkoutItemPublicId,
+            $checkoutItemTitle,
             $quantity,
             $unitAmount,
             $grossAmount,
@@ -87,21 +113,37 @@ class OrderFulfillmentService
                     'buyer_name' => $buyerName ?: null,
                     'buyer_email' => $buyerEmail ?: null,
                     'buyer_phone' => $buyerPhone ?: null,
-                    'meta' => [
+                    'meta' => array_filter([
                         'transaction_reference' => $transactionReference,
                         'gateway_reference' => $gatewayReference,
                         'gateway_transaction_id' => $gatewayTransactionId,
                         'offerable_type' => $offerableType,
+                        'checkout_item_type' => $checkoutItemType !== '' ? $checkoutItemType : null,
+                        'checkout_item_public_id' => $checkoutItemPublicId !== '' ? $checkoutItemPublicId : null,
+                        'checkout_item_title' => $checkoutItemTitle !== '' ? $checkoutItemTitle : null,
+                        'orderable_type' => $orderableType !== '' ? $orderableType : null,
+                        'orderable_id' => $orderableId > 0 ? $orderableId : null,
+                        'event_ticket_id' => Arr::get($metadata, 'event_ticket_id'),
+                        'event_ticket_public_id' => Arr::get($metadata, 'event_ticket_public_id'),
+                        'event_ticket_title' => Arr::get($metadata, 'event_ticket_title'),
+                        'event_ticket_category' => Arr::get($metadata, 'event_ticket_category'),
+                        'event_ticket_category_code' => Arr::get($metadata, 'event_ticket_category_code'),
                         'payment_method' => $paymentMethod !== '' ? $paymentMethod : null,
-                    ],
+                    ], fn ($value): bool => $value !== null && $value !== ''),
                     'pricing_snapshot' => $pricingSnapshot,
-                ],
+                ] + $this->orderableAttributes($orderableType, $orderableId),
             );
 
             $this->ensureReceipt($order);
 
             if (! $isCrowdfunding) {
-                $this->ensureAccessPasses($order, $offer, $offerableType);
+                $this->ensureAccessPasses($order, $offer, $offerableType, array_merge($metadata, [
+                    'orderable_type' => $orderableType,
+                    'orderable_id' => $orderableId,
+                    'checkout_item_type' => $checkoutItemType,
+                    'checkout_item_public_id' => $checkoutItemPublicId,
+                    'checkout_item_title' => $checkoutItemTitle,
+                ]));
             }
 
             return $order->fresh(['receipt', 'accessPasses']);
@@ -139,7 +181,7 @@ class OrderFulfillmentService
         ]);
     }
 
-    private function ensureAccessPasses(Order $order, ?Offer $offer, string $offerableType): void
+    private function ensureAccessPasses(Order $order, ?Offer $offer, string $offerableType, array $checkout): void
     {
         $existingCount = $order->accessPasses()->count();
 
@@ -152,6 +194,7 @@ class OrderFulfillmentService
             : AccessPassType::PurchasePass;
 
         $needed = $order->quantity - $existingCount;
+        [$passableType, $passableId] = $this->passableTarget($offer, $checkout);
 
         for ($i = 0; $i < $needed; $i++) {
             AccessPass::query()->create([
@@ -166,8 +209,22 @@ class OrderFulfillmentService
                 'meta' => [
                     'order_reference' => $order->reference,
                     'seat_index' => $i + $existingCount + 1,
+                    'checkout_item_type' => Arr::get($checkout, 'checkout_item_type'),
+                    'checkout_item_public_id' => Arr::get($checkout, 'checkout_item_public_id'),
+                    'checkout_item_title' => Arr::get($checkout, 'checkout_item_title'),
+                    'passable_type' => $passableType,
+                    'passable_id' => $passableId,
+                    'event_ticket_id' => Arr::get($checkout, 'event_ticket_id'),
+                    'event_ticket_public_id' => Arr::get($checkout, 'event_ticket_public_id'),
+                    'event_ticket_title' => Arr::get($checkout, 'event_ticket_title'),
+                    'event_ticket_category' => Arr::get($checkout, 'event_ticket_category'),
+                    'event_ticket_category_code' => Arr::get($checkout, 'event_ticket_category_code'),
                 ],
-            ]);
+            ] + $this->passableAttributes($passableType, $passableId));
+        }
+
+        if ($this->checkoutItems->confirm(array_merge($checkout, ['order_id' => $order->getKey()]), $needed)) {
+            return;
         }
 
         if ($offer !== null) {
@@ -204,5 +261,77 @@ class OrderFulfillmentService
             'wave' => 'Wave',
             default => ucfirst(str_replace('_', ' ', $paymentMethod)),
         };
+    }
+
+    private function passableTarget(?Offer $offer, array $checkout): array
+    {
+        $type = (string) Arr::get($checkout, 'orderable_type', '');
+        $id = (int) Arr::get($checkout, 'orderable_id', 0);
+
+        if ($type !== '' && $id > 0) {
+            return [$type, $id];
+        }
+
+        $eventTicketId = (int) Arr::get($checkout, 'event_ticket_id', 0);
+
+        if ($eventTicketId > 0) {
+            return [self::EVENT_TICKET_MODEL, $eventTicketId];
+        }
+
+        if ($offer instanceof Offer) {
+            return [Offer::class, (int) $offer->getKey()];
+        }
+
+        return [null, null];
+    }
+
+    private function orderableAttributes(?string $type, ?int $id): array
+    {
+        if (! $this->tenantColumnExists('orders', 'orderable_type') || ! $this->tenantColumnExists('orders', 'orderable_id')) {
+            return [];
+        }
+
+        if (! $type || ! $id) {
+            return [];
+        }
+
+        return [
+            'orderable_type' => $type,
+            'orderable_id' => $id,
+        ];
+    }
+
+    private function passableAttributes(?string $type, ?int $id): array
+    {
+        if (! $this->tenantColumnExists('access_passes', 'passable_type') || ! $this->tenantColumnExists('access_passes', 'passable_id')) {
+            return [];
+        }
+
+        if (! $type || ! $id) {
+            return [];
+        }
+
+        return [
+            'passable_type' => $type,
+            'passable_id' => $id,
+        ];
+    }
+
+    private function tenantColumnExists(string $table, string $column): bool
+    {
+        static $columns = [];
+
+        $connection = (string) config('ticket.tenant_connection', 'tenant');
+        $key = $connection.'.'.$table.'.'.$column;
+
+        if (array_key_exists($key, $columns)) {
+            return $columns[$key];
+        }
+
+        try {
+            return $columns[$key] = Schema::connection($connection)->hasColumn($table, $column);
+        } catch (\Throwable) {
+            return $columns[$key] = false;
+        }
     }
 }

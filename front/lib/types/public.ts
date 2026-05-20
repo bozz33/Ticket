@@ -72,6 +72,9 @@ export interface EventTicketTier {
   title: string;
   subtitle?: string | null;
   type: string;
+  category?: string | null;
+  categoryCode?: string | null;
+  categoryColor?: string | null;
   price: number;
   currency?: string | null;
   remaining?: number | null;

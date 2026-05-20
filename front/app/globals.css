@@ -7315,6 +7315,12 @@ body {
   font-weight: 700;
 }
 
+.ticket-card__category {
+  color: var(--ink-strong);
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
 .ticket-card--unavailable {
   opacity: 0.72;
 }

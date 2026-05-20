@@ -134,6 +134,7 @@ class EventTicketAvailabilityServiceTest extends TestCase
         $this->assertSame([
             'min' => 2,
             'max' => 4,
+            'max_per_account' => 4,
         ], $bounds);
     }
 
@@ -150,11 +151,12 @@ class EventTicketAvailabilityServiceTest extends TestCase
         $this->assertSame([
             'min' => 0,
             'max' => 0,
+            'max_per_account' => null,
         ], $bounds);
     }
 
     private function service(): EventTicketAvailabilityService
     {
-        return new EventTicketAvailabilityService();
+        return new EventTicketAvailabilityService;
     }
 }

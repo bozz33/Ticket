@@ -14,7 +14,8 @@ class PublicPaymentInitializeRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'offer' => ['required', 'string'],
+            'offer' => ['required_without:ticket', 'nullable', 'string'],
+            'ticket' => ['required_without:offer', 'nullable', 'string'],
             'quantity' => ['nullable', 'integer', 'min:1'],
             'payment_method' => ['nullable', 'string', 'max:80'],
             'buyer_name' => ['nullable', 'string', 'max:255'],

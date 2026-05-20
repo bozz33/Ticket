@@ -29,6 +29,12 @@ export interface OfferTier {
   quantityLabel?: string;
   ctaLabel: string;
   perks: string[];
+  source?: "offer" | "event_ticket";
+  ticketId?: string | null;
+  availabilityStatus?: "available" | "low_stock" | "sold_out" | "sales_not_started" | "sales_ended" | "inactive";
+  availabilityLabel?: string;
+  isAvailable?: boolean;
+  isSoldOut?: boolean;
 }
 
 export interface TimelineEntry {

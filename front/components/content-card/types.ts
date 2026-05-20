@@ -1,3 +1,4 @@
+import type { TicketAvailabilityBadge } from "@/components/ticketing/availability";
 import type { PublicContent } from "@/lib/types";
 
 export type ContentCardProps = {
@@ -15,4 +16,5 @@ export type ContentCardModel = {
   publisherImage: string;
   publisherName: string;
   showMedia: boolean;
+  ticketAvailabilityBadge: TicketAvailabilityBadge | null;
 };

@@ -34,6 +34,22 @@ export interface CheckoutPaymentOptions {
     currency: string;
     unit_amount: number;
   };
+  checkout_item?: {
+    type: "offer" | "event_ticket" | string;
+    id: string;
+    title: string;
+  };
+  ticket?: {
+    id: string;
+    title: string;
+    availability: {
+      status: string;
+      label: string;
+      remaining?: number | null;
+      is_sold_out: boolean;
+      is_available: boolean;
+    };
+  } | null;
   tenant: {
     public_id: string;
     name: string;

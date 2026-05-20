@@ -13,12 +13,12 @@ use App\Models\FormDefinition;
 use App\Models\Offer;
 use App\Models\Stand;
 use App\Models\Tenant;
-use App\Services\Ticketing\EventTicketAvailabilityService;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Ticket\PublicCatalog\Domain\PublicCatalogModules;
+use Ticket\Ticketing\Contracts\EventTicketInventory;
 
 class PublicContentService
 {
@@ -27,7 +27,7 @@ class PublicContentService
     public function __construct(
         private readonly CallForProjectApplicationFormService $callForProjectApplicationFormService,
         private readonly PublicCatalogModules $modules,
-        private readonly EventTicketAvailabilityService $eventTicketAvailabilityService,
+        private readonly EventTicketInventory $eventTicketInventory,
         private readonly ?PublicCatalogProjectionReader $projectionReader = null,
     ) {}
 
@@ -615,7 +615,7 @@ class PublicContentService
 
         if ($module === 'evenements') {
             $base[] = 'dates';
-            $base['tickets'] = fn ($q) => $q->where('is_active', true)->orderBy('sort_order');
+            $base['tickets'] = fn ($q) => $q->with('ticketCategory')->where('is_active', true)->orderBy('sort_order');
         }
 
         return $base;
@@ -974,14 +974,17 @@ class PublicContentService
     private function transformEventTicket(EventTicket $ticket): array
     {
         $meta = (array) ($ticket->meta ?? []);
-        $availability = $this->eventTicketAvailabilityService->snapshot($ticket);
-        $bounds = $this->eventTicketAvailabilityService->purchasableQuantityBounds($ticket);
+        $availability = $this->eventTicketInventory->snapshot($ticket);
+        $bounds = $this->eventTicketInventory->purchasableQuantityBounds($ticket);
 
         return [
             'id' => $ticket->public_id,
             'title' => $ticket->name,
             'subtitle' => $ticket->description,
             'type' => $ticket->ticket_type,
+            'category' => $ticket->ticketCategory?->name,
+            'categoryCode' => $ticket->ticketCategory?->code,
+            'categoryColor' => $ticket->ticketCategory?->color,
             'price' => $ticket->price_amount,
             'currency' => $ticket->currency_code,
             'remaining' => $availability['remaining'],

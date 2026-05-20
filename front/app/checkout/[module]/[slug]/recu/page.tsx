@@ -33,12 +33,13 @@ export default async function CheckoutReceiptPage({
 
   const search = await searchParams;
   const offer = Array.isArray(search.offer) ? search.offer[0] : search.offer;
+  const ticket = Array.isArray(search.ticket) ? search.ticket[0] : search.ticket;
   const tenant = Array.isArray(search.tenant) ? search.tenant[0] : search.tenant;
   const tx =
     (Array.isArray(search.tx) ? search.tx[0] : search.tx) ??
     (Array.isArray(search.reference) ? search.reference[0] : search.reference) ??
     (Array.isArray(search.trxref) ? search.trxref[0] : search.trxref);
-  const data = await getCheckoutData(module, slug, offer, tenant);
+  const data = await getCheckoutData(module, slug, ticket ?? offer, tenant);
 
   if (!data || !tx) {
     notFound();

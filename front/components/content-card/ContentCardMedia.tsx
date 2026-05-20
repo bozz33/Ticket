@@ -31,6 +31,9 @@ export function ContentCardMedia({ accountAuthenticated, initialLiked, item, mod
         </div>
         <div className="content-card__top-badges">
           <span className={`badge ${item.isFree ? "badge--free" : "badge--paid"}`}>{model.priceBadge}</span>
+          {model.ticketAvailabilityBadge ? (
+            <span className={model.ticketAvailabilityBadge.className}>{model.ticketAvailabilityBadge.label}</span>
+          ) : null}
           {model.editorialBadge ? <span className="badge badge--muted">{model.editorialBadge}</span> : null}
           <span className="badge badge--muted">{item.category}</span>
         </div>
@@ -50,6 +53,9 @@ export function ContentCardMedia({ accountAuthenticated, initialLiked, item, mod
           <span className={`badge badge--light ${item.isFree ? "badge--free" : "badge--paid"}`}>
             {model.priceBadge}
           </span>
+          {model.ticketAvailabilityBadge ? (
+            <span className={`${model.ticketAvailabilityBadge.className} badge--light`}>{model.ticketAvailabilityBadge.label}</span>
+          ) : null}
           {model.editorialBadge ? <span className="badge badge--light badge--editorial">{model.editorialBadge}</span> : null}
         </div>
       </div>

@@ -8,6 +8,7 @@ use Illuminate\Support\ServiceProvider;
 use Ticket\Payments\Application\OrderFulfillmentService;
 use Ticket\Payments\Application\PaymentGatewayCredentialResolver;
 use Ticket\Payments\Application\PaymentWebhookService;
+use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Contracts\CheckoutManager;
 use Ticket\Payments\Contracts\PaymentWebhookReceiver;
 use Ticket\Payments\Contracts\PayoutManager;
@@ -22,6 +23,7 @@ use Ticket\Payments\Infrastructure\Laravel\LaravelPricingEngine;
 use Ticket\Payments\Infrastructure\Laravel\LaravelRefundManager;
 use Ticket\Payments\Infrastructure\Laravel\LaravelSettlementWorkflow;
 use Ticket\Payments\Infrastructure\Laravel\LaravelTenantRefundManager;
+use Ticket\Payments\Infrastructure\Laravel\OfferCheckoutItemResolver;
 
 class PaymentsServiceProvider extends ServiceProvider
 {
@@ -36,6 +38,7 @@ class PaymentsServiceProvider extends ServiceProvider
         ));
 
         $this->app->bind(CheckoutManager::class, LaravelCheckoutManager::class);
+        $this->app->bind(CheckoutItemResolver::class, OfferCheckoutItemResolver::class);
         $this->app->bind(PaymentWebhookReceiver::class, LaravelPaymentWebhookReceiver::class);
         $this->app->bind(PricingEngine::class, LaravelPricingEngine::class);
         $this->app->bind(RefundManager::class, LaravelRefundManager::class);

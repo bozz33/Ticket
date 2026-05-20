@@ -36,6 +36,9 @@ return [
         'archived',
     ],
     'public_frontend_url' => env('PUBLIC_FRONTEND_URL', 'http://localhost:3000'),
+    'ticket_reservations' => [
+        'ttl_minutes' => (int) env('TICKET_RESERVATION_TTL_MINUTES', 20),
+    ],
     'token_expirations' => [
         'tenant_api_minutes' => (int) env('TENANT_API_TOKEN_TTL_MINUTES', 60 * 24 * 30),
         'platform_api_minutes' => (int) env('PLATFORM_API_TOKEN_TTL_MINUTES', 60 * 24),

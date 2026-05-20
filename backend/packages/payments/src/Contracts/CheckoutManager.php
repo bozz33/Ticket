@@ -6,7 +6,13 @@ use App\Models\Tenant;
 
 interface CheckoutManager
 {
-    public function options(Tenant $tenant, string $offerIdentifier, int $requestedQuantity = 1, ?string $paymentMethod = null): array;
+    public function options(
+        Tenant $tenant,
+        string $offerIdentifier,
+        int $requestedQuantity = 1,
+        ?string $paymentMethod = null,
+        ?string $checkoutItemType = null,
+    ): array;
 
     public function initialize(Tenant $tenant, array $payload): array;
 

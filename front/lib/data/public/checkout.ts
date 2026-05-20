@@ -1,18 +1,20 @@
-import type { CheckoutPaymentOptions, CheckoutVerificationResult, ModuleRoute } from "@/lib/types";
+import type { CheckoutPaymentOptions, CheckoutVerificationResult, EventTicketTier, ModuleRoute, OfferTier, PublicContent } from "@/lib/types";
+import { getCheckoutSelectionParamName } from "@/lib/checkout/selection";
 import { formatDateRange } from "@/lib/utils";
 import { getContentDetail } from "./catalog";
 import { getPlatformConfiguration } from "./cms";
 import { fetchJson, getTenantPublicPath, type PublicApiEnvelope } from "./shared";
 
 export async function getCheckoutPaymentOptions(
-  offerId: string,
+  checkoutItemId: string,
   quantity = 1,
   paymentMethod?: string,
   tenantSlug?: string,
+  selectionType: "offer" | "ticket" = "offer",
 ): Promise<CheckoutPaymentOptions | null> {
   const paymentMethodQuery = paymentMethod ? `&payment_method=${encodeURIComponent(paymentMethod)}` : "";
   const path = await getTenantPublicPath(
-    `/payment-options?offer=${encodeURIComponent(offerId)}&quantity=${quantity}${paymentMethodQuery}`,
+    `/payment-options?${selectionType}=${encodeURIComponent(checkoutItemId)}&quantity=${quantity}${paymentMethodQuery}`,
     tenantSlug,
   );
 
@@ -53,13 +55,14 @@ export async function getCheckoutData(module: ModuleRoute, slug: string, offerId
     return null;
   }
 
-  const selectedOffer = item.tiers.find((tier) => tier.id === offerId) ?? item.tiers[0] ?? null;
+  const selectedOffer = resolveCheckoutSelection(item, offerId);
   const paymentOptions = selectedOffer
     ? await getCheckoutPaymentOptions(
       selectedOffer.id,
       1,
       selectedOffer.price > 0 ? "card" : "free",
       item.organizerSlug,
+      getCheckoutSelectionParamName(selectedOffer),
     )
     : null;
 
@@ -69,6 +72,50 @@ export async function getCheckoutData(module: ModuleRoute, slug: string, offerId
     selectedOffer,
     dateLabel: formatDateRange(item),
     paymentOptions,
+  };
+}
+
+function resolveCheckoutSelection(item: PublicContent, identifier?: string): OfferTier | null {
+  const ticket = resolveEventTicketSelection(item, identifier);
+
+  if (ticket) {
+    return ticketToCheckoutOffer(ticket);
+  }
+
+  return item.tiers.find((tier) => tier.id === identifier) ?? item.tiers[0] ?? null;
+}
+
+function resolveEventTicketSelection(item: PublicContent, identifier?: string): EventTicketTier | null {
+  const tickets = item.module === "evenements" ? (item.tickets ?? []) : [];
+
+  if (tickets.length === 0) {
+    return null;
+  }
+
+  if (!identifier) {
+    return tickets.find((ticket) => ticket.isAvailable) ?? tickets[0] ?? null;
+  }
+
+  return tickets.find((ticket) => ticket.id === identifier || ticket.offerId === identifier) ?? null;
+}
+
+function ticketToCheckoutOffer(ticket: EventTicketTier): OfferTier {
+  return {
+    id: ticket.id,
+    title: ticket.title,
+    subtitle: ticket.subtitle ?? undefined,
+    price: ticket.price,
+    currency: ticket.currency ?? "XOF",
+    remaining: ticket.remaining ?? undefined,
+    quantityLabel: ticket.quantityLabel ?? undefined,
+    ctaLabel: ticket.ctaLabel,
+    perks: ticket.perks,
+    source: "event_ticket",
+    ticketId: ticket.id,
+    availabilityStatus: ticket.availabilityStatus,
+    availabilityLabel: ticket.availabilityLabel,
+    isAvailable: ticket.isAvailable,
+    isSoldOut: ticket.isSoldOut,
   };
 }
 

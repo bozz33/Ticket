@@ -2909,6 +2909,42 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "offer",
+            "in": "query",
+            "required": false,
+            "description": "Identifiant public d'une offre legacy. Requis si ticket est absent.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "ticket",
+            "in": "query",
+            "required": false,
+            "description": "Identifiant public d'un ticket evenement. Requis si offer est absent.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "quantity",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            }
+          },
+          {
+            "name": "payment_method",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {

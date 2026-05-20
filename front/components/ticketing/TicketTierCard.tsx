@@ -25,6 +25,7 @@ export function TicketTierCard({
         <AvailabilityBadge ticket={ticket} />
       </div>
       <strong>{ticket.price === 0 ? "Gratuit" : formatMoney(ticket.price, ticket.currency ?? "XOF")}</strong>
+      {ticket.category ? <span className="ticket-card__category">{ticket.category}</span> : null}
       {ticket.quantityLabel ? <span className="ticket-card__quantity">{ticket.quantityLabel}</span> : null}
       {ticket.perks.length > 0 ? (
         <ul className="bullet-list">

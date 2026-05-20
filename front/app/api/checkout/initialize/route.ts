@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
 
   const payload = await request.json().catch(() => null) as {
     offer?: string;
+    ticket?: string;
     quantity?: number;
     payment_method?: string;
     content_module?: string;
@@ -47,8 +48,11 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Payload invalide." }, { status: 400 });
   }
 
-  if (typeof payload.offer !== "string" || !payload.offer.trim()) {
-    return NextResponse.json({ error: "Offre manquante." }, { status: 422 });
+  const offer = typeof payload.offer === "string" ? payload.offer.trim() : "";
+  const ticket = typeof payload.ticket === "string" ? payload.ticket.trim() : "";
+
+  if (!offer && !ticket) {
+    return NextResponse.json({ error: "Offre ou ticket manquant." }, { status: 422 });
   }
 
   const tenantSlug = await getTenantSlug(typeof payload?.tenant === "string" ? payload.tenant : undefined);
@@ -69,7 +73,8 @@ export async function POST(request: NextRequest) {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      offer: payload.offer,
+      offer: offer || undefined,
+      ticket: ticket || undefined,
       quantity: Number.isFinite(Number(payload.quantity)) ? Math.max(1, Math.trunc(Number(payload.quantity))) : 1,
       payment_method: payload.payment_method,
       content_module: payload.content_module,

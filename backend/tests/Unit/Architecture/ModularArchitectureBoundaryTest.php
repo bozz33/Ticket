@@ -9,6 +9,7 @@ use Tests\TestCase;
 use Ticket\Notifications\Contracts\DomainEventPublisher;
 use Ticket\Notifications\Contracts\NotificationDispatcher;
 use Ticket\Notifications\Contracts\OutboxDispatcher;
+use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Contracts\CheckoutManager;
 use Ticket\Payments\Contracts\PaymentWebhookReceiver;
 use Ticket\Payments\Contracts\PayoutManager;
@@ -33,6 +34,8 @@ use Ticket\Ticketing\Contracts\BuyerRefundRequests;
 use Ticket\Ticketing\Contracts\DocumentCatalog;
 use Ticket\Ticketing\Contracts\EventCatalog;
 use Ticket\Ticketing\Contracts\EventEngagement;
+use Ticket\Ticketing\Contracts\EventTicketInventory;
+use Ticket\Ticketing\Contracts\EventTicketOfferBridge;
 use Ticket\Ticketing\Contracts\OrderCatalog;
 use Ticket\Ticketing\Contracts\OrganizationAudience;
 use Ticket\Ticketing\Contracts\ReceiptCatalog;
@@ -125,6 +128,7 @@ class ModularArchitectureBoundaryTest extends TestCase
     private function moduleContracts(): array
     {
         return [
+            CheckoutItemResolver::class,
             CheckoutManager::class,
             PaymentWebhookReceiver::class,
             PricingEngine::class,
@@ -140,6 +144,8 @@ class ModularArchitectureBoundaryTest extends TestCase
             TenantProfileManager::class,
             TenantSettingsManager::class,
             EventCatalog::class,
+            EventTicketInventory::class,
+            EventTicketOfferBridge::class,
             DocumentCatalog::class,
             OrderCatalog::class,
             ReceiptCatalog::class,

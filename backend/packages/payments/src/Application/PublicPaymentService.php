@@ -18,6 +18,9 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Ticket\Payments\Contracts\CheckoutItemResolver;
+use Ticket\Payments\Domain\CheckoutItem;
+use Ticket\Payments\Domain\CheckoutReservation;
 use Ticket\Payments\Domain\PaymentStatuses;
 use Ticket\Ticketing\Contracts\OrderCatalog;
 
@@ -33,12 +36,19 @@ class PublicPaymentService
         private readonly PaymentGatewayHttpClientFactory $httpClientFactory,
         private readonly GatewayAmountConverter $amountConverter,
         private readonly ReferenceGenerator $referenceGenerator,
+        private readonly CheckoutItemResolver $checkoutItems,
     ) {}
 
-    public function options(Tenant $tenant, string $offerIdentifier, int $requestedQuantity = 1, ?string $paymentMethod = null): array
-    {
-        $offer = $this->resolveOffer($offerIdentifier);
-        $bounds = $this->resolveQuantityBounds($offer);
+    public function options(
+        Tenant $tenant,
+        string $offerIdentifier,
+        int $requestedQuantity = 1,
+        ?string $paymentMethod = null,
+        ?string $checkoutItemType = null,
+    ): array {
+        $item = $this->resolveCheckoutItem($offerIdentifier, $checkoutItemType);
+        $offer = $item->pricingOffer;
+        $bounds = $this->checkoutItems->quantityBounds($item);
         $quantity = min(max($requestedQuantity, $bounds['min']), $bounds['max']);
         $gateway = $offer->price_amount > 0
             ? $this->pricingRuleEngine->resolveGatewayForCurrency((string) $offer->currency_code, $paymentMethod)
@@ -55,14 +65,25 @@ class PublicPaymentService
                 'currency' => $offer->currency_code,
                 'unit_amount' => $offer->price_amount,
             ],
+            'checkout_item' => [
+                'type' => $item->type,
+                'id' => $item->publicId,
+                'title' => $item->title,
+            ],
+            'ticket' => $item->is('event_ticket') ? [
+                'id' => $item->publicId,
+                'title' => $item->title,
+                'availability' => data_get($item->metadata, 'availability'),
+            ] : null,
             'tenant' => $tenant->only(['public_id', 'name', 'slug']),
         ];
     }
 
     public function initialize(Tenant $tenant, array $payload): array
     {
-        $offer = $this->resolveOffer((string) ($payload['offer'] ?? ''));
-        $bounds = $this->resolveQuantityBounds($offer);
+        $item = $this->resolveCheckoutItemFromPayload($payload);
+        $offer = $item->pricingOffer;
+        $bounds = $this->checkoutItems->quantityBounds($item);
         $quantity = (int) ($payload['quantity'] ?? 1);
 
         if ($quantity < $bounds['min'] || $quantity > $bounds['max']) {
@@ -85,13 +106,21 @@ class PublicPaymentService
         $pricing = $this->pricingRuleEngine->quote($tenant, $offer, $quantity, $gateway, $paymentMethod);
         $reference = $this->generateReference($pricing['total'] <= 0 ? 'FREE' : 'PAY', (string) $pricing['currency']);
         $module = $this->moduleFromOfferableType((string) $offer->offerable_type);
-        $metadata = [
+        $reservation = null;
+        $transaction = null;
+
+        $metadata = array_merge([
             'tenant_slug' => $tenant->slug,
             'tenant_public_id' => $tenant->public_id,
             'offer_id' => $offer->id,
             'offer_public_id' => $offer->public_id,
             'offerable_type' => $offer->offerable_type,
             'offer_title' => $offer->name,
+            'checkout_item_type' => $item->type,
+            'checkout_item_public_id' => $item->publicId,
+            'checkout_item_title' => $item->title,
+            'orderable_type' => $item->orderableType,
+            'orderable_id' => $item->orderableId,
             'quantity' => $quantity,
             'buyer_user_id' => $buyerUserId,
             'buyer_name' => trim((string) ($payload['buyer_name'] ?? '')),
@@ -103,80 +132,115 @@ class PublicPaymentService
             'callback_url' => trim((string) ($payload['callback_url'] ?? '')),
             'payment_method' => $paymentMethod !== '' ? $paymentMethod : null,
             'pricing_snapshot' => $pricing,
-        ];
+        ], $item->metadata);
 
-        $transaction = PlatformTransaction::query()->create([
-            'tenant_id' => $tenant->id,
-            'payment_gateway_id' => $gateway?->id,
-            'transaction_reference' => $reference,
-            'gateway_reference' => null,
-            'type' => 'public_checkout',
-            'direction' => 'credit',
-            'status' => 'pending',
-            'gross_amount' => $pricing['total'],
-            'fee_amount' => $pricing['total_fee_amount'],
-            'net_amount' => $pricing['organizer_net'],
-            'gateway_fee_amount' => $pricing['gateway_fee_amount'],
-            'platform_fee_amount' => $pricing['platform_fee_amount'],
-            'tax_amount' => $pricing['tax_amount'],
-            'payout_fee_amount' => 0,
-            'customer_fee_amount' => $pricing['customer_fee_total'],
-            'absorbed_fee_amount' => $pricing['absorbed_fee_total'],
-            'currency_code' => $pricing['currency'],
-            'occurred_at' => now(),
-            'meta' => [
-                'pricing' => $pricing,
-                'checkout' => $metadata,
-            ],
-            'pricing_snapshot' => $pricing,
-        ]);
-
-        Log::channel((string) config('ticket.logging.payments_channel', 'payments'))->info('public_checkout_initialized', [
-            'tenant_id' => $tenant->getKey(),
-            'transaction_reference' => $reference,
-            'offer_public_id' => $offer->public_id,
-            'offer_title' => $offer->name,
-            'quantity' => $quantity,
-            'payment_method' => $paymentMethod !== '' ? $paymentMethod : 'auto',
-            'gross_amount' => $pricing['total'],
-            'currency' => $pricing['currency'],
-            'buyer_user_id' => $buyerUserId,
-        ]);
-
-        if ($pricing['total'] <= 0) {
-            $paymentPayload = $this->buildInternalSuccessPayload($reference, $pricing, $metadata);
-            $transaction->forceFill([
-                'status' => 'success',
-                'meta' => array_merge((array) $transaction->meta, ['gateway_payload' => $paymentPayload]),
-            ])->save();
-
-            $order = $this->fulfillInTenant($tenant, $reference, $paymentPayload);
-
-            Log::channel((string) config('ticket.logging.payments_channel', 'payments'))->info('public_checkout_fulfilled_free', [
-                'tenant_id' => $tenant->getKey(),
+        try {
+            $reservation = $this->checkoutItems->reserve($item, $quantity, [
                 'transaction_reference' => $reference,
-                'order_reference' => $order?->reference,
-                'offer_public_id' => $offer->public_id,
-                'quantity' => $quantity,
+                'buyer_user_id' => $buyerUserId,
+                'buyer_email' => $buyerEmail,
             ]);
 
-            return [
-                'mode' => 'free',
-                'reference' => $reference,
-                'status' => 'confirmed',
-                'authorization_url' => null,
-                'order' => $order?->only(['public_id', 'reference']),
-            ];
-        }
+            if ($reservation instanceof CheckoutReservation) {
+                $metadata = array_merge($metadata, [
+                    'reservation_type' => $reservation->type,
+                    'reservation_public_id' => $reservation->publicId,
+                    'reservation_expires_at' => $reservation->expiresAt?->toIso8601String(),
+                ], $reservation->metadata);
+            }
 
-        if (! $gateway) {
-            throw new RuntimeException('Aucune passerelle de paiement active n’est disponible pour cette devise.');
-        }
+            $transaction = PlatformTransaction::query()->create([
+                'tenant_id' => $tenant->id,
+                'payment_gateway_id' => $gateway?->id,
+                'transaction_reference' => $reference,
+                'gateway_reference' => null,
+                'type' => 'public_checkout',
+                'direction' => 'credit',
+                'status' => 'pending',
+                'gross_amount' => $pricing['total'],
+                'fee_amount' => $pricing['total_fee_amount'],
+                'net_amount' => $pricing['organizer_net'],
+                'gateway_fee_amount' => $pricing['gateway_fee_amount'],
+                'platform_fee_amount' => $pricing['platform_fee_amount'],
+                'tax_amount' => $pricing['tax_amount'],
+                'payout_fee_amount' => 0,
+                'customer_fee_amount' => $pricing['customer_fee_total'],
+                'absorbed_fee_amount' => $pricing['absorbed_fee_total'],
+                'currency_code' => $pricing['currency'],
+                'occurred_at' => now(),
+                'meta' => [
+                    'pricing' => $pricing,
+                    'checkout' => $metadata,
+                ],
+                'pricing_snapshot' => $pricing,
+            ]);
 
-        return match ($gateway->code) {
-            'paystack' => $this->initializePaystack($transaction, $gateway, $offer, $pricing, $metadata),
-            default => throw new RuntimeException('Gateway de paiement non prise en charge.'),
-        };
+            Log::channel((string) config('ticket.logging.payments_channel', 'payments'))->info('public_checkout_initialized', [
+                'tenant_id' => $tenant->getKey(),
+                'transaction_reference' => $reference,
+                'offer_public_id' => $offer->public_id,
+                'offer_title' => $offer->name,
+                'checkout_item_type' => $item->type,
+                'checkout_item_public_id' => $item->publicId,
+                'quantity' => $quantity,
+                'payment_method' => $paymentMethod !== '' ? $paymentMethod : 'auto',
+                'gross_amount' => $pricing['total'],
+                'currency' => $pricing['currency'],
+                'buyer_user_id' => $buyerUserId,
+            ]);
+
+            if ($pricing['total'] <= 0) {
+                $paymentPayload = $this->buildInternalSuccessPayload($reference, $pricing, $metadata);
+                $transaction->forceFill([
+                    'status' => 'success',
+                    'meta' => array_merge((array) $transaction->meta, ['gateway_payload' => $paymentPayload]),
+                ])->save();
+
+                $order = $this->fulfillInTenant($tenant, $reference, $paymentPayload);
+
+                Log::channel((string) config('ticket.logging.payments_channel', 'payments'))->info('public_checkout_fulfilled_free', [
+                    'tenant_id' => $tenant->getKey(),
+                    'transaction_reference' => $reference,
+                    'order_reference' => $order?->reference,
+                    'offer_public_id' => $offer->public_id,
+                    'checkout_item_type' => $item->type,
+                    'checkout_item_public_id' => $item->publicId,
+                    'quantity' => $quantity,
+                ]);
+
+                return [
+                    'mode' => 'free',
+                    'reference' => $reference,
+                    'status' => 'confirmed',
+                    'authorization_url' => null,
+                    'order' => $order?->only(['public_id', 'reference']),
+                ];
+            }
+
+            if (! $gateway) {
+                throw new RuntimeException('Aucune passerelle de paiement active n’est disponible pour cette devise.');
+            }
+
+            return match ($gateway->code) {
+                'paystack' => $this->initializePaystack($transaction, $gateway, $offer, $pricing, $metadata),
+                default => throw new RuntimeException('Gateway de paiement non prise en charge.'),
+            };
+        } catch (\Throwable $exception) {
+            if ($reservation instanceof CheckoutReservation) {
+                $this->checkoutItems->release($metadata);
+            }
+
+            if ($transaction instanceof PlatformTransaction) {
+                $meta = (array) ($transaction->meta ?? []);
+                data_set($meta, 'checkout.reservation_released_at', now()->toIso8601String());
+                $transaction->forceFill([
+                    'status' => 'failed',
+                    'meta' => $meta,
+                ])->save();
+            }
+
+            throw $exception;
+        }
     }
 
     public function verify(Tenant $tenant, string $reference): array
@@ -390,6 +454,10 @@ class PublicPaymentService
             'pricing_snapshot' => $pricingSnapshot,
         ])->save();
 
+        if ($this->shouldReleaseTicketReservationForStatus($status)) {
+            $this->releaseTicketReservationForTransaction($tenant, $transaction);
+        }
+
         $order = $this->findOrderInTenant($tenant, $transaction->transaction_reference);
 
         Log::channel((string) config('ticket.logging.payments_channel', 'payments'))->info('public_checkout_verified', [
@@ -450,33 +518,32 @@ class PublicPaymentService
         return $methods;
     }
 
-    private function resolveQuantityBounds(Offer $offer): array
+    private function shouldReleaseTicketReservationForStatus(string $status): bool
     {
-        $min = max(1, (int) ($offer->min_per_order ?: 1));
-        $available = $offer->quantity_total > 0
-            ? max(0, (int) $offer->quantity_total - (int) $offer->quantity_sold)
-            : null;
-        $configuredMax = (int) ($offer->max_per_order ?: 0);
-        $max = $configuredMax > 0 ? $configuredMax : ($available ?? max($min, 10));
-        $maxPerAccount = (int) ($offer->max_per_account ?: 0);
+        $normalized = strtolower(trim($status));
 
-        if ($available !== null) {
-            $max = min($max, $available);
+        return $normalized !== ''
+            && ! PaymentStatuses::isSuccessful($normalized)
+            && ! in_array($normalized, ['pending', 'ongoing', 'processing'], true);
+    }
+
+    private function releaseTicketReservationForTransaction(Tenant $tenant, PlatformTransaction $transaction): void
+    {
+        $meta = (array) ($transaction->meta ?? []);
+        $checkout = (array) data_get($meta, 'checkout', []);
+
+        if (data_get($checkout, 'reservation_released_at')) {
+            return;
         }
 
-        if ($maxPerAccount > 0) {
-            $max = min($max, $maxPerAccount);
+        $released = $tenant->run(fn (): bool => $this->checkoutItems->release($checkout));
+
+        if (! $released) {
+            return;
         }
 
-        if ($max < $min) {
-            throw new RuntimeException('Cette offre est indisponible pour le moment.');
-        }
-
-        return [
-            'min' => $min,
-            'max' => $max,
-            'max_per_account' => $maxPerAccount > 0 ? $maxPerAccount : null,
-        ];
+        data_set($meta, 'checkout.reservation_released_at', now()->toIso8601String());
+        $transaction->forceFill(['meta' => $meta])->save();
     }
 
     private function assertBuyerCanPurchase(
@@ -539,23 +606,26 @@ class PublicPaymentService
         }
     }
 
-    private function resolveOffer(string $identifier): Offer
+    private function resolveCheckoutItemFromPayload(array $payload): CheckoutItem
     {
-        $query = Offer::query()->where('is_active', true);
+        $ticketIdentifier = trim((string) ($payload['ticket'] ?? ''));
 
-        $offer = $query->where(function ($builder) use ($identifier): void {
-            $builder->where('public_id', $identifier);
-
-            if (ctype_digit($identifier)) {
-                $builder->orWhere('id', (int) $identifier);
-            }
-        })->first();
-
-        if (! $offer) {
-            throw new RuntimeException('Offre introuvable.');
+        if ($ticketIdentifier !== '') {
+            return $this->resolveCheckoutItem($ticketIdentifier, 'event_ticket');
         }
 
-        return $offer;
+        return $this->resolveCheckoutItem((string) ($payload['offer'] ?? ''), 'offer');
+    }
+
+    private function resolveCheckoutItem(string $identifier, ?string $type = null): CheckoutItem
+    {
+        $item = $this->checkoutItems->resolve(trim($identifier), $type);
+
+        if (! $item instanceof CheckoutItem) {
+            throw new RuntimeException($type === 'event_ticket' ? 'Ticket introuvable.' : 'Offre introuvable.');
+        }
+
+        return $item;
     }
 
     private function moduleFromOfferableType(string $offerableType): string

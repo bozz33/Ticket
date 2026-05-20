@@ -1,3 +1,4 @@
+import { buildEventTicketAvailabilityBadge } from "@/components/ticketing";
 import type { PublicContent } from "@/lib/types";
 
 import { CARD_IMAGE_FALLBACK } from "./constants";
@@ -14,6 +15,7 @@ export function buildContentCardModel(item: PublicContent): ContentCardModel {
   const priceBadge = item.isFree ? "Gratuit" : "Payant";
   const editorialBadge =
     item.badges.find((badge) => badge !== priceBadge) ?? (item.popular ? "Tendance" : item.featured ? "Sélection" : null);
+  const ticketAvailabilityBadge = buildEventTicketAvailabilityBadge(item);
 
   return {
     coverImage,
@@ -24,5 +26,6 @@ export function buildContentCardModel(item: PublicContent): ContentCardModel {
     publisherImage,
     publisherName,
     showMedia: true,
+    ticketAvailabilityBadge,
   };
 }

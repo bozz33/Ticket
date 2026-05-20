@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { EventLikeButton } from "@/components/EventLikeButton";
-import { TicketCtaButton } from "@/components/ticketing/TicketCtaButton";
+import { TicketCtaButton } from "@/components/ticketing";
 import type { PublicContent } from "@/lib/types";
 import { formatDateRange, formatMoney } from "@/lib/utils";
 

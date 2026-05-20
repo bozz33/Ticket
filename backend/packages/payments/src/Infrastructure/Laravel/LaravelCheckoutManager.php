@@ -12,9 +12,14 @@ class LaravelCheckoutManager implements CheckoutManager
         private readonly PublicPaymentService $payments,
     ) {}
 
-    public function options(Tenant $tenant, string $offerIdentifier, int $requestedQuantity = 1, ?string $paymentMethod = null): array
-    {
-        return $this->payments->options($tenant, $offerIdentifier, $requestedQuantity, $paymentMethod);
+    public function options(
+        Tenant $tenant,
+        string $offerIdentifier,
+        int $requestedQuantity = 1,
+        ?string $paymentMethod = null,
+        ?string $checkoutItemType = null,
+    ): array {
+        return $this->payments->options($tenant, $offerIdentifier, $requestedQuantity, $paymentMethod, $checkoutItemType);
     }
 
     public function initialize(Tenant $tenant, array $payload): array
