@@ -6,15 +6,14 @@ use App\Enums\CategoryScope;
 use App\Filament\Tenant\Resources\CallsForProjects\Pages\CreateCallForProject;
 use App\Filament\Tenant\Resources\CallsForProjects\Pages\EditCallForProject;
 use App\Filament\Tenant\Resources\CallsForProjects\Pages\ListCallForProjects;
+use App\Filament\Tenant\Resources\CallsForProjects\RelationManagers\FormDefinitionRelationManager;
 use App\Filament\Tenant\Resources\CallsForProjects\RelationManagers\SubmissionsRelationManager;
-use App\Filament\Tenant\Resources\FormDefinitions\FormDefinitionResource;
 use App\Models\CallForProject;
 use App\Models\Category;
 use App\Models\OrganizationProfile;
 use App\Models\PublicStatus;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
-use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -91,13 +90,6 @@ class CallForProjectResource extends Resource
                 TagsInput::make('meta.requiredDocuments')->label('Documents requis')->columnSpanFull(),
                 TagsInput::make('meta.gallery')->label('Galerie (URLs)')->columnSpanFull(),
             ])->columns(2),
-            Section::make('Parcours de candidature')->schema([
-                TextInput::make('meta.application_form.title')->label('Titre du formulaire')->maxLength(255),
-                Textarea::make('meta.application_form.description')->label('Description du formulaire')->rows(3)->columnSpanFull(),
-                TextInput::make('meta.application_form.submit_label')->label('Libellé du bouton')->maxLength(120),
-                Textarea::make('meta.application_form.success_message')->label('Message de succès')->rows(3)->columnSpanFull(),
-                Toggle::make('meta.application_payment.requires_receipt')->label('Exiger un reçu de paiement')->default(false),
-            ])->columns(2),
         ]);
     }
 
@@ -113,10 +105,6 @@ class CallForProjectResource extends Resource
             IconColumn::make('is_active')->label('Actif')->boolean(),
             TextColumn::make('updated_at')->label('Mis à jour')->since(),
         ])->defaultSort('updated_at', 'desc')->recordActions([
-            Action::make('formDefinition')
-                ->label('Formulaire')
-                ->icon('heroicon-o-clipboard-document-list')
-                ->url(fn (CallForProject $record): string => static::formDefinitionUrl($record)),
             EditAction::make()
                 ->url(fn (CallForProject $record): string => static::getUrl('edit', ['record' => $record])),
             DeleteAction::make(),
@@ -139,6 +127,7 @@ class CallForProjectResource extends Resource
     public static function getRelations(): array
     {
         return [
+            FormDefinitionRelationManager::class,
             SubmissionsRelationManager::class,
         ];
     }
@@ -161,19 +150,5 @@ class CallForProjectResource extends Resource
     public static function canDeleteAny(): bool
     {
         return static::allows('update');
-    }
-
-    protected static function formDefinitionUrl(CallForProject $record): string
-    {
-        $formDefinition = $record->formDefinition;
-
-        if ($formDefinition !== null) {
-            return FormDefinitionResource::getUrl('edit', ['record' => $formDefinition]);
-        }
-
-        return FormDefinitionResource::getUrl('create', [
-            'owner_type' => CallForProject::class,
-            'owner_id' => $record->getKey(),
-        ]);
     }
 }
