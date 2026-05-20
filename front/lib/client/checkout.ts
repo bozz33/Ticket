@@ -10,8 +10,13 @@ type CheckoutInitializationInput = {
   ticket?: string;
   quantity: number;
   payment_method?: string;
+  buyer_name?: string;
+  buyer_email?: string;
+  buyer_phone?: string;
   content_module: ModuleRoute;
   content_slug: string;
+  contributor_display_name?: string;
+  contributor_is_anonymous?: boolean;
   callback_url: string;
   tenant?: string;
   ticket_reservation?: string;

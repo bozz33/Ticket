@@ -24,6 +24,8 @@ class PublicPaymentInitializeRequest extends FormRequest
             'ticket_reservation' => ['nullable', 'string', 'max:80'],
             'content_module' => ['nullable', 'string', 'max:100'],
             'content_slug' => ['nullable', 'string', 'max:255'],
+            'contributor_display_name' => ['nullable', 'string', 'max:255'],
+            'contributor_is_anonymous' => ['nullable', 'boolean'],
             'callback_url' => ['required', 'url', 'max:2048'],
         ];
     }

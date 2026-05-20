@@ -34,6 +34,12 @@ export function CheckoutClient({
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [reservationExpiresAt, setReservationExpiresAt] = useState<string | null>(null);
+  const [guestContributor, setGuestContributor] = useState({
+    name: "",
+    email: "",
+    phone: "",
+    isAnonymous: false,
+  });
   const organizerName = item.organizers[0]?.name ?? "Organisateur";
   const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const quantityBounds = paymentOptions?.quantity ?? { min: 1, max: 10 };
@@ -47,6 +53,7 @@ export function CheckoutClient({
     quantity,
   };
   const selectedPaymentMethod = paymentOptions?.methods[0]?.code ?? (pricing.total === 0 ? "free" : "card");
+  const isCrowdfunding = item.module === "crowdfunding";
   const accountReadyForActions = Boolean(accountUser?.account_ready_for_actions);
   const buyerEmail = accountUser?.email?.trim() ?? "";
   const buyerPhone = accountUser?.phone?.trim() ?? "";
@@ -118,14 +125,21 @@ export function CheckoutClient({
       return;
     }
 
-    if (!accountUser) {
+    if (!accountUser && !isCrowdfunding) {
       window.location.assign(loginUrl);
       return;
     }
 
-    if (!accountReadyForActions || missingCheckoutFields.length > 0) {
+    if (accountUser && (!accountReadyForActions || missingCheckoutFields.length > 0)) {
       setError("Avant de continuer, complétez votre profil et vérifiez votre e-mail.");
       return;
+    }
+
+    if (!accountUser && isCrowdfunding) {
+      if (!guestContributor.name.trim() || !guestContributor.email.trim()) {
+        setError("Indiquez votre nom et votre adresse e-mail pour recevoir le reçu.");
+        return;
+      }
     }
 
     setSubmitting(true);
@@ -157,8 +171,13 @@ export function CheckoutClient({
         ...getCheckoutInitializationIds(selectedOffer),
         quantity,
         payment_method: selectedPaymentMethod,
+        buyer_name: !accountUser && isCrowdfunding ? guestContributor.name.trim() : undefined,
+        buyer_email: !accountUser && isCrowdfunding ? guestContributor.email.trim() : undefined,
+        buyer_phone: !accountUser && isCrowdfunding ? guestContributor.phone.trim() || undefined : undefined,
         content_module: item.module as ModuleRoute,
         content_slug: item.slug,
+        contributor_display_name: !accountUser && isCrowdfunding && !guestContributor.isAnonymous ? guestContributor.name.trim() : undefined,
+        contributor_is_anonymous: !accountUser && isCrowdfunding ? guestContributor.isAnonymous : undefined,
         callback_url: callbackUrl.toString(),
         tenant: item.organizerSlug,
         ticket_reservation: ticketReservationId,
@@ -201,9 +220,11 @@ export function CheckoutClient({
           quantity={quantity}
           quantityBounds={quantityBounds}
           selectedOffer={selectedOffer}
+          guestContributor={!accountUser && isCrowdfunding ? guestContributor : null}
           onQuantityChange={(nextQuantity) => {
             void refreshPricing(nextQuantity);
           }}
+          onGuestContributorChange={setGuestContributor}
         />
 
         <CheckoutSummary

@@ -9,7 +9,19 @@ type CheckoutStageProps = {
   quantity: number;
   quantityBounds: CheckoutPaymentOptions["quantity"];
   selectedOffer: PublicContent["tiers"][number] | null;
+  guestContributor: {
+    name: string;
+    email: string;
+    phone: string;
+    isAnonymous: boolean;
+  } | null;
   onQuantityChange: (quantity: number) => void;
+  onGuestContributorChange: (value: {
+    name: string;
+    email: string;
+    phone: string;
+    isAnonymous: boolean;
+  }) => void;
 };
 
 export function CheckoutStage({
@@ -19,7 +31,9 @@ export function CheckoutStage({
   quantity,
   quantityBounds,
   selectedOffer,
+  guestContributor,
   onQuantityChange,
+  onGuestContributorChange,
 }: CheckoutStageProps) {
   return (
     <div className="checkout-stage checkout-stage--standard">
@@ -84,6 +98,52 @@ export function CheckoutStage({
           </p>
         ) : null}
       </article>
+      {guestContributor ? (
+        <article className="checkout-stage-card checkout-stage-card--quantity">
+          <div className="checkout-stage-card__section-title">
+            <div>
+              <p className="eyebrow">Contributeur</p>
+              <h2>Vos informations</h2>
+            </div>
+          </div>
+          <div className="form-grid">
+            <label className="field">
+              <span>Nom</span>
+              <input
+                onChange={(event) => onGuestContributorChange({ ...guestContributor, name: event.target.value })}
+                required
+                type="text"
+                value={guestContributor.name}
+              />
+            </label>
+            <label className="field">
+              <span>E-mail</span>
+              <input
+                onChange={(event) => onGuestContributorChange({ ...guestContributor, email: event.target.value })}
+                required
+                type="email"
+                value={guestContributor.email}
+              />
+            </label>
+            <label className="field">
+              <span>Téléphone</span>
+              <input
+                onChange={(event) => onGuestContributorChange({ ...guestContributor, phone: event.target.value })}
+                type="tel"
+                value={guestContributor.phone}
+              />
+            </label>
+            <label className="checkbox-field">
+              <input
+                checked={guestContributor.isAnonymous}
+                onChange={(event) => onGuestContributorChange({ ...guestContributor, isAnonymous: event.target.checked })}
+                type="checkbox"
+              />
+              <span>Contribuer anonymement si les contributeurs sont affichés plus tard</span>
+            </label>
+          </div>
+        </article>
+      ) : null}
     </div>
   );
 }

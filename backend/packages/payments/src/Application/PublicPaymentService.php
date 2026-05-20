@@ -128,6 +128,8 @@ class PublicPaymentService
             'buyer_name' => trim((string) ($payload['buyer_name'] ?? '')),
             'buyer_email' => $buyerEmail,
             'buyer_phone' => trim((string) ($payload['buyer_phone'] ?? '')),
+            'contributor_display_name' => trim((string) ($payload['contributor_display_name'] ?? '')),
+            'contributor_is_anonymous' => (bool) ($payload['contributor_is_anonymous'] ?? false),
             'module' => $module,
             'content_module' => trim((string) ($payload['content_module'] ?? '')),
             'content_slug' => trim((string) ($payload['content_slug'] ?? '')),

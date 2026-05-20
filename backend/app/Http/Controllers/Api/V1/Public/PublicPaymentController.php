@@ -73,23 +73,28 @@ class PublicPaymentController extends Controller
         }
 
         $validated = $request->validated();
-
         $buyer = $this->resolveAuthenticatedBuyer($request);
+        $isPublicCrowdfundingContribution = (string) ($validated['content_module'] ?? '') === 'crowdfunding';
 
-        if ($buyer === null) {
+        if ($buyer === null && ! $isPublicCrowdfundingContribution) {
             return response()->json([
                 'message' => 'Connexion acheteur requise pour réserver ou acheter.',
                 'code' => 'AUTH_REQUIRED',
             ], 401);
         }
 
-        $validated['buyer_user_id'] = $buyer->getKey();
-        $validated['buyer_name'] = $buyer->name;
-        $validated['buyer_email'] = Str::lower($buyer->email);
-        $validated['buyer_phone'] = $buyer->phone;
+        if ($buyer !== null) {
+            $validated['buyer_user_id'] = $buyer->getKey();
+            $validated['buyer_name'] = $buyer->name;
+            $validated['buyer_email'] = Str::lower($buyer->email);
+            $validated['buyer_phone'] = $buyer->phone;
+        }
 
         try {
-            $this->buyerAccountReadiness->assertReadyForSensitiveAction($buyer, 'acheter ou réserver');
+            if ($buyer !== null) {
+                $this->buyerAccountReadiness->assertReadyForSensitiveAction($buyer, 'acheter ou réserver');
+            }
+
             $data = $tenantModel->run(fn () => $this->checkoutManager->initialize($tenantModel, $validated));
 
             return response()->json([
