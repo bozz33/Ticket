@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
+use Illuminate\Database\Eloquent\Relations\MorphOne;
 
 class CallForProject extends Model
 {
@@ -70,5 +71,10 @@ class CallForProject extends Model
     public function submissions(): HasMany
     {
         return $this->hasMany(CallForProjectSubmission::class)->latest();
+    }
+
+    public function formDefinition(): MorphOne
+    {
+        return $this->morphOne(FormDefinition::class, 'owner')->latestOfMany();
     }
 }

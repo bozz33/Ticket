@@ -48,6 +48,8 @@ class FormDefinitionResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'name';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([
@@ -61,6 +63,7 @@ class FormDefinitionResource extends Resource
                 ])->default('draft')->required(),
                 Select::make('owner_type')
                     ->label('Module lié')
+                    ->default(fn (): ?string => request()->query('owner_type'))
                     ->options([
                         CallForProject::class => 'Appel à projets',
                         Event::class => 'Événement',
@@ -69,6 +72,7 @@ class FormDefinitionResource extends Resource
                     ->afterStateUpdated(fn ($set) => $set('owner_id', null)),
                 Select::make('owner_id')
                     ->label('Contenu lié')
+                    ->default(fn (): mixed => request()->query('owner_id'))
                     ->options(fn ($get): array => static::ownerOptions((string) $get('owner_type')))
                     ->searchable()
                     ->preload(),

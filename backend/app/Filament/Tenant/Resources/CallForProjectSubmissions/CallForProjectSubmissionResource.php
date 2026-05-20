@@ -39,6 +39,8 @@ class CallForProjectSubmissionResource extends Resource
 
     protected static ?string $slug = 'call-for-project-submissions';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Schema $schema): Schema
     {
         return CallForProjectSubmissionForm::configure($schema);

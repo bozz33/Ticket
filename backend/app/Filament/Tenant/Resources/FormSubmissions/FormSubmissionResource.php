@@ -43,6 +43,8 @@ class FormSubmissionResource extends Resource
 
     protected static ?string $slug = 'form-submissions';
 
+    protected static bool $shouldRegisterNavigation = false;
+
     public static function form(Schema $schema): Schema
     {
         return $schema->components([

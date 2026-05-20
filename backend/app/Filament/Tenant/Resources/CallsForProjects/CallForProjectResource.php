@@ -6,12 +6,15 @@ use App\Enums\CategoryScope;
 use App\Filament\Tenant\Resources\CallsForProjects\Pages\CreateCallForProject;
 use App\Filament\Tenant\Resources\CallsForProjects\Pages\EditCallForProject;
 use App\Filament\Tenant\Resources\CallsForProjects\Pages\ListCallForProjects;
+use App\Filament\Tenant\Resources\CallsForProjects\RelationManagers\SubmissionsRelationManager;
+use App\Filament\Tenant\Resources\FormDefinitions\FormDefinitionResource;
 use App\Models\CallForProject;
 use App\Models\Category;
 use App\Models\OrganizationProfile;
 use App\Models\PublicStatus;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\DeleteBulkAction;
@@ -29,6 +32,7 @@ use Filament\Schemas\Schema;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
 use UnitEnum;
@@ -99,15 +103,20 @@ class CallForProjectResource extends Resource
 
     public static function table(Table $table): Table
     {
-        return $table->recordTitleAttribute('title')->columns([
+        return $table->recordTitleAttribute('title')->modifyQueryUsing(fn (Builder $query) => $query->withCount('submissions'))->columns([
             TextColumn::make('title')->label('Titre')->searchable(),
             TextColumn::make('category.name')->label('Catégorie')->badge(),
             TextColumn::make('public_status_code')->label('Statut public')->badge(),
+            TextColumn::make('submissions_count')->label('Candidatures')->badge(),
             TextColumn::make('application_opens_at')->label('Ouverture')->dateTime(),
             TextColumn::make('application_closes_at')->label('Clôture')->dateTime(),
             IconColumn::make('is_active')->label('Actif')->boolean(),
             TextColumn::make('updated_at')->label('Mis à jour')->since(),
         ])->defaultSort('updated_at', 'desc')->recordActions([
+            Action::make('formDefinition')
+                ->label('Formulaire')
+                ->icon('heroicon-o-clipboard-document-list')
+                ->url(fn (CallForProject $record): string => static::formDefinitionUrl($record)),
             EditAction::make()
                 ->url(fn (CallForProject $record): string => static::getUrl('edit', ['record' => $record])),
             DeleteAction::make(),
@@ -124,6 +133,13 @@ class CallForProjectResource extends Resource
             'index' => ListCallForProjects::route('/'),
             'create' => CreateCallForProject::route('/create'),
             'edit' => EditCallForProject::route('/{record}/edit'),
+        ];
+    }
+
+    public static function getRelations(): array
+    {
+        return [
+            SubmissionsRelationManager::class,
         ];
     }
 
@@ -145,5 +161,19 @@ class CallForProjectResource extends Resource
     public static function canDeleteAny(): bool
     {
         return static::allows('update');
+    }
+
+    protected static function formDefinitionUrl(CallForProject $record): string
+    {
+        $formDefinition = $record->formDefinition;
+
+        if ($formDefinition !== null) {
+            return FormDefinitionResource::getUrl('edit', ['record' => $formDefinition]);
+        }
+
+        return FormDefinitionResource::getUrl('create', [
+            'owner_type' => CallForProject::class,
+            'owner_id' => $record->getKey(),
+        ]);
     }
 }
