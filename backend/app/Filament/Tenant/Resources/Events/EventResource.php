@@ -6,11 +6,11 @@ use App\Enums\CategoryScope;
 use App\Filament\Tenant\Resources\Events\Pages\CreateEvent;
 use App\Filament\Tenant\Resources\Events\Pages\EditEvent;
 use App\Filament\Tenant\Resources\Events\Pages\ListEvents;
-use App\Filament\Tenant\Resources\Events\RelationManagers\EventTicketsRelationManager;
 use App\Models\Category;
 use App\Models\City;
 use App\Models\Country;
 use App\Models\Event;
+use App\Models\EventTicketCategory;
 use App\Models\PublicStatus;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
@@ -20,6 +20,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Forms\Components\DateTimePicker;
 use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -133,6 +134,33 @@ class EventResource extends Resource
                         ->label('Fin')
                         ->default(fn (?Event $record): mixed => $record?->dates()->first()?->ends_at),
                 ])->columns(2),
+                Section::make('Billetterie')->schema([
+                    Repeater::make('tickets')
+                        ->label('Tickets')
+                        ->relationship('tickets')
+                        ->schema([
+                            Select::make('ticket_category_id')
+                                ->label('Catégorie')
+                                ->options(fn (): array => EventTicketCategory::query()->where('is_active', true)->orderBy('sort_order')->orderBy('name')->pluck('name', 'id')->all())
+                                ->searchable()
+                                ->preload(),
+                            TextInput::make('name')->label('Nom')->required()->maxLength(255),
+                            TextInput::make('code')->label('Code')->maxLength(100)->unique(ignoreRecord: true),
+                            TextInput::make('ticket_type')->label('Type')->default('standard')->required()->maxLength(100),
+                            Textarea::make('description')->label('Description')->rows(3)->columnSpanFull(),
+                            TextInput::make('currency_code')->label('Devise')->default(fn ($get): ?string => $get('../../currency_code') ?: 'XOF')->maxLength(3),
+                            TextInput::make('price_amount')->label('Prix')->numeric()->default(0),
+                            TextInput::make('quantity_total')->label('Stock total')->numeric(),
+                            TextInput::make('min_per_order')->label('Minimum par commande')->numeric()->default(1),
+                            TextInput::make('max_per_order')->label('Maximum par commande')->numeric(),
+                            DateTimePicker::make('sales_start_at')->label('Début de vente'),
+                            DateTimePicker::make('sales_end_at')->label('Fin de vente'),
+                            Toggle::make('is_active')->label('Actif')->default(true),
+                            TextInput::make('sort_order')->label('Ordre')->numeric()->default(0),
+                        ])
+                        ->columns(2)
+                        ->columnSpanFull(),
+                ]),
             ]);
     }
 
@@ -201,9 +229,7 @@ class EventResource extends Resource
 
     public static function getRelations(): array
     {
-        return [
-            EventTicketsRelationManager::class,
-        ];
+        return [];
     }
 
     public static function canCreate(): bool

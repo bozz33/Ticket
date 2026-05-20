@@ -40,8 +40,6 @@ class CrowdfundingCampaignResource extends Resource
 
     protected static ?string $permissionPrefix = 'tenant.catalog';
 
-    protected static ?string $requiredTenantFeature = 'tenant.crowdfunding';
-
     protected static string|UnitEnum|null $navigationGroup = 'Modules';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-heart';
