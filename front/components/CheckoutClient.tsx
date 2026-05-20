@@ -6,6 +6,8 @@ import { getCheckoutPaymentOptions, initializeCheckoutPayment } from "@/lib/clie
 import { getCheckoutInitializationIds, getCheckoutSelectionParamName } from "@/lib/checkout/selection";
 import { CheckoutStage } from "@/components/checkout-client/CheckoutStage";
 import { CheckoutSummary } from "@/components/checkout-client/CheckoutSummary";
+import { releaseReservedEventTicket, reserveSelectedEventTicket } from "@/components/checkout-client/reservations";
+import { buildCheckoutCallbackUrl, buildCheckoutSuccessUrl } from "@/components/checkout-client/urls";
 import type { AccountUser, CheckoutPaymentOptions, ModuleRoute, PublicContent } from "@/lib/types";
 
 export function CheckoutClient({
@@ -48,7 +50,6 @@ export function CheckoutClient({
   const accountReadyForActions = Boolean(accountUser?.account_ready_for_actions);
   const buyerEmail = accountUser?.email?.trim() ?? "";
   const buyerPhone = accountUser?.phone?.trim() ?? "";
-
   const missingCheckoutFields = useMemo(() => {
     const missing: string[] = [];
     if (!buyerEmail) {
@@ -59,7 +60,6 @@ export function CheckoutClient({
     }
     return missing;
   }, [buyerEmail, buyerPhone]);
-
   if (initialPaymentOptions && pricingCache.current.size === 0) {
     const initialCheckoutItemId =
       initialPaymentOptions.checkout_item?.id ??
@@ -68,7 +68,6 @@ export function CheckoutClient({
 
     pricingCache.current.set(`${initialCheckoutItemId}:${initialPaymentOptions.pricing.quantity}:${selectedPaymentMethod}`, initialPaymentOptions);
   }
-
   async function refreshPricing(nextQuantity: number) {
     if (!selectedOffer?.id) {
       return;
@@ -110,23 +109,6 @@ export function CheckoutClient({
       setLoadingPricing(false);
     }
   }
-
-  function buildSuccessUrl(reference: string) {
-    const successUrl = new URL(`/checkout/${item.module}/${item.slug}/succes`, window.location.origin);
-
-    if (selectedOffer?.id) {
-      successUrl.searchParams.set(getCheckoutSelectionParamName(selectedOffer), selectedOffer.id);
-    }
-
-    if (item.organizerSlug) {
-      successUrl.searchParams.set("tenant", item.organizerSlug);
-    }
-
-    successUrl.searchParams.set("tx", reference);
-
-    return successUrl.toString();
-  }
-
   async function handleSubmit() {
     if (!selectedOffer?.id) {
       setError("Aucune offre sélectionnée.");
@@ -153,11 +135,23 @@ export function CheckoutClient({
     setNotice(null);
 
     try {
-      const callbackUrl = new URL(`/checkout/${item.module}/${item.slug}/succes`, window.location.origin);
-      callbackUrl.searchParams.set(getCheckoutSelectionParamName(selectedOffer), selectedOffer.id);
+      const callbackUrl = buildCheckoutCallbackUrl(item, selectedOffer);
 
-      if (item.organizerSlug) {
-        callbackUrl.searchParams.set("tenant", item.organizerSlug);
+      const reservation = await reserveSelectedEventTicket({
+        selectedOffer,
+        quantity,
+        tenant: item.organizerSlug,
+      });
+
+      if (reservation.error) {
+        setError(reservation.error);
+        return;
+      }
+
+      const ticketReservationId = reservation.reservationId;
+
+      if (reservation.notice) {
+        setNotice(reservation.notice);
       }
 
       const result = await initializeCheckoutPayment({
@@ -168,14 +162,21 @@ export function CheckoutClient({
         content_slug: item.slug,
         callback_url: callbackUrl.toString(),
         tenant: item.organizerSlug,
+        ticket_reservation: ticketReservationId,
       });
 
       if (!result) {
+        if (ticketReservationId) {
+          releaseReservedEventTicket(ticketReservationId, item.organizerSlug);
+        }
         setError("Impossible de contacter le serveur de paiement.");
         return;
       }
 
       if ("error" in result) {
+        if (ticketReservationId) {
+          releaseReservedEventTicket(ticketReservationId, item.organizerSlug);
+        }
         setError(result.error);
         return;
       }
@@ -185,7 +186,7 @@ export function CheckoutClient({
         return;
       }
 
-      window.location.assign(buildSuccessUrl(result.reference));
+      window.location.assign(buildCheckoutSuccessUrl(item, selectedOffer, result.reference));
     } finally {
       setSubmitting(false);
     }

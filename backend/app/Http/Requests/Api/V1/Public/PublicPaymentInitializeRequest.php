@@ -21,6 +21,7 @@ class PublicPaymentInitializeRequest extends FormRequest
             'buyer_name' => ['nullable', 'string', 'max:255'],
             'buyer_email' => ['nullable', 'email:rfc', 'max:255'],
             'buyer_phone' => ['nullable', 'string', 'max:50'],
+            'ticket_reservation' => ['nullable', 'string', 'max:80'],
             'content_module' => ['nullable', 'string', 'max:100'],
             'content_slug' => ['nullable', 'string', 'max:255'],
             'callback_url' => ['required', 'url', 'max:2048'],

@@ -2,6 +2,7 @@ import type {
   CheckoutInitializationResult,
   CheckoutPaymentOptions,
   ModuleRoute,
+  TicketReservationResult,
 } from "@/lib/types";
 
 type CheckoutInitializationInput = {
@@ -13,6 +14,7 @@ type CheckoutInitializationInput = {
   content_slug: string;
   callback_url: string;
   tenant?: string;
+  ticket_reservation?: string;
 };
 
 type ApiEnvelope<T> = {
@@ -84,5 +86,53 @@ export async function initializeCheckoutPayment(
     return payload.data;
   } catch {
     return null;
+  }
+}
+
+
+export async function reserveCheckoutTicket(input: {
+  ticket: string;
+  quantity: number;
+  tenant?: string;
+}): Promise<TicketReservationResult | { error: string } | null> {
+  const params = input.tenant ? `?tenant=${encodeURIComponent(input.tenant)}` : "";
+
+  try {
+    const response = await fetch(`/api/checkout/ticket-reservations${params}`, {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ ticket: input.ticket, quantity: input.quantity }),
+    });
+    const payload = (await response.json()) as ApiEnvelope<TicketReservationResult>;
+
+    if (!response.ok || !payload.data) {
+      return { error: payload.message ?? payload.error ?? "Impossible de réserver ce ticket." };
+    }
+
+    return payload.data;
+  } catch {
+    return null;
+  }
+}
+
+export async function releaseCheckoutTicketReservation(reservationId: string, tenant?: string) {
+  const params = tenant ? `?tenant=${encodeURIComponent(tenant)}` : "";
+
+  try {
+    const response = await fetch(`/api/checkout/ticket-reservations/${encodeURIComponent(reservationId)}${params}`, {
+      method: "DELETE",
+      cache: "no-store",
+      headers: {
+        Accept: "application/json",
+      },
+    });
+
+    return response.ok;
+  } catch {
+    return false;
   }
 }

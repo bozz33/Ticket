@@ -71,6 +71,14 @@ export interface CheckoutInitializationResult {
   } | null;
 }
 
+export interface TicketReservationResult {
+  type: "event_ticket" | string;
+  id: string;
+  quantity: number;
+  expires_at?: string | null;
+  metadata?: Record<string, unknown>;
+}
+
 export interface CheckoutVerificationResult {
   reference: string;
   status: string;

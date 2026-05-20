@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Ticket\Ticketing\Contracts\EventTicketOfferBridge;
 
 class EventTicket extends Model
 {
@@ -56,21 +55,6 @@ class EventTicket extends Model
             'sort_order' => 'integer',
             'meta' => 'array',
         ];
-    }
-
-    protected static function booted(): void
-    {
-        static::saved(function (EventTicket $ticket): void {
-            if ((bool) data_get($ticket->meta ?? [], 'skip_offer_sync', false)) {
-                return;
-            }
-
-            if ($ticket->wasChanged('offer_id') && ! $ticket->wasRecentlyCreated) {
-                return;
-            }
-
-            app(EventTicketOfferBridge::class)->sync($ticket->fresh(['event', 'offer', 'ticketCategory']));
-        });
     }
 
     public function event(): BelongsTo

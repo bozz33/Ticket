@@ -67,6 +67,22 @@ class TicketingCheckoutItemResolver implements CheckoutItemResolver
             throw new \RuntimeException('Ticket introuvable.');
         }
 
+        $existingReservation = $this->existingReservationFromContext($ticket, $quantity, $context);
+
+        if ($existingReservation instanceof TicketReservation) {
+            return new CheckoutReservation(
+                type: 'event_ticket',
+                publicId: $existingReservation->public_id,
+                quantity: $existingReservation->quantity,
+                expiresAt: $existingReservation->expires_at,
+                metadata: [
+                    'ticket_reservation_id' => $existingReservation->getKey(),
+                    'ticket_reservation_public_id' => $existingReservation->public_id,
+                    'ticket_reservation_expires_at' => $existingReservation->expires_at?->toIso8601String(),
+                ],
+            );
+        }
+
         $reservedTicket = $this->inventory->reserve($ticket, $quantity);
         $reservation = $this->createReservation($reservedTicket, $quantity, $context);
 
@@ -200,6 +216,35 @@ class TicketingCheckoutItemResolver implements CheckoutItemResolver
                 ],
             ]);
         });
+    }
+
+    private function existingReservationFromContext(EventTicket $ticket, int $quantity, array $context): ?TicketReservation
+    {
+        $reservationPublicId = (string) ($context['ticket_reservation_public_id'] ?? $context['reservation_public_id'] ?? '');
+
+        if ($reservationPublicId === '' || ! $this->ticketReservationsTableExists()) {
+            return null;
+        }
+
+        $reservation = TicketReservation::query()
+            ->where('public_id', $reservationPublicId)
+            ->where('event_ticket_id', $ticket->getKey())
+            ->where('status', 'pending')
+            ->first();
+
+        if (! $reservation instanceof TicketReservation) {
+            return null;
+        }
+
+        if ($reservation->expires_at !== null && $reservation->expires_at->isPast()) {
+            return null;
+        }
+
+        if ($reservation->quantity !== max(1, $quantity)) {
+            throw new \RuntimeException('La quantité ne correspond pas à la réservation.');
+        }
+
+        return $reservation;
     }
 
     private function reservationFromCheckout(array $checkout): ?TicketReservation

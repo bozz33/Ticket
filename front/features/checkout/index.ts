@@ -2,6 +2,8 @@ export { CheckoutClient } from "@/components/CheckoutClient";
 export {
   getCheckoutPaymentOptions as getClientCheckoutPaymentOptions,
   initializeCheckoutPayment,
+  releaseCheckoutTicketReservation,
+  reserveCheckoutTicket,
 } from "@/lib/client/checkout";
 export {
   getCheckoutData,

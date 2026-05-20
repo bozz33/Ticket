@@ -741,13 +741,22 @@ Le contrat OpenAPI documente maintenant les endpoints publics du form builder.
 - `optimize:clear` est nécessaire après modification des routes Laravel si un cache de routes est présent.
 - les réservations tickets expirées peuvent être libérées par `ticket:release-expired-ticket-reservations` ;
 - le scheduler Laravel exécute la libération multi-tenant toutes les cinq minutes.
+- le panier ticketing suit l'approche recommandée pour la billetterie : hold temporaire explicite, timer côté front, confirmation au paiement, libération en cas d'abandon ou d'expiration ;
+- endpoints publics ajoutés pour réserver, consulter et libérer une réservation ticket :
+
+```txt
+POST /api/v1/public/tenants/{tenant}/ticket-reservations
+GET /api/v1/public/tenants/{tenant}/ticket-reservations/{reservation}
+DELETE /api/v1/public/tenants/{tenant}/ticket-reservations/{reservation}
+```
+
+- l'initialisation paiement peut consommer une réservation existante via `ticket_reservation`, ce qui évite la double réservation.
 
 ### Restant réel
 
 Les éléments suivants restent des évolutions futures, non indispensables au fonctionnement actuel :
 
 - suppression progressive des anciens chemins événementiels basés sur `Offer` ;
-- endpoints publics explicites de réservation/libération si l'on veut exposer le panier temporaire avant l'initialisation paiement.
 - migration progressive des imports front vers `features/*` ;
 - extraction future des resources Filament vers Schemas/Tables dédiées pour suivre un style très grand projet.
 

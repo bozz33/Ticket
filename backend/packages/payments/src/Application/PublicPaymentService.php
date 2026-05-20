@@ -141,6 +141,7 @@ class PublicPaymentService
                 'transaction_reference' => $reference,
                 'buyer_user_id' => $buyerUserId,
                 'buyer_email' => $buyerEmail,
+                'ticket_reservation_public_id' => trim((string) ($payload['ticket_reservation'] ?? '')),
             ]);
 
             if ($reservation instanceof CheckoutReservation) {

@@ -51,9 +51,12 @@ class EventTicketOfferSyncServiceTest extends TestCase
             'quantity_total' => 100,
             'quantity_sold' => 10,
             'quantity_reserved' => 0,
+            'min_per_order' => 1,
+            'sort_order' => 0,
             'is_active' => true,
         ]);
 
+        app(EventTicketOfferSyncService::class)->sync($ticket);
         $ticket->refresh();
         $offer = $ticket->offer;
 
@@ -137,7 +140,7 @@ class EventTicketOfferSyncServiceTest extends TestCase
 
         $this->assertSame(0, $sold->quantity_reserved);
         $this->assertSame(2, $sold->quantity_sold);
-        $this->assertSame(2, $sold->offer->fresh()->quantity_sold);
+        $this->assertNull($sold->offer_id);
     }
 
     public function test_checkout_item_resolver_reserves_and_confirms_event_ticket_stock(): void

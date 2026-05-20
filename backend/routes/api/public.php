@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\V1\Public\PublicFrontPageController;
 use App\Http\Controllers\Api\V1\Public\PublicOnboardingController;
 use App\Http\Controllers\Api\V1\Public\PublicPaymentController;
 use App\Http\Controllers\Api\V1\Public\PublicReceiptVerificationController;
+use App\Http\Controllers\Api\V1\Public\PublicTicketReservationController;
 use App\Http\Controllers\Api\V1\PublicPlatformConfigurationController;
 use App\Http\Controllers\Api\V1\PublicReferenceDataController;
 use App\Http\Controllers\Api\V1\PublicTenantDocumentController;
@@ -57,4 +58,10 @@ Route::middleware(['initialize.tenant.route'])->group(function (): void {
         ->middleware('throttle:public-payment-initialize');
     Route::get('/public/tenants/{tenant}/payments/verify/{reference}', [PublicPaymentController::class, 'verify'])
         ->middleware('throttle:public-payment-verify');
+    Route::post('/public/tenants/{tenant}/ticket-reservations', [PublicTicketReservationController::class, 'store'])
+        ->middleware('throttle:public-payment-initialize');
+    Route::get('/public/tenants/{tenant}/ticket-reservations/{reservation}', [PublicTicketReservationController::class, 'show'])
+        ->middleware('throttle:public-pass-lookup');
+    Route::delete('/public/tenants/{tenant}/ticket-reservations/{reservation}', [PublicTicketReservationController::class, 'destroy'])
+        ->middleware('throttle:public-payment-initialize');
 });
