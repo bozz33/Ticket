@@ -3,6 +3,12 @@ export interface DynamicFormOption {
   label: string;
 }
 
+export interface DynamicFormVisibilityCondition {
+  field: string;
+  operator?: "equals" | "not_equals" | "in" | "not_in" | "filled" | "empty";
+  value?: string | number | boolean | Array<string | number | boolean>;
+}
+
 export interface DynamicFormField {
   key: string;
   type: string;
@@ -10,6 +16,7 @@ export interface DynamicFormField {
   help_text?: string;
   required?: boolean;
   visible?: boolean;
+  visible_if?: DynamicFormVisibilityCondition | DynamicFormVisibilityCondition[];
   accept?: string[];
   options?: DynamicFormOption[] | Record<string, string>;
 }

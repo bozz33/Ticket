@@ -40,6 +40,7 @@ class DynamicFormValidator
             'fields.*.label' => ['required_unless:fields.*.type,section', 'nullable', 'string', 'max:255'],
             'fields.*.required' => ['sometimes', 'boolean'],
             'fields.*.visible' => ['sometimes', 'boolean'],
+            'fields.*.visible_if' => ['sometimes'],
             'fields.*.options' => ['sometimes', 'array'],
         ]);
 
@@ -65,6 +66,8 @@ class DynamicFormValidator
                 if (! in_array($type, self::SUPPORTED_TYPES, true)) {
                     $validator->errors()->add("fields.{$index}.type", 'Le type de champ est invalide.');
                 }
+
+                $this->validateVisibilityConditions($validator, $field, $index);
 
                 if (in_array($type, ['select', 'radio', 'checkbox_group'], true) && count((array) ($field['options'] ?? [])) === 0) {
                     $validator->errors()->add("fields.{$index}.options", 'Ce type de champ nécessite des options.');
@@ -126,5 +129,34 @@ class DynamicFormValidator
             'file' => [],
             default => ['string', 'max:5000'],
         })));
+    }
+
+    private function validateVisibilityConditions($validator, array $field, int $index): void
+    {
+        if (! array_key_exists('visible_if', $field)) {
+            return;
+        }
+
+        $conditions = array_is_list((array) $field['visible_if'])
+            ? (array) $field['visible_if']
+            : [$field['visible_if']];
+
+        foreach ($conditions as $conditionIndex => $condition) {
+            if (! is_array($condition)) {
+                $validator->errors()->add("fields.{$index}.visible_if.{$conditionIndex}", 'La condition d’affichage est invalide.');
+
+                continue;
+            }
+
+            if (blank($condition['field'] ?? '')) {
+                $validator->errors()->add("fields.{$index}.visible_if.{$conditionIndex}.field", 'Le champ source est requis.');
+            }
+
+            $operator = (string) ($condition['operator'] ?? 'equals');
+
+            if (! in_array($operator, ['equals', 'not_equals', 'in', 'not_in', 'filled', 'empty'], true)) {
+                $validator->errors()->add("fields.{$index}.visible_if.{$conditionIndex}.operator", 'L’opérateur de condition est invalide.');
+            }
+        }
     }
 }

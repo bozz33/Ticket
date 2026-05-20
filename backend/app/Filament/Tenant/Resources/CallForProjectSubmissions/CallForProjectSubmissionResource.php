@@ -72,6 +72,17 @@ class CallForProjectSubmissionResource extends Resource
                 TextInput::make('country_code')->label('Pays')->disabled()->dehydrated(false),
                 TextInput::make('city_name')->label('Ville')->disabled()->dehydrated(false),
             ])->columns(2),
+            Section::make('Évaluation')->schema([
+                TextInput::make('meta.review_score')
+                    ->label('Score')
+                    ->numeric()
+                    ->minValue(0)
+                    ->maxValue(100),
+                Textarea::make('meta.review_notes')
+                    ->label('Notes internes')
+                    ->rows(6)
+                    ->columnSpanFull(),
+            ])->columns(2),
             Section::make('Réponses soumises')->schema([
                 Textarea::make('answers')
                     ->label('Réponses')
@@ -106,6 +117,7 @@ class CallForProjectSubmissionResource extends Resource
                 TextColumn::make('city_name')->label('Ville')->toggleable(),
                 TextColumn::make('country_code')->label('Pays')->badge(),
                 TextColumn::make('status')->label('Statut')->badge(),
+                TextColumn::make('meta.review_score')->label('Score')->sortable()->toggleable(),
                 TextColumn::make('submitted_at')->label('Soumise le')->dateTime(),
             ])
             ->defaultSort('submitted_at', 'desc')

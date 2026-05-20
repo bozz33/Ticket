@@ -3,6 +3,7 @@
 import { useState } from "react";
 
 import { DynamicFormFieldRenderer } from "./DynamicFormFieldRenderer";
+import { isFieldVisible } from "./helpers";
 import type { DynamicFormSchema } from "./types";
 
 export function DynamicFormRenderer({
@@ -31,7 +32,7 @@ export function DynamicFormRenderer({
 
   return (
     <form className="dynamic-form" onSubmit={handleSubmit}>
-      {schema.fields.filter((field) => field.visible !== false).map((field) => (
+      {schema.fields.filter((field) => isFieldVisible(field, responses)).map((field) => (
         <DynamicFormFieldRenderer
           field={field}
           key={field.key}

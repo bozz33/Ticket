@@ -688,6 +688,25 @@ Sinon, l'ancien wizard de candidature reste utilisé.
 - `FormSubmission` reste réservé aux formulaires génériques hors domaine métier spécifique ;
 - resource Filament de consultation des `FormSubmission` génériques ;
 - stockage persistant des fichiers soumis via formulaire dynamique sur le disque local tenant-aware.
+- conditions d'affichage dynamiques `visible_if` côté schéma et rendu front ;
+- scoring/review simple des candidatures via `meta.review_score` et `meta.review_notes`.
+
+### Découpage modulaire
+
+Backend :
+
+- le découpage principal est déjà organisé en packages métier : `ticketing`, `payments`, `public-catalog`, `tenancy`, `notifications` ;
+- `payments` consomme le checkout via `CheckoutItemResolver`, sans dépendre directement du détail `EventTicket` ;
+- `ticketing` reste propriétaire des tickets, réservations et access passes ;
+- `public-catalog` reste propriétaire de la projection publique.
+
+Frontend :
+
+- un découpage progressif `features/*` est introduit sans déplacement massif risqué ;
+- `features/forms` expose les primitives du form builder ;
+- `features/ticketing` expose les composants de billetterie ;
+- `features/checkout` expose les primitives client/data du checkout ;
+- les anciens chemins `components/*` restent compatibles pendant la migration.
 
 ### Contrats et tests validés
 
@@ -728,9 +747,9 @@ Le contrat OpenAPI documente maintenant les endpoints publics du form builder.
 Les éléments suivants restent des évolutions futures, non indispensables au fonctionnement actuel :
 
 - suppression progressive des anciens chemins événementiels basés sur `Offer` ;
-- conditions d'affichage de champs ;
-- workflow de review/scoring des soumissions ;
 - endpoints publics explicites de réservation/libération si l'on veut exposer le panier temporaire avant l'initialisation paiement.
+- migration progressive des imports front vers `features/*` ;
+- extraction future des resources Filament vers Schemas/Tables dédiées pour suivre un style très grand projet.
 
 ## Décision finale
 
