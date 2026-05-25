@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 
 import { getLikeRenderingContext } from "@/components/route/content-engagement";
+import { organizerFollowKey } from "@/lib/engagement";
 import { OrganizerBodySection } from "./organizer/OrganizerBodySection";
 import { OrganizerCatalogSection } from "./organizer/OrganizerCatalogSection";
 import { OrganizerHero } from "./organizer/OrganizerHero";
@@ -19,15 +20,30 @@ export async function OrganizerView({
     notFound();
   }
 
-  const { accountAuthenticated, likeSummaries } = await getLikeRenderingContext(items);
+  const {
+    accountAuthenticated,
+    accountSessionKey,
+    followSummaries,
+    likeSummaries,
+  } = await getLikeRenderingContext(items);
 
   return (
     <>
-      <OrganizerHero organizer={organizer} stats={stats} />
+      <OrganizerHero
+        accountAuthenticated={accountAuthenticated}
+        accountSessionKey={accountSessionKey}
+        initialFollowing={accountAuthenticated === true
+          ? followSummaries[organizerFollowKey(organizer.slug)]?.following ?? false
+          : undefined}
+        organizer={organizer}
+        stats={stats}
+      />
       <OrganizerBodySection organizer={organizer} />
       <OrganizerCatalogSection
         accountAuthenticated={accountAuthenticated}
+        accountSessionKey={accountSessionKey}
         currentPage={currentPage}
+        followSummaries={followSummaries}
         filters={filters}
         items={items}
         likeSummaries={likeSummaries}

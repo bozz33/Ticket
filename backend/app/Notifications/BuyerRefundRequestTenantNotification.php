@@ -27,9 +27,9 @@ class BuyerRefundRequestTenantNotification extends Notification
         $reason = (string) ($this->requestData['reason'] ?? $this->requestData['reason_code'] ?? 'Demande acheteur');
 
         return FilamentNotification::make()
-            ->title('Demande de remboursement acheteur')
+            ->title('Demande de remboursement à valider')
             ->body(sprintf(
-                '%s a demandé un remboursement pour la commande %s (%s).',
+                '%s a demandé un remboursement pour la commande %s (%s). Validez ou rejetez la demande depuis le panel organisateur.',
                 $buyerLabel,
                 $this->order->reference,
                 $reason,

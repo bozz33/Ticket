@@ -57,6 +57,7 @@ export function useForgotPasswordForm() {
   return {
     email,
     error,
+    isReady,
     loading,
     loginHref: isReady && tenant ? `/compte/connexion?tenant=${encodeURIComponent(tenant)}` : "/compte/connexion",
     success,

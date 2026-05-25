@@ -31,7 +31,7 @@ export function OrderReceiptPanel({ receipt }: OrderReceiptPanelProps) {
         <div className="ac-detail-row" style={{ border: "none", paddingTop: "12px" }}>
           <Link
             className="button button--small"
-            href={`/compte/recus/${receipt.reference}`}
+            href={`/compte/recus/${receipt.reference}/imprimer`}
             style={{ width: "100%", textAlign: "center" }}
           >
             Voir le reçu

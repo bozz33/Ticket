@@ -94,4 +94,9 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmailContr
     {
         return $this->hasMany(EventLike::class);
     }
+
+    public function contentLikes(): HasMany
+    {
+        return $this->hasMany(ContentLike::class);
+    }
 }

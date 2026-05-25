@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\V1\Public\PublicCallForProjectSubmissionController;
 use App\Http\Controllers\Api\V1\Public\PublicContentController;
 use App\Http\Controllers\Api\V1\Public\PublicFormSubmissionController;
 use App\Http\Controllers\Api\V1\Public\PublicFrontPageController;
+use App\Http\Controllers\Api\V1\Public\PublicMarketplaceSessionController;
 use App\Http\Controllers\Api\V1\Public\PublicOnboardingController;
 use App\Http\Controllers\Api\V1\Public\PublicPaymentController;
 use App\Http\Controllers\Api\V1\Public\PublicReceiptVerificationController;
@@ -26,6 +27,8 @@ Route::prefix('public')->group(function (): void {
     Route::get('/content/search/suggestions', [PublicContentController::class, 'globalSearchSuggestions']);
     Route::get('/content/{module}/{slug}/related', [PublicContentController::class, 'globalRelated']);
     Route::get('/content/{module}/{slug}', [PublicContentController::class, 'globalShow']);
+    Route::post('/marketplace/session/exchange', [PublicMarketplaceSessionController::class, 'exchange'])
+        ->middleware('throttle:tenant-auth');
     Route::get('/front/pages', [PublicFrontPageController::class, 'index']);
     Route::post('/onboarding/register', [PublicOnboardingController::class, 'register'])
         ->middleware('throttle:public-onboarding');

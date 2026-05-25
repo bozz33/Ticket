@@ -2,6 +2,7 @@
 
 namespace Ticket\Ticketing\Application;
 
+use App\Models\ContentLike;
 use App\Models\Event;
 use App\Models\User;
 use Illuminate\Support\Str;
@@ -10,10 +11,8 @@ class EventLikeService
 {
     public function summary(?User $user, Event $event): array
     {
-        $likes = $event->likes()->count();
-        $liked = $user !== null
-            ? $event->likes()->where('user_id', $user->getKey())->exists()
-            : false;
+        $likes = $this->likesCount($event);
+        $liked = $user !== null && $this->isLikedBy($user, $event);
 
         return [
             'liked' => $liked,
@@ -42,7 +41,6 @@ class EventLikeService
             ->values();
 
         $events = Event::query()
-            ->withCount('likes')
             ->where(function ($query) use ($publicIds, $slugs): void {
                 if ($slugs->isNotEmpty()) {
                     $query->whereIn('slug', $slugs->all());
@@ -58,20 +56,11 @@ class EventLikeService
             return [];
         }
 
-        $likedEventIds = $user !== null
-            ? $user->eventLikes()
-                ->whereIn('event_id', $events->pluck('id'))
-                ->pluck('event_id')
-                ->all()
-            : [];
-
-        $likedLookup = array_fill_keys($likedEventIds, true);
-
         return $events
-            ->mapWithKeys(function (Event $event) use ($likedLookup): array {
+            ->mapWithKeys(function (Event $event) use ($user): array {
                 $summary = [
-                    'liked' => isset($likedLookup[$event->getKey()]),
-                    'likes' => (int) ($event->likes_count ?? 0),
+                    'liked' => $user !== null && $this->isLikedBy($user, $event),
+                    'likes' => $this->likesCount($event),
                 ];
 
                 $keys = array_filter([
@@ -86,23 +75,63 @@ class EventLikeService
 
     public function like(User $user, Event $event): array
     {
-        $event->likes()->firstOrCreate([
+        ContentLike::query()->firstOrCreate([
+            'module' => 'evenements',
+            'content_slug' => $event->slug,
             'user_id' => $user->getKey(),
+        ], [
+            'content_public_id' => $event->public_id,
         ]);
+
+        $event->likes()->where('user_id', $user->getKey())->delete();
 
         return [
             'liked' => true,
-            'likes' => $event->likes()->count(),
+            'likes' => $this->likesCount($event),
         ];
     }
 
     public function unlike(User $user, Event $event): array
     {
+        ContentLike::query()
+            ->where('module', 'evenements')
+            ->where('content_slug', $event->slug)
+            ->where('user_id', $user->getKey())
+            ->delete();
+
         $event->likes()->where('user_id', $user->getKey())->delete();
 
         return [
             'liked' => false,
-            'likes' => $event->likes()->count(),
+            'likes' => $this->likesCount($event),
         ];
+    }
+
+    private function isLikedBy(User $user, Event $event): bool
+    {
+        return ContentLike::query()
+            ->where('module', 'evenements')
+            ->where('content_slug', $event->slug)
+            ->where('user_id', $user->getKey())
+            ->exists()
+            || $event->likes()->where('user_id', $user->getKey())->exists();
+    }
+
+    private function likesCount(Event $event): int
+    {
+        $contentUserIds = ContentLike::query()
+            ->where('module', 'evenements')
+            ->where('content_slug', $event->slug)
+            ->pluck('user_id')
+            ->all();
+
+        $legacyUserIds = $event->likes()
+            ->pluck('user_id')
+            ->all();
+
+        return collect($contentUserIds)
+            ->merge($legacyUserIds)
+            ->unique()
+            ->count();
     }
 }

@@ -1,14 +1,17 @@
-import { ManagedFrontPageRoute, getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
+import { LegalNoticePageView } from "@/components/static-pages/LegalPageView";
+import { legalNoticeContent } from "@/components/static-pages/legal-pages";
+import { createMetadata } from "@/lib/metadata";
 
 export const revalidate = 300;
 
 export async function generateMetadata() {
-  return getManagedPageMetadata("/mentions-legales", {
+  return createMetadata({
     title: "Mentions légales — Ticket",
-    description: "Mentions légales de la plateforme Ticket : éditeur, hébergeur, propriété intellectuelle et données personnelles.",
+    description: legalNoticeContent.description,
+    path: "/mentions-legales",
   });
 }
 
 export default async function MentionsLegalesPage() {
-  return <ManagedFrontPageRoute path="/mentions-legales" />;
+  return <LegalNoticePageView content={legalNoticeContent} />;
 }

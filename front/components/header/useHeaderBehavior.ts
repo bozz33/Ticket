@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { SCROLLED_ENTER_THRESHOLD, SCROLLED_EXIT_THRESHOLD } from "./config";
 
 export function useHeaderBehavior() {
+  const [isReady, setIsReady] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const closeMenu = () => setIsMenuOpen(false);
@@ -50,6 +51,7 @@ export function useHeaderBehavior() {
 
     syncScrolledState();
     onResize();
+    setIsReady(true);
 
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", onResize);
@@ -65,6 +67,7 @@ export function useHeaderBehavior() {
   return {
     closeMenu,
     isMenuOpen,
+    isReady,
     isScrolled,
     toggleMenu: () => setIsMenuOpen((value) => !value),
   };

@@ -16,7 +16,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->string('module')->nullable()->index();
             $table->boolean('default_enabled')->default(false)->index();
-            $table->boolean('requires_subscription')->default(false)->index();
             $table->boolean('is_public')->default(false)->index();
             $table->boolean('is_active')->default(true)->index();
             $table->json('meta')->nullable();
@@ -43,10 +42,9 @@ return new class extends Migration
                 'description' => 'Autorise l’accès général au panneau tenant.',
                 'module' => 'core',
                 'default_enabled' => true,
-                'requires_subscription' => true,
                 'is_public' => false,
                 'is_active' => true,
-                'meta' => json_encode(['group' => 'subscription']),
+                'meta' => json_encode(['group' => 'core']),
                 'created_at' => $now,
                 'updated_at' => $now,
             ],
@@ -56,7 +54,6 @@ return new class extends Migration
                 'description' => 'Autorise la gestion des comptes et rôles tenant.',
                 'module' => 'core',
                 'default_enabled' => true,
-                'requires_subscription' => true,
                 'is_public' => false,
                 'is_active' => true,
                 'meta' => json_encode(['group' => 'rbac']),
@@ -69,7 +66,6 @@ return new class extends Migration
                 'description' => 'Expose la lecture des données financières tenant.',
                 'module' => 'finance',
                 'default_enabled' => true,
-                'requires_subscription' => true,
                 'is_public' => false,
                 'is_active' => true,
                 'meta' => json_encode(['group' => 'finance']),
@@ -82,7 +78,6 @@ return new class extends Migration
                 'description' => 'Expose les outils de support côté tenant.',
                 'module' => 'support',
                 'default_enabled' => true,
-                'requires_subscription' => true,
                 'is_public' => false,
                 'is_active' => true,
                 'meta' => json_encode(['group' => 'support']),
@@ -95,7 +90,6 @@ return new class extends Migration
                 'description' => 'Active le catalogue public global.',
                 'module' => 'public',
                 'default_enabled' => true,
-                'requires_subscription' => false,
                 'is_public' => true,
                 'is_active' => true,
                 'meta' => json_encode(['group' => 'public']),

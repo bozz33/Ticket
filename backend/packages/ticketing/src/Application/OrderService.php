@@ -24,9 +24,10 @@ class OrderService
             ->get();
     }
 
-    public function listForBuyer(User $user, ?string $status = null): Collection
+    public function listForBuyer(User $user, ?string $status = null, int $limit = 100): Collection
     {
         $email = Str::lower($user->email);
+        $limit = min(max($limit, 1), 100);
 
         return Order::query()
             ->with(['offer', 'receipt'])
@@ -40,6 +41,7 @@ class OrderService
             )
             ->withCount('accessPasses')
             ->latest()
+            ->limit($limit)
             ->get();
     }
 

@@ -49,6 +49,7 @@ return [
     'rate_limits' => [
         'platform_auth_per_minute' => (int) env('RATE_LIMIT_PLATFORM_AUTH_PER_MINUTE', 5),
         'tenant_auth_per_minute' => (int) env('RATE_LIMIT_TENANT_AUTH_PER_MINUTE', 5),
+        'tenant_engagement_per_minute' => (int) env('RATE_LIMIT_TENANT_ENGAGEMENT_PER_MINUTE', 120),
         'public_onboarding_per_minute' => (int) env('RATE_LIMIT_PUBLIC_ONBOARDING_PER_MINUTE', 3),
         'public_call_for_project_apply_per_minute' => (int) env('RATE_LIMIT_PUBLIC_CALL_FOR_PROJECT_APPLY_PER_MINUTE', 5),
         'public_payment_initialize_per_minute' => (int) env('RATE_LIMIT_PUBLIC_PAYMENT_INITIALIZE_PER_MINUTE', 10),

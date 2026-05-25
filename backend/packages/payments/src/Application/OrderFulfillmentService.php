@@ -6,9 +6,11 @@ use App\Enums\AccessPassType;
 use App\Enums\OrderStatus;
 use App\Models\AccessPass;
 use App\Models\CrowdfundingCampaign;
+use App\Models\CrowdfundingContribution;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\Receipt;
+use App\Notifications\BuyerOrderConfirmedNotification;
 use App\Support\References\ReferenceGenerator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
@@ -48,6 +50,8 @@ class OrderFulfillmentService
         $buyerName = (string) Arr::get($metadata, 'buyer_name', '');
         $buyerEmail = (string) Arr::get($metadata, 'buyer_email', '');
         $buyerPhone = (string) Arr::get($metadata, 'buyer_phone', '');
+        $contributorDisplayName = (string) Arr::get($metadata, 'contributor_display_name', '');
+        $contributorIsAnonymous = (bool) Arr::get($metadata, 'contributor_is_anonymous', false);
         $buyerUserId = (int) Arr::get($metadata, 'buyer_user_id', 0) ?: null;
         $gatewayReference = (string) Arr::get($payload, 'data.reference', $transactionReference);
         $gatewayTransactionId = Arr::get($payload, 'data.id');
@@ -55,7 +59,10 @@ class OrderFulfillmentService
         $pricingSnapshot = (array) Arr::get($payload, 'data.pricing_snapshot', Arr::get($metadata, 'pricing_snapshot', []));
 
         $offer = $offerId > 0 ? Offer::query()->find($offerId) : null;
-        $unitAmount = $offer !== null ? $offer->price_amount : (int) ($grossAmount / max(1, $quantity));
+        $customUnitAmount = (int) Arr::get($metadata, 'custom_unit_amount', 0);
+        $unitAmount = $customUnitAmount > 0
+            ? $customUnitAmount
+            : ($offer !== null ? $offer->price_amount : (int) ($grossAmount / max(1, $quantity)));
 
         if ($orderableType === '' && $orderableId <= 0 && $eventTicketId > 0) {
             $orderableType = self::EVENT_TICKET_MODEL;
@@ -70,6 +77,7 @@ class OrderFulfillmentService
         $connectionName = config('ticket.tenant_connection', 'tenant');
 
         return DB::connection($connectionName)->transaction(function () use (
+            $metadata,
             $transactionReference,
             $offer,
             $offerId,
@@ -86,6 +94,8 @@ class OrderFulfillmentService
             $buyerName,
             $buyerEmail,
             $buyerPhone,
+            $contributorDisplayName,
+            $contributorIsAnonymous,
             $buyerUserId,
             $isCrowdfunding,
             $gatewayReference,
@@ -129,17 +139,26 @@ class OrderFulfillmentService
                         'event_ticket_title' => Arr::get($metadata, 'event_ticket_title'),
                         'event_ticket_category' => Arr::get($metadata, 'event_ticket_category'),
                         'event_ticket_category_code' => Arr::get($metadata, 'event_ticket_category_code'),
+                        'contributor_display_name' => $contributorDisplayName !== '' ? $contributorDisplayName : null,
+                        'contributor_is_anonymous' => $contributorIsAnonymous,
                         'payment_method' => $paymentMethod !== '' ? $paymentMethod : null,
                     ], fn ($value): bool => $value !== null && $value !== ''),
                     'pricing_snapshot' => $pricingSnapshot,
                 ] + $this->orderableAttributes($orderableType, $orderableId),
             );
 
-            $this->ensureReceipt($order);
-
             if ($isCrowdfunding) {
-                $this->updateCrowdfundingProgress($offer, $grossAmount, $quantity, $order->wasRecentlyCreated);
+                $this->recordCrowdfundingContribution(
+                    $offer,
+                    $order,
+                    $grossAmount,
+                    $quantity,
+                    $contributorDisplayName,
+                    $contributorIsAnonymous,
+                    $order->wasRecentlyCreated
+                );
             } else {
+                $this->ensureReceipt($order);
                 $this->ensureAccessPasses($order, $offer, $offerableType, array_merge($metadata, [
                     'orderable_type' => $orderableType,
                     'orderable_id' => $orderableId,
@@ -149,19 +168,54 @@ class OrderFulfillmentService
                 ]));
             }
 
+            $this->notifyBuyer($order);
+
             return $order->fresh(['receipt', 'accessPasses']);
         });
     }
 
-    private function updateCrowdfundingProgress(?Offer $offer, int $grossAmount, int $quantity, bool $isNewOrder): void
+    private function recordCrowdfundingContribution(
+        ?Offer $offer,
+        Order $order,
+        int $grossAmount,
+        int $quantity,
+        string $contributorDisplayName,
+        bool $contributorIsAnonymous,
+        bool $isNewOrder
+    ): void
     {
         if (! $isNewOrder || ! $offer instanceof Offer || $offer->offerable_type !== CrowdfundingCampaign::class) {
             return;
         }
 
+        CrowdfundingContribution::query()->firstOrCreate(
+            [
+                'transaction_reference' => $order->transaction_reference,
+                'order_id' => $order->getKey(),
+            ],
+            [
+                'crowdfunding_campaign_id' => $offer->offerable_id,
+                'offer_id' => $offer->getKey(),
+                'buyer_user_id' => $order->buyer_user_id,
+                'contributor_name' => $contributorDisplayName !== '' ? $contributorDisplayName : $order->buyer_name,
+                'contributor_email' => $order->buyer_email,
+                'contributor_phone' => $order->buyer_phone,
+                'amount' => max(0, $order->subtotal_amount),
+                'currency_code' => $order->currency_code,
+                'status' => 'confirmed',
+                'is_anonymous' => $contributorIsAnonymous,
+                'paid_at' => now(),
+                'meta' => [
+                    'order_reference' => $order->reference,
+                    'offer_name' => $offer->name,
+                    'quantity' => $quantity,
+                ],
+            ],
+        );
+
         CrowdfundingCampaign::query()
             ->whereKey($offer->offerable_id)
-            ->increment('raised_amount', max(0, $grossAmount));
+            ->increment('raised_amount', max(0, $order->subtotal_amount));
 
         $offer->increment('quantity_sold', max(1, $quantity));
     }
@@ -195,6 +249,15 @@ class OrderFulfillmentService
                 'pricing_snapshot' => $order->pricing_snapshot,
             ],
         ]);
+    }
+
+    private function notifyBuyer(Order $order): void
+    {
+        if (! $order->wasRecentlyCreated || ! $order->buyer) {
+            return;
+        }
+
+        $order->buyer->notify(new BuyerOrderConfirmedNotification($order));
     }
 
     private function ensureAccessPasses(Order $order, ?Offer $offer, string $offerableType, array $checkout): void

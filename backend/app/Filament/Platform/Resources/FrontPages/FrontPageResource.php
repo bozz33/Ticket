@@ -23,7 +23,7 @@ class FrontPageResource extends Resource
 
     protected static ?string $permissionPrefix = 'platform.front_pages';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Front public';
+    protected static string|UnitEnum|null $navigationGroup = 'CMS front public';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-duplicate';
 

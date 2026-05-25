@@ -24,9 +24,10 @@ import { formatDateRange, normalizeSearchParams } from "@/lib/utils";
 
 export const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
 const publicTenantSlug = normalizeTenantSlug(process.env.NEXT_PUBLIC_TENANT_SLUG);
-const publicApiTimeoutMs = parsePositiveInteger(process.env.PUBLIC_API_TIMEOUT_MS, process.env.NODE_ENV === "production" ? 900 : 160);
-const publicApiFailureCacheSeconds = parsePositiveInteger(process.env.PUBLIC_API_FAILURE_CACHE_SECONDS, 30);
+const publicApiTimeoutMs = parsePositiveInteger(process.env.PUBLIC_API_TIMEOUT_MS, process.env.NODE_ENV === "production" ? 3000 : 5000);
+const publicApiFailureCacheSeconds = parsePositiveInteger(process.env.PUBLIC_API_FAILURE_CACHE_SECONDS, process.env.NODE_ENV === "production" ? 15 : 2);
 export const publicDataCacheSeconds = parsePositiveInteger(process.env.PUBLIC_DATA_CACHE_SECONDS, process.env.NODE_ENV === "production" ? 60 : 20);
+export const publicCmsCacheSeconds = parsePositiveInteger(process.env.PUBLIC_CMS_CACHE_SECONDS, process.env.NODE_ENV === "production" ? 30 : 5);
 export const defaultMenus: Record<FrontMenuLocation, NavigationLink[]> = {
   header_primary: [],
   header_utility: [],
@@ -38,6 +39,34 @@ export const defaultMenus: Record<FrontMenuLocation, NavigationLink[]> = {
 export const defaultPlatformConfiguration: PlatformConfiguration = {
   brandName: process.env.NEXT_PUBLIC_PLATFORM_NAME || "Ticket",
   logoUrl: undefined,
+  faviconUrl: undefined,
+  appleTouchIconUrl: undefined,
+  seo: {
+    defaultTitle: process.env.NEXT_PUBLIC_PLATFORM_NAME || "Ticket",
+    defaultDescription: "Portail public unifie pour billetterie, reservations, paiements et contenus multi-modules.",
+    keywords: ["billetterie", "evenements", "reservations", "paiement securise"],
+    canonicalUrl: undefined,
+    robots: {
+      index: "index",
+      follow: "follow",
+      maxImagePreview: "large",
+      allowPaths: ["/"],
+      disallowPaths: ["/compte", "/checkout"],
+    },
+    openGraph: {
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+    },
+    structuredDataJson: undefined,
+    sitemap: {
+      enabled: true,
+      includeFrontPages: true,
+      includeCatalog: true,
+      includeOrganizers: true,
+    },
+  },
   footerDescription: "Catalogue public unifie pour decouvrir, comparer et convertir sur plusieurs modules metier.",
   supportEmail: "support@ticket.africa",
   supportPhone: "+225 27 22 40 11 00",
@@ -54,6 +83,12 @@ export const defaultPlatformConfiguration: PlatformConfiguration = {
   menus: defaultMenus,
   featureFlags: [],
   usersCount: 0,
+  languages: [
+    { code: "fr", locale: "fr", name: "Français", native_name: "Français", is_default: true },
+    { code: "en", locale: "en", name: "Anglais", native_name: "English" },
+  ],
+  defaultLanguage: { code: "fr", locale: "fr", name: "Français", native_name: "Français", is_default: true },
+  translations: {},
 };
 
 export type PublicPlatformPayload = {
@@ -125,9 +160,6 @@ export type PublicContentSummaryPayload = {
 };
 
 let defaultPublicTenantSlugPromise: Promise<string> | null = null;
-let categoryOverviewPromise: Promise<CategoryOverviewEntry[]> | null = null;
-let cityOverviewPromise: Promise<CityOverviewEntry[]> | null = null;
-let speakerHighlightsPromise: Promise<SpeakerHighlightEntry[]> | null = null;
 const MAX_PUBLIC_REQUEST_CACHE_ENTRIES = 500;
 const publicRequestCache = new Map<string, { expiresAt: number; value: Promise<unknown | null> }>();
 const MAX_PUBLIC_DATA_CACHE_ENTRIES = 250;
@@ -415,14 +447,6 @@ export function normalizeStringArray(values: unknown): string[] {
 
 function getStringValue(value: unknown): string {
   return typeof value === "string" ? value : "";
-}
-
-function getNumberValue(value: unknown): number {
-  return typeof value === "number"
-    ? value
-    : typeof value === "string" && value.trim() !== "" && !Number.isNaN(Number(value))
-      ? Number(value)
-      : 0;
 }
 
 export function buildContentQuery(filters: PublicContentQuery, page: number, perPage: number): string {

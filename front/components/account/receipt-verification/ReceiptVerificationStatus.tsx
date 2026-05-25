@@ -30,7 +30,7 @@ export function ReceiptVerificationStatus({ receipt }: ReceiptVerificationStatus
           </div>
           <p className="ac-qr-status__title">Justificatif valide</p>
           <p className="ac-qr-status__sub">
-            Le reçu est bien enregistré dans l&apos;espace public du tenant, avec {receipt.access_passes_count} pass
+            Le reçu est bien enregistré dans l&apos;espace public organisateur, avec {receipt.access_passes_count} pass
             lié(s).
           </p>
         </div>

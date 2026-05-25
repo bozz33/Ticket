@@ -95,6 +95,32 @@ class PricingRuleEngine
         return $pricing;
     }
 
+    public function quoteCustomAmount(
+        Tenant $tenant,
+        int $subtotal,
+        string $currencyCode,
+        CommercialModule $module,
+        ?string $paymentMethod = null,
+    ): array {
+        $subtotal = max(1, $subtotal);
+        $currencyCode = strtoupper((string) ($currencyCode ?: $tenant->currency_code ?: 'XOF'));
+        $countryCode = strtoupper((string) ($tenant->country_code ?: 'CI'));
+        $paymentChannel = $this->normalizePaymentChannel($paymentMethod);
+
+        $pricing = $this->financePolicyService->buildPricingSnapshot(
+            subtotal: $subtotal,
+            quantity: 1,
+            currencyCode: $currencyCode,
+            module: $module->value,
+            paymentMethod: $paymentMethod,
+        );
+
+        $pricing['country_code'] = $countryCode;
+        $pricing['payment_channel'] = $paymentChannel;
+
+        return $pricing;
+    }
+
     public function resolveGatewayForCurrency(string $currencyCode, ?string $paymentMethod = null): ?PaymentGateway
     {
         $channel = $this->normalizePaymentChannel($paymentMethod);
@@ -425,7 +451,7 @@ class PricingRuleEngine
         $fixedAmount = (int) ($policy->flat_fee_amount ?? 0);
         $mode = $policy->monetization_mode?->value ?? $policy->monetization_mode;
 
-        if ($mode === MonetizationMode::Free->value || $mode === MonetizationMode::Subscription->value) {
+        if ($mode === MonetizationMode::Free->value) {
             return null;
         }
 

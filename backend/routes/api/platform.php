@@ -3,7 +3,6 @@
 use App\Http\Controllers\Api\V1\Auth\PlatformAuthController;
 use App\Http\Controllers\Api\V1\Platform\CentralCategoryController;
 use App\Http\Controllers\Api\V1\Platform\CentralTagController;
-use App\Http\Controllers\Api\V1\Platform\PlanController;
 use App\Http\Controllers\Api\V1\Platform\PlatformSettingController;
 use App\Http\Controllers\Api\V1\Platform\ReferenceDataController;
 use App\Http\Controllers\Api\V1\Platform\TenantController;
@@ -38,10 +37,6 @@ Route::prefix('platform')->middleware(['auth.platform.api'])->group(function ():
     Route::post('/tags', [CentralTagController::class, 'store']);
     Route::get('/tags/{tag}', [CentralTagController::class, 'show']);
 
-    Route::get('/plans', [PlanController::class, 'index']);
-    Route::post('/plans', [PlanController::class, 'store']);
-    Route::get('/plans/{plan}', [PlanController::class, 'show']);
-
     Route::get('/settings', [PlatformSettingController::class, 'index']);
     Route::put('/settings', [PlatformSettingController::class, 'upsert']);
 
@@ -53,5 +48,4 @@ Route::prefix('platform')->middleware(['auth.platform.api'])->group(function ():
     Route::patch('/tenants/{tenant}/archive', [TenantController::class, 'archive']);
     Route::post('/tenants/{tenant}/categories/sync', [CentralCategoryController::class, 'syncTenant']);
     Route::post('/tenants/{tenant}/tags/sync', [CentralTagController::class, 'syncTenant']);
-    Route::post('/tenants/{tenant}/subscriptions', [PlanController::class, 'assignToTenant']);
 });

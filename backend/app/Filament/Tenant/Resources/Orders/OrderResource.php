@@ -35,6 +35,21 @@ class OrderResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'reference';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
+    public static function canAccess(): bool
+    {
+        return false;
+    }
+
+    public static function canViewAny(): bool
+    {
+        return false;
+    }
+
     public static function form(Schema $schema): Schema
     {
         return $schema;

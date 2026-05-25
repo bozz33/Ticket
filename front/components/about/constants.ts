@@ -26,7 +26,7 @@ export const ABOUT_CAPABILITIES = [
   },
   {
     badge: "Exploitation",
-    title: "Un vrai pilotage cote super-admin et cote tenant",
+    title: "Un vrai pilotage cote super-admin et cote organisateur",
     body: "Pages front, SEO, frais, remboursements, acces, candidatures, offres et profils publics restent configurables.",
   },
 ];

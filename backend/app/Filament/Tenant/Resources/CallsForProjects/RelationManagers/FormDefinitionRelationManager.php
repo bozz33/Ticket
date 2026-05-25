@@ -2,15 +2,14 @@
 
 namespace App\Filament\Tenant\Resources\CallsForProjects\RelationManagers;
 
+use App\Filament\Tenant\Resources\CallsForProjects\Schemas\CallForProjectFormBuilderSchema;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
-use Filament\Forms\Components\Builder;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
-use Filament\Forms\Components\Toggle;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
@@ -43,10 +42,7 @@ class FormDefinitionRelationManager extends RelationManager
                 Textarea::make('success_message')->label('Message de succès')->rows(3)->columnSpanFull(),
             ])->columns(2),
             Section::make('Champs')->schema([
-                Builder::make('schema.fields')
-                    ->label('Champs du formulaire')
-                    ->blocks(static::fieldBlocks())
-                    ->columnSpanFull(),
+                CallForProjectFormBuilderSchema::make('schema.fields'),
             ]),
             Section::make('Réglages avancés')->schema([
                 KeyValue::make('settings')->label('Réglages')->columnSpanFull(),
@@ -73,33 +69,4 @@ class FormDefinitionRelationManager extends RelationManager
             ]);
     }
 
-    protected static function fieldBlocks(): array
-    {
-        return [
-            Builder\Block::make('text')->label('Texte')->schema(static::commonFieldSchema()),
-            Builder\Block::make('textarea')->label('Zone de texte')->schema(static::commonFieldSchema()),
-            Builder\Block::make('email')->label('Email')->schema(static::commonFieldSchema()),
-            Builder\Block::make('number')->label('Nombre')->schema(static::commonFieldSchema()),
-            Builder\Block::make('date')->label('Date')->schema(static::commonFieldSchema()),
-            Builder\Block::make('select')->label('Liste')->schema(array_merge(static::commonFieldSchema(), [KeyValue::make('options')->label('Options')])),
-            Builder\Block::make('checkbox')->label('Case')->schema(static::commonFieldSchema()),
-            Builder\Block::make('consent')->label('Consentement')->schema(static::commonFieldSchema()),
-            Builder\Block::make('section')->label('Section')->schema([
-                TextInput::make('key')->label('Clé')->required()->maxLength(80),
-                TextInput::make('label')->label('Titre')->required()->maxLength(255),
-                Textarea::make('help_text')->label('Texte')->rows(3)->columnSpanFull(),
-            ]),
-        ];
-    }
-
-    protected static function commonFieldSchema(): array
-    {
-        return [
-            TextInput::make('key')->label('Clé')->required()->maxLength(80),
-            TextInput::make('label')->label('Libellé')->required()->maxLength(255),
-            Textarea::make('help_text')->label('Aide')->rows(2)->columnSpanFull(),
-            Toggle::make('required')->label('Obligatoire')->default(false),
-            TextInput::make('placeholder')->label('Placeholder')->maxLength(255),
-        ];
-    }
 }

@@ -9,6 +9,8 @@ use App\Models\FrontMenuItem;
 use App\Models\FrontPage;
 use App\Models\FrontPageSection;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class FrontCmsService
 {
@@ -61,7 +63,22 @@ class FrontCmsService
             'seo' => [
                 'title' => (string) ($page->seo_title ?: $page->title),
                 'description' => (string) ($page->seo_description ?: data_get($page->meta ?? [], 'summary', '')),
-                'image' => $page->seo_image_url,
+                'image' => $this->publicAssetUrl($page->seo_image_url),
+                'keywords' => data_get($page->meta ?? [], 'seo.keywords', []),
+                'canonical_url' => data_get($page->meta ?? [], 'seo.canonical_url'),
+                'robots_index' => data_get($page->meta ?? [], 'seo.robots_index'),
+                'robots_follow' => data_get($page->meta ?? [], 'seo.robots_follow'),
+                'max_image_preview' => data_get($page->meta ?? [], 'seo.max_image_preview'),
+                'og_title' => data_get($page->meta ?? [], 'seo.og_title'),
+                'og_description' => data_get($page->meta ?? [], 'seo.og_description'),
+                'og_type' => data_get($page->meta ?? [], 'seo.og_type'),
+                'og_image' => $this->publicAssetUrl(data_get($page->meta ?? [], 'seo.og_image')),
+                'og_image_alt' => data_get($page->meta ?? [], 'seo.og_image_alt'),
+                'twitter_title' => data_get($page->meta ?? [], 'seo.twitter_title'),
+                'twitter_description' => data_get($page->meta ?? [], 'seo.twitter_description'),
+                'twitter_image' => $this->publicAssetUrl(data_get($page->meta ?? [], 'seo.twitter_image')),
+                'twitter_card' => data_get($page->meta ?? [], 'seo.twitter_card'),
+                'structured_data_json' => data_get($page->meta ?? [], 'seo.structured_data_json'),
             ],
             'meta' => $page->meta ?? [],
             'sections' => $page->sections
@@ -103,6 +120,7 @@ class FrontCmsService
     {
         return FrontPage::query()
             ->where('is_active', true)
+            ->where('show_in_sitemap', true)
             ->where('status', FrontPageStatus::Published->value)
             ->orderBy('route_path')
             ->get(['key', 'title', 'route_path', 'updated_at', 'published_at'])
@@ -125,5 +143,24 @@ class FrontCmsService
             FrontMenuLocation::FooterPlatform->value => [],
             FrontMenuLocation::FooterBottom->value => [],
         ];
+    }
+
+    private function publicAssetUrl(mixed $value): ?string
+    {
+        if (is_array($value)) {
+            $value = reset($value) ?: null;
+        }
+
+        $normalized = trim((string) ($value ?? ''));
+
+        if ($normalized === '') {
+            return null;
+        }
+
+        if (Str::startsWith($normalized, ['http://', 'https://', 'data:', '/'])) {
+            return $normalized;
+        }
+
+        return Storage::disk('public')->url($normalized);
     }
 }

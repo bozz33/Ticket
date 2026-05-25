@@ -188,6 +188,18 @@ class VerifyAccessPasses extends Page
                     return trim((string) $decoded['code']);
                 }
 
+                if (filled($decoded['access_code'] ?? null)) {
+                    return trim((string) $decoded['access_code']);
+                }
+
+                if (filled($decoded['receipt_reference'] ?? null)) {
+                    return trim((string) $decoded['receipt_reference']);
+                }
+
+                if (filled($decoded['ref'] ?? null)) {
+                    return trim((string) $decoded['ref']);
+                }
+
                 if (filled($decoded['public_id'] ?? null)) {
                     return trim((string) $decoded['public_id']);
                 }
@@ -195,6 +207,18 @@ class VerifyAccessPasses extends Page
         }
 
         if (filter_var($trimmed, FILTER_VALIDATE_URL)) {
+            $query = (string) parse_url($trimmed, PHP_URL_QUERY);
+
+            if ($query !== '') {
+                parse_str($query, $params);
+
+                foreach (['code', 'access_code', 'receipt_reference', 'ref', 'reference'] as $key) {
+                    if (filled($params[$key] ?? null)) {
+                        return trim((string) $params[$key]);
+                    }
+                }
+            }
+
             $path = (string) parse_url($trimmed, PHP_URL_PATH);
             $segments = array_values(array_filter(explode('/', trim($path, '/'))));
 

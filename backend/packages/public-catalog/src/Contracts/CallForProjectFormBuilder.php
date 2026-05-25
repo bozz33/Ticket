@@ -6,5 +6,5 @@ use App\Models\CallForProject;
 
 interface CallForProjectFormBuilder
 {
-    public function schemaFor(CallForProject $callForProject): array;
+    public function schemaFor(CallForProject $callForProject): ?array;
 }

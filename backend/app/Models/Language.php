@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Language extends Model
 {
@@ -28,6 +29,11 @@ class Language extends Model
             'is_active' => 'boolean',
             'meta' => 'array',
         ];
+    }
+
+    public function translations(): HasMany
+    {
+        return $this->hasMany(TranslationEntry::class);
     }
 
     public function resolveRouteBinding($value, $field = null): ?Model

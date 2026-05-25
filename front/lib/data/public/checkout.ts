@@ -11,10 +11,14 @@ export async function getCheckoutPaymentOptions(
   paymentMethod?: string,
   tenantSlug?: string,
   selectionType: "offer" | "ticket" = "offer",
+  customAmount?: number,
 ): Promise<CheckoutPaymentOptions | null> {
   const paymentMethodQuery = paymentMethod ? `&payment_method=${encodeURIComponent(paymentMethod)}` : "";
+  const customAmountQuery = typeof customAmount === "number" && Number.isFinite(customAmount) && customAmount > 0
+    ? `&custom_amount=${Math.trunc(customAmount)}`
+    : "";
   const path = await getTenantPublicPath(
-    `/payment-options?${selectionType}=${encodeURIComponent(checkoutItemId)}&quantity=${quantity}${paymentMethodQuery}`,
+    `/payment-options?${selectionType}=${encodeURIComponent(checkoutItemId)}&quantity=${quantity}${paymentMethodQuery}${customAmountQuery}`,
     tenantSlug,
   );
 
@@ -22,7 +26,10 @@ export async function getCheckoutPaymentOptions(
     return null;
   }
 
-  const payload = await fetchJson<PublicApiEnvelope<CheckoutPaymentOptions>>(path, { revalidate: 45 });
+  const payload = await fetchJson<PublicApiEnvelope<CheckoutPaymentOptions>>(path, {
+    noStore: true,
+    timeoutMs: 5000,
+  });
 
   return payload?.data ?? null;
 }
@@ -40,7 +47,10 @@ export async function verifyCheckoutPayment(
     return null;
   }
 
-  const payload = await fetchJson<PublicApiEnvelope<CheckoutVerificationResult>>(path, { noStore: true });
+  const payload = await fetchJson<PublicApiEnvelope<CheckoutVerificationResult>>(path, {
+    noStore: true,
+    timeoutMs: 5000,
+  });
 
   return payload?.data ?? null;
 }
@@ -60,9 +70,10 @@ export async function getCheckoutData(module: ModuleRoute, slug: string, offerId
     ? await getCheckoutPaymentOptions(
       selectedOffer.id,
       1,
-      selectedOffer.price > 0 ? "card" : "free",
+      item.module === "crowdfunding" || selectedOffer.price > 0 ? "card" : "free",
       item.organizerSlug,
       getCheckoutSelectionParamName(selectedOffer),
+      item.module === "crowdfunding" ? Math.max(1, selectedOffer.price || item.priceFrom || 1000) : undefined,
     )
     : null;
 

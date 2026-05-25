@@ -4,6 +4,7 @@ namespace Ticket\Payments\Application;
 
 use App\Enums\CommercialModule;
 use App\Enums\OrderStatus;
+use App\Models\CrowdfundingCampaign;
 use App\Models\Offer;
 use App\Models\Order;
 use App\Models\PaymentGateway;
@@ -45,25 +46,41 @@ class PublicPaymentService
         int $requestedQuantity = 1,
         ?string $paymentMethod = null,
         ?string $checkoutItemType = null,
+        ?int $customAmount = null,
     ): array {
         $item = $this->resolveCheckoutItem($offerIdentifier, $checkoutItemType);
         $offer = $item->pricingOffer;
+        $isCrowdfunding = $this->isCrowdfundingItem($item);
+        $customContributionAmount = $isCrowdfunding ? $this->customContributionAmount($customAmount) : null;
         $bounds = $this->checkoutItems->quantityBounds($item);
-        $quantity = min(max($requestedQuantity, $bounds['min']), $bounds['max']);
-        $gateway = $item->unitAmount > 0
-            ? $this->pricingRuleEngine->resolveGatewayForCurrency((string) $item->currencyCode, $paymentMethod)
+        if ($customContributionAmount !== null) {
+            $bounds = ['min' => 1, 'max' => 1, 'max_per_account' => null];
+        }
+        $quantity = $customContributionAmount !== null ? 1 : min(max($requestedQuantity, $bounds['min']), $bounds['max']);
+        $unitAmount = $customContributionAmount ?? $item->unitAmount;
+        $currencyCode = (string) ($item->currencyCode ?: $tenant->currency_code ?: 'XOF');
+
+        if ($isCrowdfunding && $unitAmount <= 0) {
+            throw new RuntimeException('Montant de contribution requis.');
+        }
+
+        $gateway = $unitAmount > 0
+            ? $this->pricingRuleEngine->resolveGatewayForCurrency($currencyCode, $paymentMethod)
             : null;
-        $pricing = $this->pricingRuleEngine->quoteCheckoutItem($tenant, $item, $quantity, $gateway, $paymentMethod);
+        $pricing = $customContributionAmount !== null
+            ? $this->pricingRuleEngine->quoteCustomAmount($tenant, $customContributionAmount, $currencyCode, CommercialModule::Crowdfunding, $paymentMethod)
+            : $this->pricingRuleEngine->quoteCheckoutItem($tenant, $item, $quantity, $gateway, $paymentMethod);
 
         return [
             'methods' => $this->buildPaymentMethods($gateway, $pricing['total'] <= 0),
             'pricing' => $pricing,
             'quantity' => $bounds,
+            'proforma_reference' => $this->generateReference('ORD', (string) $item->currencyCode),
             'offer' => [
                 'id' => $offer?->public_id ?? $item->publicId,
                 'title' => $offer?->name ?? $item->title,
                 'currency' => $offer?->currency_code ?? $item->currencyCode,
-                'unit_amount' => $offer?->price_amount ?? $item->unitAmount,
+                'unit_amount' => $unitAmount,
             ],
             'checkout_item' => [
                 'type' => $item->type,
@@ -83,11 +100,22 @@ class PublicPaymentService
     {
         $item = $this->resolveCheckoutItemFromPayload($payload);
         $offer = $item->pricingOffer;
+        $isCrowdfunding = $this->isCrowdfundingItem($item);
+        $customContributionAmount = $isCrowdfunding
+            ? $this->customContributionAmount($payload['custom_amount'] ?? null)
+            : null;
         $bounds = $this->checkoutItems->quantityBounds($item);
-        $quantity = (int) ($payload['quantity'] ?? 1);
+        if ($customContributionAmount !== null) {
+            $bounds = ['min' => 1, 'max' => 1, 'max_per_account' => null];
+        }
+        $quantity = $customContributionAmount !== null ? 1 : (int) ($payload['quantity'] ?? 1);
 
         if ($quantity < $bounds['min'] || $quantity > $bounds['max']) {
             throw new RuntimeException('Quantité invalide pour cette offre.');
+        }
+
+        if ($isCrowdfunding && ($customContributionAmount ?? $item->unitAmount) <= 0) {
+            throw new RuntimeException('Montant de contribution requis.');
         }
 
         $buyerEmail = Str::lower(trim((string) ($payload['buyer_email'] ?? '')));
@@ -100,10 +128,14 @@ class PublicPaymentService
         $this->assertBuyerCanPurchase($tenant, $item, $buyerEmail, $buyerUserId, $quantity);
 
         $paymentMethod = trim((string) ($payload['payment_method'] ?? ''));
-        $gateway = $item->unitAmount > 0
-            ? $this->pricingRuleEngine->resolveGatewayForCurrency((string) $item->currencyCode, $paymentMethod)
+        $unitAmount = $customContributionAmount ?? $item->unitAmount;
+        $currencyCode = (string) ($item->currencyCode ?: $tenant->currency_code ?: 'XOF');
+        $gateway = $unitAmount > 0
+            ? $this->pricingRuleEngine->resolveGatewayForCurrency($currencyCode, $paymentMethod)
             : null;
-        $pricing = $this->pricingRuleEngine->quoteCheckoutItem($tenant, $item, $quantity, $gateway, $paymentMethod);
+        $pricing = $customContributionAmount !== null
+            ? $this->pricingRuleEngine->quoteCustomAmount($tenant, $customContributionAmount, $currencyCode, CommercialModule::Crowdfunding, $paymentMethod)
+            : $this->pricingRuleEngine->quoteCheckoutItem($tenant, $item, $quantity, $gateway, $paymentMethod);
         $reference = $this->generateReference($pricing['total'] <= 0 ? 'FREE' : 'PAY', (string) $pricing['currency']);
         $module = $offer instanceof Offer
             ? $this->moduleFromOfferableType((string) $offer->offerable_type)
@@ -123,6 +155,8 @@ class PublicPaymentService
             'checkout_item_title' => $item->title,
             'orderable_type' => $item->orderableType,
             'orderable_id' => $item->orderableId,
+            'custom_amount' => $customContributionAmount,
+            'custom_unit_amount' => $customContributionAmount,
             'quantity' => $quantity,
             'buyer_user_id' => $buyerUserId,
             'buyer_name' => trim((string) ($payload['buyer_name'] ?? '')),
@@ -551,6 +585,21 @@ class PublicPaymentService
         $transaction->forceFill(['meta' => $meta])->save();
     }
 
+    private function isCrowdfundingItem(CheckoutItem $item): bool
+    {
+        return $item->pricingOffer instanceof Offer
+            && $item->pricingOffer->offerable_type === CrowdfundingCampaign::class;
+    }
+
+    private function customContributionAmount(mixed $amount): ?int
+    {
+        if ($amount === null || $amount === '') {
+            return null;
+        }
+
+        return max(1, (int) $amount);
+    }
+
     private function assertBuyerCanPurchase(
         Tenant $tenant,
         CheckoutItem $item,
@@ -561,6 +610,10 @@ class PublicPaymentService
         $offer = $item->pricingOffer;
 
         if (! $offer instanceof Offer) {
+            return;
+        }
+
+        if ($offer->offerable_type === CrowdfundingCampaign::class) {
             return;
         }
 

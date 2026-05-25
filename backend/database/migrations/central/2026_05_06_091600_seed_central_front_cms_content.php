@@ -273,7 +273,7 @@ return new class extends Migration
                         'secondary_cta_label' => 'Devenir organisateur',
                         'secondary_cta_url' => '/devenir-organisateur',
                         'items' => [
-                            ['title' => 'Front public unifié pour tous les tenants'],
+                            ['title' => 'Front public unifié pour tous les organisateurs'],
                             ['title' => 'Pages détail denses avec CTA visibles sans friction'],
                             ['title' => 'Checkout rassurant, mobile-first et lisible'],
                             ['title' => 'Valorisation publique des organisateurs et intervenants'],
@@ -626,16 +626,16 @@ return new class extends Migration
                 'template' => 'onboarding_page',
                 'status' => 'published',
                 'seo_title' => 'Devenir organisateur — Ticket',
-                'seo_description' => 'Publiez et vendez sur la plateforme Ticket avec un backoffice tenant et un front public unifié.',
+                'seo_description' => 'Publiez et vendez sur la plateforme Ticket avec un espace organisateur et un front public unifié.',
                 'seo_image_url' => 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1800&q=80',
                 'meta' => ['summary' => 'Créer un espace organisateur sur Ticket.'],
                 'sections' => [
                     [
                         'key' => 'organizer_hero',
                         'type' => 'hero',
-                        'eyebrow' => 'Onboarding tenant',
+                        'eyebrow' => 'Onboarding organisateur',
                         'title' => 'Publier et vendre sur la plateforme',
-                        'body' => 'Un front public unifié, un backoffice tenant autonome et des parcours de conversion cohérents sur tous les modules.',
+                        'body' => 'Un front public unifié, un espace organisateur autonome et des parcours de conversion cohérents sur tous les modules.',
                         'image_url' => 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?auto=format&fit=crop&w=1800&q=80',
                         'settings' => ['variant' => 'page'],
                     ],
@@ -647,7 +647,7 @@ return new class extends Migration
                         'items' => [
                             ['title' => 'Billetterie et checkout', 'body' => 'Vendre des billets, configurer plusieurs offres et suivre vos conversions.'],
                             ['title' => 'Stands, appels et crowdfunding', 'body' => 'Une même base produit pour plusieurs modules métier sans casser l’expérience publique.'],
-                            ['title' => 'Pages organisateur', 'body' => 'Chaque tenant dispose d’une vitrine publique dédiée dans le portail commun.'],
+                            ['title' => 'Pages organisateur', 'body' => 'Chaque organisateur dispose d’une vitrine publique dédiée dans le portail commun.'],
                         ],
                     ],
                     [

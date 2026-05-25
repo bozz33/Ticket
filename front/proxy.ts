@@ -3,7 +3,12 @@ import { isMutationMethod, validateMutationOrigin } from "@/lib/request-security
 
 const AUTH_TOKEN_COOKIE = "_account_token";
 const TENANT_COOKIE = "_account_tenant";
-const authPages = new Set(["/compte/connexion", "/compte/inscription"]);
+const authPages = new Set([
+  "/compte/connexion",
+  "/compte/inscription",
+  "/compte/reinitialisation",
+  "/compte/reinitialisation/nouveau",
+]);
 
 function applySecurityHeaders(response: NextResponse, pathname: string) {
   if (pathname.startsWith("/compte") || pathname.startsWith("/api/account") || pathname.startsWith("/api/onboarding") || pathname.startsWith("/api/public/call-for-projects")) {

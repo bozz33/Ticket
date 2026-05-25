@@ -5,7 +5,7 @@ export type ModuleRoute =
   | "appels-a-projets"
   | "crowdfunding";
 
-export type SortOption = "popular" | "recent" | "price";
+export type SortOption = "popular" | "recent" | "price" | "weekly_likes";
 
 export interface SearchFilters {
   module?: ModuleRoute | "all";

@@ -28,10 +28,6 @@ class TenantSupervisionTable extends TableWidget
             ->columns([
                 TextColumn::make('name')->label('Tenant')->searchable(),
                 TextColumn::make('status')->label('Statut')->badge(),
-                TextColumn::make('active_subscription')
-                    ->label('Souscription')
-                    ->state(fn (Tenant $record): string => $record->activeSubscription()?->status?->value ?? 'inactive')
-                    ->badge(),
                 TextColumn::make('open_incidents_count')->label('Incidents ouverts')->numeric(),
                 TextColumn::make('pending_settlements_count')->label('Reversements attente')->numeric(),
                 TextColumn::make('updated_at')->label('Mis à jour')->since(),

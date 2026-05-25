@@ -14,7 +14,7 @@ export function requireValidTenantSlug(value: string | null | undefined): string
   const slug = normalizeTenantSlug(value);
 
   if (!slug) {
-    throw new Error("Tenant invalide.");
+    throw new Error("Espace organisateur invalide.");
   }
 
   return slug;

@@ -10,7 +10,7 @@ class LaravelCallForProjectFormBuilder implements CallForProjectFormBuilder
 {
     public function __construct(private readonly CallForProjectApplicationFormService $forms) {}
 
-    public function schemaFor(CallForProject $callForProject): array
+    public function schemaFor(CallForProject $callForProject): ?array
     {
         return $this->forms->schemaFor($callForProject);
     }

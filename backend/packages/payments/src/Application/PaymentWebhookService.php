@@ -163,7 +163,6 @@ class PaymentWebhookService
             ],
             [
                 'tenant_id' => $existingTransaction?->tenant_id,
-                'plan_id' => $existingTransaction?->plan_id,
                 'payment_gateway_id' => $gateway->getKey(),
                 'gateway_reference' => (string) (Arr::get($payload, 'data.reference') ?? $reference),
                 'type' => $existingTransaction?->type ?? 'gateway_charge',

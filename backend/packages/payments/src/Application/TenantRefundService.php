@@ -6,10 +6,13 @@ use App\Enums\AccessPassStatus;
 use App\Enums\OrderStatus;
 use App\Enums\RefundStatus;
 use App\Models\AccessPass;
+use App\Models\CrowdfundingContribution;
 use App\Models\Order;
 use App\Models\Receipt;
 use App\Models\Refund;
+use App\Notifications\BuyerOrderRefundedNotification;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class TenantRefundService
 {
@@ -93,6 +96,12 @@ class TenantRefundService
             'meta' => $meta,
         ])->save();
 
+        $this->markCrowdfundingContributionRefunded($refund, $order);
+
+        if ($order->buyer) {
+            $order->buyer->notify(new BuyerOrderRefundedNotification($order, $refund));
+        }
+
         $this->updateReceipt($refund, $order->receipt, 'refunded');
     }
 
@@ -170,6 +179,47 @@ class TenantRefundService
                     'revocation_reason' => $reason,
                 ])->save();
             });
+    }
+
+    private function markCrowdfundingContributionRefunded(Refund $refund, Order $order): void
+    {
+        if (! Schema::connection(config('ticket.tenant_connection', 'tenant'))->hasTable('crowdfunding_contributions')) {
+            return;
+        }
+
+        $contribution = CrowdfundingContribution::query()
+            ->with(['campaign', 'offer'])
+            ->where('order_id', $order->getKey())
+            ->first();
+
+        if (! $contribution instanceof CrowdfundingContribution || $contribution->status === 'refunded') {
+            return;
+        }
+
+        $refundAmount = min(max(0, (int) $refund->amount_refunded_to_buyer), (int) $contribution->amount);
+
+        $contribution->forceFill([
+            'status' => 'refunded',
+            'refunded_amount' => $refundAmount,
+            'refunded_at' => $refund->processed_at ?? now(),
+            'meta' => array_merge((array) ($contribution->meta ?? []), [
+                'refund_reference' => $refund->reference,
+            ]),
+        ])->save();
+
+        if ($contribution->campaign) {
+            $contribution->campaign->forceFill([
+                'raised_amount' => max(0, (int) $contribution->campaign->raised_amount - $refundAmount),
+            ])->save();
+        }
+
+        if ($contribution->offer) {
+            $quantity = max(1, (int) (($contribution->meta ?? [])['quantity'] ?? 1));
+
+            $contribution->offer->forceFill([
+                'quantity_sold' => max(0, (int) $contribution->offer->quantity_sold - $quantity),
+            ])->save();
+        }
     }
 
     private function updateReceipt(Refund $refund, ?Receipt $receipt, string $status): void

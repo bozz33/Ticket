@@ -2,7 +2,7 @@
 
 namespace App\Support\Filament\Concerns;
 
-use App\Services\SubscriptionGateService;
+use App\Services\FeatureFlagService;
 use App\Support\Tenancy\TenantContext;
 use Filament\Facades\Filament;
 use Illuminate\Database\Eloquent\Model;
@@ -70,12 +70,20 @@ trait HasPanelPermission
             return false;
         }
 
+        if (
+            str_starts_with(static::class, 'App\\Filament\\Tenant\\Resources\\')
+            && method_exists($user, 'hasRole')
+            && $user->hasRole('owner')
+        ) {
+            return true;
+        }
+
         $requiredTenantFeature = static::resolveStaticPropertyValue('requiredTenantFeature');
 
         if ($requiredTenantFeature !== null) {
             $tenant = app(TenantContext::class)->get();
 
-            if ($tenant !== null && ! app(SubscriptionGateService::class)->allowsModule($tenant, $requiredTenantFeature)) {
+            if ($tenant !== null && ! app(FeatureFlagService::class)->enabledForTenant($tenant, $requiredTenantFeature)) {
                 return false;
             }
         }
@@ -104,13 +112,13 @@ trait HasPanelPermission
 
         return in_array(static::class, [
             'App\\Filament\\Platform\\Resources\\CentralCategories\\CentralCategoryResource',
-            'App\\Filament\\Platform\\Resources\\FeatureFlags\\FeatureFlagResource',
             'App\\Filament\\Platform\\Resources\\FrontMenus\\FrontMenuResource',
             'App\\Filament\\Platform\\Resources\\FrontPages\\FrontPageResource',
             'App\\Filament\\Platform\\Resources\\GatewayFeeRules\\GatewayFeeRuleResource',
+            'App\\Filament\\Platform\\Resources\\Languages\\LanguageResource',
+            'App\\Filament\\Platform\\Resources\\MailSettings\\MailSettingResource',
             'App\\Filament\\Platform\\Resources\\PaymentGateways\\PaymentGatewayResource',
             'App\\Filament\\Platform\\Resources\\PayoutPolicies\\PayoutPolicyResource',
-            'App\\Filament\\Platform\\Resources\\Plans\\PlanResource',
             'App\\Filament\\Platform\\Resources\\PlatformAuditLogs\\PlatformAuditLogResource',
             'App\\Filament\\Platform\\Resources\\PlatformSettings\\PlatformSettingResource',
             'App\\Filament\\Platform\\Resources\\PlatformFeeRules\\PlatformFeeRuleResource',
@@ -121,6 +129,7 @@ trait HasPanelPermission
             'App\\Filament\\Platform\\Resources\\SeoSettings\\SeoSettingResource',
             'App\\Filament\\Platform\\Resources\\Settlements\\SettlementResource',
             'App\\Filament\\Platform\\Resources\\Tenants\\TenantResource',
+            'App\\Filament\\Platform\\Resources\\TranslationEntries\\TranslationEntryResource',
         ], true);
     }
 }

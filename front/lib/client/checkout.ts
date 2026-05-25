@@ -10,6 +10,7 @@ type CheckoutInitializationInput = {
   ticket?: string;
   quantity: number;
   payment_method?: string;
+  custom_amount?: number;
   buyer_name?: string;
   buyer_email?: string;
   buyer_phone?: string;
@@ -35,6 +36,7 @@ export async function getCheckoutPaymentOptions(
   paymentMethod?: string,
   tenantSlug?: string,
   selectionType: "offer" | "ticket" = "offer",
+  customAmount?: number,
 ): Promise<CheckoutPaymentOptions | null> {
   const params = new URLSearchParams({
     [selectionType]: checkoutItemId,
@@ -47,6 +49,10 @@ export async function getCheckoutPaymentOptions(
 
   if (tenantSlug) {
     params.set("tenant", tenantSlug);
+  }
+
+  if (typeof customAmount === "number" && Number.isFinite(customAmount) && customAmount > 0) {
+    params.set("custom_amount", String(Math.trunc(customAmount)));
   }
 
   try {

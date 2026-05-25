@@ -18,7 +18,6 @@ class FeatureFlag extends Model
         'description',
         'module',
         'default_enabled',
-        'requires_subscription',
         'is_public',
         'is_active',
         'meta',
@@ -28,7 +27,6 @@ class FeatureFlag extends Model
     {
         return [
             'default_enabled' => 'boolean',
-            'requires_subscription' => 'boolean',
             'is_public' => 'boolean',
             'is_active' => 'boolean',
             'meta' => 'array',

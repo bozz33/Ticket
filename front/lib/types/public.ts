@@ -214,6 +214,7 @@ export interface PublicContent {
   featured: boolean;
   popular: boolean;
   likesCount: number;
+  weeklyLikesCount?: number;
   badges: string[];
   highlights: string[];
   organizerSlug: string;
@@ -239,6 +240,42 @@ export interface PublicContent {
 export interface PlatformConfiguration {
   brandName: string;
   logoUrl?: string;
+  faviconUrl?: string;
+  appleTouchIconUrl?: string;
+  seo?: {
+    defaultTitle?: string;
+    defaultDescription?: string;
+    keywords?: string[];
+    canonicalUrl?: string | null;
+    robots?: {
+      index?: string;
+      follow?: string;
+      maxImagePreview?: string;
+      allowPaths?: string[];
+      disallowPaths?: string[];
+    };
+    openGraph?: {
+      title?: string | null;
+      description?: string | null;
+      type?: string;
+      imageUrl?: string | null;
+      imageAlt?: string | null;
+    };
+    twitter?: {
+      card?: string;
+      title?: string | null;
+      description?: string | null;
+      imageUrl?: string | null;
+      site?: string | null;
+    };
+    structuredDataJson?: string | null;
+    sitemap?: {
+      enabled?: boolean;
+      includeFrontPages?: boolean;
+      includeCatalog?: boolean;
+      includeOrganizers?: boolean;
+    };
+  };
   footerDescription?: string;
   supportEmail: string;
   supportPhone: string;
@@ -259,6 +296,21 @@ export interface PlatformConfiguration {
     name?: string;
     slug?: string;
   } | null;
+  languages: Array<{
+    code: string;
+    locale: string;
+    name: string;
+    native_name: string;
+    is_default?: boolean;
+  }>;
+  defaultLanguage?: {
+    code: string;
+    locale: string;
+    name: string;
+    native_name: string;
+    is_default?: boolean;
+  } | null;
+  translations: Record<string, Record<string, string>>;
 }
 
 export interface ListingData {

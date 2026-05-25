@@ -9,12 +9,12 @@ use App\Filament\Tenant\Resources\AccessPasses\Pages\VerifyAccessPasses;
 use App\Models\AccessPass;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
+use Filament\Actions\Action as TableAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Forms\Components\TextInput;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
-use Filament\Tables\Actions\Action as TableAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
@@ -30,11 +30,13 @@ class AccessPassResource extends Resource
 
     protected static ?string $permissionPrefix = 'tenant.sales';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Ventes';
+    protected static string|UnitEnum|null $navigationGroup = 'Contrôle d’accès';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-qr-code';
 
     protected static ?string $navigationLabel = 'Pass d\'accès';
+
+    protected static ?int $navigationSort = 999;
 
     protected static ?string $modelLabel = 'Pass d\'accès';
 
@@ -79,7 +81,7 @@ class AccessPassResource extends Resource
                 TextColumn::make('used_at')
                     ->label('Utilisé le')
                     ->dateTime('d/m/Y H:i')
-                    ->default('—'),
+                    ->placeholder('—'),
                 TextColumn::make('scans_count')
                     ->label('Scans')
                     ->counts('scans')

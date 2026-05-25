@@ -18,7 +18,6 @@ class CommercialPoliciesTable
             ->columns([
                 TextColumn::make('module')->label('Module métier')->badge(),
                 TextColumn::make('monetization_mode')->label('Modèle économique')->badge(),
-                TextColumn::make('plan.name')->label('Plan de référence'),
                 TextColumn::make('commission_rate')->label('Commission %'),
                 TextColumn::make('flat_fee_amount')->label('Frais fixes')->numeric(),
                 TextColumn::make('currency_code')->label('Devise'),

@@ -23,7 +23,11 @@ class TenantOrderController extends Controller
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
-            'data' => $this->orderCatalog->listForBuyer($user, $request->query('status')),
+            'data' => $this->orderCatalog->listForBuyer(
+                $user,
+                $request->query('status'),
+                (int) $request->query('limit', 100),
+            ),
         ]);
     }
 

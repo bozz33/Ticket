@@ -26,6 +26,13 @@ class CallForProjectSubmissionService
         $this->ensureSubmissionWindowIsOpen($callForProject);
 
         $form = $this->formService->schemaFor($callForProject);
+
+        if ($form === null) {
+            throw ValidationException::withMessages([
+                'call_for_project' => 'Aucun formulaire de candidature publié n’est disponible pour cet appel à projets.',
+            ]);
+        }
+
         $validator = Validator::make(
             $request->all(),
             $this->rulesFor($form),

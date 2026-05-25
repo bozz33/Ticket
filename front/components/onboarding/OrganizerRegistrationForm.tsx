@@ -9,6 +9,7 @@ export function OrganizerRegistrationForm({ brandName }: { brandName: string }) 
     email,
     error,
     handleSubmit,
+    isReady,
     loading,
     orgName,
     password,
@@ -17,17 +18,19 @@ export function OrganizerRegistrationForm({ brandName }: { brandName: string }) 
     setPassword,
     success,
   } = useOrganizerRegistrationForm();
+  const isDisabled = !isReady || loading;
 
   if (success) {
     return <OrganizerRegistrationSuccessPanel brandName={brandName} success={success} />;
   }
 
   return (
-    <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+    <form noValidate onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <OrganizerRegistrationFields
         email={email}
         orgName={orgName}
         password={password}
+        disabled={isDisabled}
         setEmail={setEmail}
         setOrgName={setOrgName}
         setPassword={setPassword}
@@ -37,7 +40,7 @@ export function OrganizerRegistrationForm({ brandName }: { brandName: string }) 
 
       <button
         type="submit"
-        disabled={loading}
+        disabled={isDisabled}
         className="button"
         style={{ width: "100%", justifyContent: "center" }}
       >

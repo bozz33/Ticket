@@ -6,6 +6,8 @@ use App\Models\Concerns\HasPublicId;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
+use Illuminate\Support\Carbon;
+use Illuminate\Validation\ValidationException;
 
 class Offer extends Model
 {
@@ -53,6 +55,31 @@ class Offer extends Model
         ];
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (self $offer): void {
+            if ($offer->sales_start_at && $offer->sales_end_at && $offer->sales_start_at->greaterThan($offer->sales_end_at)) {
+                throw ValidationException::withMessages([
+                    'sales_end_at' => 'La fin de vente doit être après le début de vente.',
+                ]);
+            }
+
+            $deadline = $offer->salesDeadline();
+
+            if ($deadline && $offer->sales_start_at && $offer->sales_start_at->greaterThan($deadline)) {
+                throw ValidationException::withMessages([
+                    'sales_start_at' => 'Le début de vente ne peut pas dépasser la date et heure de l’activité.',
+                ]);
+            }
+
+            if ($deadline && $offer->sales_end_at && $offer->sales_end_at->greaterThan($deadline)) {
+                throw ValidationException::withMessages([
+                    'sales_end_at' => 'La fin de vente ne peut pas dépasser la date et heure de l’activité.',
+                ]);
+            }
+        });
+    }
+
     public function offerable(): MorphTo
     {
         return $this->morphTo();
@@ -86,5 +113,53 @@ class Offer extends Model
             $record instanceof CrowdfundingCampaign => $record->title,
             default => null,
         };
+    }
+
+    private function salesDeadline(): ?Carbon
+    {
+        $record = $this->offerable;
+
+        if ($record instanceof Event) {
+            try {
+                return $record->dates()->first()?->starts_at;
+            } catch (\Throwable) {
+                return null;
+            }
+        }
+
+        if ($record instanceof Training) {
+            return $record->starts_at;
+        }
+
+        if ($record instanceof CallForProject) {
+            return $record->application_closes_at
+                ?? $this->dateFromMeta($record->meta, 'event_at');
+        }
+
+        if ($record instanceof CrowdfundingCampaign) {
+            return $record->ends_at
+                ?? $this->dateFromMeta($record->meta, 'event_at');
+        }
+
+        if ($record instanceof Stand) {
+            return $this->dateFromMeta($record->meta, 'event_at');
+        }
+
+        return null;
+    }
+
+    private function dateFromMeta(mixed $meta, string $key): ?Carbon
+    {
+        $value = is_array($meta) ? ($meta[$key] ?? null) : null;
+
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return Carbon::parse($value);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 }

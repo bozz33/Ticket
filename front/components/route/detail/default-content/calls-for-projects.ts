@@ -11,12 +11,12 @@ export function getCallForProjectsDefaultContent(item: PublicContent): ModuleDef
     program: [
       "Lecture du cadre de candidature et des conditions générales",
       "Préparation des pièces demandées et des informations du porteur",
-      "Soumission depuis le formulaire public relié au tenant organisateur",
+      "Soumission depuis le formulaire public relié à l'organisateur",
     ],
     timeline: [
       { label: "Candidatures ouvertes", dateLabel: item.applicationOpensAt ? formatDateLabel(item.applicationOpensAt) : "Ouvert", description: "Le formulaire public reste disponible pendant la période de soumission." },
       { label: "Clôture", dateLabel: item.deadlineAt ? formatDateLabel(item.deadlineAt) : "À confirmer", description: "Aucune nouvelle soumission n'est acceptée après la date limite." },
-      { label: "Instruction", dateLabel: "Après soumission", description: "Les candidatures restent visibles dans le panel organisateur du tenant concerné." },
+      { label: "Instruction", dateLabel: "Après soumission", description: "Les candidatures restent visibles dans le panel de l'organisateur concerné." },
     ],
     conditions: [
       "Le dossier doit être soumis depuis le formulaire public prévu pour l'appel.",
@@ -28,7 +28,7 @@ export function getCallForProjectsDefaultContent(item: PublicContent): ModuleDef
     ],
     faq: [
       { question: "Faut-il être connecté pour candidater ?", answer: "Le formulaire public peut être ouvert au public, mais la plateforme peut imposer un compte acheteur prêt pour les actions sensibles." },
-      { question: "La soumission remonte-t-elle chez l'organisateur ?", answer: "Oui. Les candidatures sont visibles dans le panel organisateur du tenant qui a publié l'appel." },
+      { question: "La soumission remonte-t-elle chez l'organisateur ?", answer: "Oui. Les candidatures sont visibles dans le panel de l'organisateur qui a publié l'appel." },
     ],
     offerTitle: "Candidatures et options",
   };

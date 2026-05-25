@@ -18,6 +18,7 @@ class PublicPaymentInitializeRequest extends FormRequest
             'ticket' => ['required_without:offer', 'nullable', 'string'],
             'quantity' => ['nullable', 'integer', 'min:1'],
             'payment_method' => ['nullable', 'string', 'max:80'],
+            'custom_amount' => ['nullable', 'integer', 'min:1'],
             'buyer_name' => ['nullable', 'string', 'max:255'],
             'buyer_email' => ['nullable', 'email:rfc', 'max:255'],
             'buyer_phone' => ['nullable', 'string', 'max:50'],

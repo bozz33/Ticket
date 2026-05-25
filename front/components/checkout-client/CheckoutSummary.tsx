@@ -33,18 +33,21 @@ export function CheckoutSummary({
   submitting,
   onSubmit,
 }: CheckoutSummaryProps) {
+  const isCrowdfunding = item.module === "crowdfunding";
+  const contributionLabel = selectedOffer?.title ?? "Contribution";
+
   return (
     <aside className="booking-summary">
       <div className="booking-summary__header">
-        <p className="booking-summary__eyebrow">Resume</p>
-        <h2 className="booking-summary__title">{selectedOffer?.title ?? "Offre principale"}</h2>
+        <p className="booking-summary__eyebrow">Résumé</p>
+        <h2 className="booking-summary__title">{contributionLabel}</h2>
         <p className="booking-summary__subtitle">{item.category}</p>
       </div>
 
       <div className="booking-summary__publisher">
         <img alt={organizerName} src={organizerImage} />
         <div className="booking-summary__publisher-copy">
-          <small>Publie par</small>
+          <small>Publié par</small>
           <strong>{organizerName}</strong>
         </div>
       </div>
@@ -62,19 +65,25 @@ export function CheckoutSummary({
         </div>
         <div className="booking-summary__detail-row">
           <span className="booking-summary__detail-label">Format</span>
-          <span className="booking-summary__detail-value">{item.format ?? "Presentiel"}</span>
+          <span className="booking-summary__detail-value">{isCrowdfunding ? "Contribution en ligne" : item.format ?? "Présentiel"}</span>
         </div>
         <div className="booking-summary__detail-row">
           <span className="booking-summary__detail-label">Règlement</span>
           <span className="booking-summary__detail-value">
-            {pricing.total === 0 ? "Confirmation immédiate" : "Paystack sécurisé"}
+            {pricing.total === 0 ? "Confirmation immédiate" : isCrowdfunding ? "Contribution sécurisée" : "Paystack sécurisé"}
           </span>
         </div>
       </div>
 
       <div className="booking-summary__price-block">
+        {isCrowdfunding ? (
+          <div className="booking-summary__price-row">
+            <span className="booking-summary__price-label">Palier</span>
+            <span className="booking-summary__price-value">{contributionLabel}</span>
+          </div>
+        ) : null}
         <div className="booking-summary__price-row">
-          <span className="booking-summary__price-label">Sous-total</span>
+          <span className="booking-summary__price-label">{isCrowdfunding ? "Contribution" : "Sous-total"}</span>
           <span className="booking-summary__price-value">
             {pricing.subtotal === 0 ? "Gratuit" : formatMoney(pricing.subtotal, pricing.currency)}
           </span>
@@ -94,7 +103,7 @@ export function CheckoutSummary({
       ) : null}
 
       <div className="booking-summary__total-block">
-        <span className="booking-summary__total-label">Total a payer</span>
+        <span className="booking-summary__total-label">Total à payer</span>
         <span className="booking-summary__total-value">
           {pricing.total === 0 ? "Gratuit" : formatMoney(pricing.total, pricing.currency)}
         </span>
@@ -107,7 +116,13 @@ export function CheckoutSummary({
           onClick={onSubmit}
           type="button"
         >
-          {submitting ? "Initialisation..." : pricing.total === 0 ? "Confirmer la réservation" : "Continuer vers le paiement"}
+          {submitting
+            ? "Initialisation..."
+            : pricing.total === 0
+              ? "Confirmer la réservation"
+              : isCrowdfunding
+                ? "Contribuer maintenant"
+                : "Continuer vers le paiement"}
         </button>
 
         <ReservationCountdown expiresAt={reservationExpiresAt} />
@@ -116,7 +131,11 @@ export function CheckoutSummary({
       </div>
 
       <div className="booking-summary__trust">
-        <span>Parcours sécurisé — confirmation serveur avant émission</span>
+        <span>
+          {isCrowdfunding
+            ? "Contribution sécurisée — aucun pass ni reçu généré après confirmation"
+            : "Parcours sécurisé — confirmation serveur avant émission"}
+        </span>
       </div>
     </aside>
   );

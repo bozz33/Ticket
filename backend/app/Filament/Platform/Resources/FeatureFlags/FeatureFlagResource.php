@@ -53,7 +53,6 @@ class FeatureFlagResource extends Resource
                     TextInput::make('name')->label('Nom')->required()->maxLength(255)->columnSpan(2),
                     TextInput::make('module')->label('Famille')->maxLength(120)->columnSpan(2),
                     Toggle::make('default_enabled')->label('Activé globalement')->default(false)->inline(false)->columnSpan(2),
-                    Toggle::make('requires_subscription')->label('Nécessite un abonnement')->default(false)->inline(false)->columnSpan(2),
                     Toggle::make('is_public')->label('Public')->default(false)->inline(false)->columnSpan(1),
                     Toggle::make('is_active')->label('Actif')->default(true)->inline(false)->columnSpan(1),
                     Textarea::make('description')->label('Description')->rows(3)->columnSpanFull(),
@@ -73,7 +72,6 @@ class FeatureFlagResource extends Resource
                 TextColumn::make('code')->label('Code')->searchable(),
                 TextColumn::make('module')->label('Famille')->badge(),
                 IconColumn::make('default_enabled')->label('Global')->boolean(),
-                IconColumn::make('requires_subscription')->label('Abonnement')->boolean(),
                 IconColumn::make('is_public')->label('Public')->boolean(),
                 IconColumn::make('is_active')->label('Actif')->boolean(),
             ])

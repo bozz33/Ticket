@@ -4,14 +4,16 @@ import type { PublicContent } from "@/lib/types";
 import { formatDateRange, formatMoney } from "@/lib/utils";
 
 import { CardIcon } from "./CardIcon";
-import type { ContentCardModel } from "./types";
+import { defaultContentCardLabels } from "./labels";
+import type { ContentCardLabels, ContentCardModel } from "./types";
 
 type ContentCardBodyProps = {
   item: PublicContent;
+  labels?: ContentCardLabels;
   model: ContentCardModel;
 };
 
-export function ContentCardBody({ item, model }: ContentCardBodyProps) {
+export function ContentCardBody({ item, labels = defaultContentCardLabels, model }: ContentCardBodyProps) {
   return (
     <div className="content-card__body">
       <div className="content-card__badges content-card__badges--meta">
@@ -33,14 +35,18 @@ export function ContentCardBody({ item, model }: ContentCardBodyProps) {
           <span className="content-card__detail-icon">
             <CardIcon name="calendar" />
           </span>
-          <strong>{formatDateRange(item)}</strong>
+          <strong>
+            <span className="content-card__detail-label">{labels.date}</span>
+            <span className="content-card__detail-value">{formatDateRange(item)}</span>
+          </strong>
         </div>
         <div className="content-card__detail-item">
           <span className="content-card__detail-icon">
             <CardIcon name="location" />
           </span>
           <strong>
-            {item.venueName ?? item.city}, {item.country}
+            <span className="content-card__detail-label">{labels.location}</span>
+            <span className="content-card__detail-value">{item.venueName ?? item.city}, {item.country}</span>
           </strong>
         </div>
         <div className="content-card__detail-item content-card__detail-item--price">
@@ -48,8 +54,8 @@ export function ContentCardBody({ item, model }: ContentCardBodyProps) {
             <CardIcon name="ticket" />
           </span>
           <strong>
-            <span>À partir de</span>
-            {item.isFree ? "Gratuit" : formatMoney(item.priceFrom, item.currency)}
+            <span className="content-card__detail-label">{labels.priceFrom}</span>
+            <span className="content-card__detail-value">{item.isFree ? labels.free : formatMoney(item.priceFrom, item.currency)}</span>
           </strong>
         </div>
         {item.module === "evenements" && typeof item.remainingSeats === "number" ? (
@@ -58,15 +64,15 @@ export function ContentCardBody({ item, model }: ContentCardBodyProps) {
               <CardIcon name="ticket" />
             </span>
             <strong>
-              <span>Places</span>
-              {item.remainingSeats > 0 ? `${item.remainingSeats} restantes` : "Épuisé"}
+              <span className="content-card__detail-label">{labels.seats}</span>
+              <span className="content-card__detail-value">{item.remainingSeats > 0 ? labels.remainingSeats(item.remainingSeats) : labels.soldOut}</span>
             </strong>
           </div>
         ) : null}
       </div>
 
       <Link className="button button--full content-card__primary-cta" href={model.detailHref}>
-        {item.moduleCta}
+        {labels.moduleCta(item.module, item.moduleCta)}
       </Link>
     </div>
   );

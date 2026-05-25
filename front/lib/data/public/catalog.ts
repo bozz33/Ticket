@@ -11,6 +11,7 @@ import type {
   SpeakerHighlightEntry,
 } from "@/lib/types";
 import { normalizeTenantSlug } from "@/lib/tenant";
+import { contentEngagementKey } from "@/lib/engagement";
 import {
   apiBaseUrl,
   buildContentQuery,
@@ -30,6 +31,7 @@ import { getFrontPageData } from "./cms";
 let categoryOverviewPromise: Promise<CategoryOverviewEntry[]> | null = null;
 let cityOverviewPromise: Promise<CityOverviewEntry[]> | null = null;
 let speakerHighlightsPromise: Promise<SpeakerHighlightEntry[]> | null = null;
+const ENGAGEMENT_SUMMARY_TIMEOUT_MS = 2500;
 
 export async function fetchContentPage(
   filters: PublicContentQuery = {},
@@ -127,7 +129,7 @@ export async function getFeaturedContent(): Promise<PublicContent[]> {
 
 export async function getPopularContent(): Promise<PublicContent[]> {
   return rememberPublicData("popular-content", {}, publicDataCacheSeconds, async () => {
-    const popular = await fetchContentPage({ sort: "popular" }, 1, 6);
+    const popular = await fetchContentPage({ sort: "weekly_likes" }, 1, 6);
 
     return popular.items.slice(0, 6);
   });
@@ -169,7 +171,7 @@ export async function getContentByModule(
 export async function getEventCatalogPageData(filters: SearchFilters = {}): Promise<ListingData & { categories: string[]; cities: string[] }> {
   return rememberPublicData("event-catalog-page", { filters }, publicDataCacheSeconds, async () => {
     const currentPage = filters.page ?? 1;
-    const activeModule = filters.module && filters.module !== "evenements" ? filters.module : "all";
+    const activeModule = filters.module ?? "evenements";
     const normalizedFilters: SearchFilters = {
       ...filters,
       module: activeModule,
@@ -198,16 +200,16 @@ export async function getEventCatalogPageData(filters: SearchFilters = {}): Prom
   });
 }
 
-export async function getEventLikeSummaries(
+export async function getContentLikeSummaries(
   items: Array<Pick<PublicContent, "module" | "slug" | "organizerSlug">>,
-  token: string | null,
+  tokens: string | Record<string, string> | null,
 ): Promise<Record<string, { liked: boolean; likes: number }>> {
-  if (!apiBaseUrl || !token) {
+  if (!apiBaseUrl || !tokens) {
     return {};
   }
 
-  const groupedByTenant = items.reduce<Record<string, string[]>>((groups, item) => {
-    if (item.module !== "evenements" || !item.organizerSlug || !item.slug) {
+  const groupedByTenant = items.reduce<Record<string, Array<{ module: PublicContent["module"]; slug: string }>>>((groups, item) => {
+    if (!item.organizerSlug || !item.slug) {
       return groups;
     }
 
@@ -222,8 +224,10 @@ export async function getEventLikeSummaries(
       groups[tenant] = [];
     }
 
-    if (!groups[tenant].includes(slug)) {
-      groups[tenant].push(slug);
+    const exists = groups[tenant].some((entry) => entry.module === item.module && entry.slug === slug);
+
+    if (!exists) {
+      groups[tenant].push({ module: item.module, slug });
     }
 
     return groups;
@@ -236,30 +240,48 @@ export async function getEventLikeSummaries(
   }
 
   const payloads = await Promise.all(
-    tenantEntries.map(async ([tenantSlug, eventSlugs]) => {
+    tenantEntries.map(async ([tenantSlug, contentItems]) => {
+      const token = typeof tokens === "string" ? tokens : tokens[tenantSlug];
+
+      if (!token) {
+        return { tenantSlug, data: {} };
+      }
+
       const query = new URLSearchParams();
 
-      for (const eventSlug of eventSlugs) {
-        query.append("events[]", eventSlug);
+      for (const contentItem of contentItems) {
+        query.append("items[]", `${contentItem.module}:${contentItem.slug}`);
       }
 
       const payload = await fetchJson<{ data?: Record<string, { liked?: boolean; likes?: number | string | null }> }>(
-        `/api/v1/tenants/${encodeURIComponent(tenantSlug)}/events/likes?${query.toString()}`,
+        `/api/v1/tenants/${encodeURIComponent(tenantSlug)}/content/likes?${query.toString()}`,
         {
           noStore: true,
+          timeoutMs: ENGAGEMENT_SUMMARY_TIMEOUT_MS,
           headers: {
             Authorization: `Bearer ${token}`,
           },
         },
       );
 
-      return payload?.data ?? {};
+      return { tenantSlug, data: payload?.data ?? {} };
     }),
   );
 
   return payloads.reduce<Record<string, { liked: boolean; likes: number }>>((carry, payload) => {
-    for (const [key, value] of Object.entries(payload)) {
-      carry[key] = {
+    for (const [key, value] of Object.entries(payload.data)) {
+      const [module, slug] = key.split(":");
+      const compositeKey = contentEngagementKey({
+        module: module as PublicContent["module"],
+        organizerSlug: payload.tenantSlug,
+        slug: slug ?? "",
+      });
+
+      if (!compositeKey) {
+        continue;
+      }
+
+      carry[compositeKey] = {
         liked: Boolean(value?.liked),
         likes: typeof value?.likes === "number"
           ? value.likes
@@ -272,6 +294,8 @@ export async function getEventLikeSummaries(
     return carry;
   }, {});
 }
+
+export const getEventLikeSummaries = getContentLikeSummaries;
 
 export async function getContentDetail(
   module: ModuleRoute,

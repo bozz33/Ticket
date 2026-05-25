@@ -18,8 +18,9 @@ class LaravelCheckoutManager implements CheckoutManager
         int $requestedQuantity = 1,
         ?string $paymentMethod = null,
         ?string $checkoutItemType = null,
+        ?int $customAmount = null,
     ): array {
-        return $this->payments->options($tenant, $offerIdentifier, $requestedQuantity, $paymentMethod, $checkoutItemType);
+        return $this->payments->options($tenant, $offerIdentifier, $requestedQuantity, $paymentMethod, $checkoutItemType, $customAmount);
     }
 
     public function initialize(Tenant $tenant, array $payload): array

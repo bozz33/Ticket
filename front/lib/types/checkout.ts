@@ -23,6 +23,7 @@ export interface CheckoutPricing {
 export interface CheckoutPaymentOptions {
   methods: CheckoutPaymentMethod[];
   pricing: CheckoutPricing;
+  proforma_reference?: string | null;
   quantity: {
     min: number;
     max: number;

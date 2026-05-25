@@ -179,7 +179,7 @@ return new class extends Migration
                         'type' => 'organizer_highlights',
                         'eyebrow' => 'Organisateurs',
                         'title' => 'Profils publics mis en avant',
-                        'body' => 'Chaque tenant peut être valorisé comme une vraie page publique d’organisateur.',
+                        'body' => 'Chaque organisateur peut être valorisé comme une vraie page publique.',
                     ],
                 ],
             ],

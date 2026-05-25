@@ -1,8 +1,9 @@
 import Link from "next/link";
 
-import { ContentCard } from "@/components/ContentCard";
+import { buildContentCardLabels } from "@/components/content-card/labels";
 import { getLikeRenderingContext } from "@/components/route/content-engagement";
 import { SectionHeader } from "@/components/route/SectionHeader";
+import { resolveSupportedLocale, translate } from "@/lib/i18n/public-translations";
 import type {
   FrontPageData,
   OrganizerProfile,
@@ -11,6 +12,7 @@ import type {
 } from "@/lib/types";
 
 import { HeroSearch } from "./home/HeroSearch";
+import { HomeContentCardGrid } from "./home/HomeContentCardGrid";
 import { getFrontSection, sectionStats, sectionText } from "./home/helpers";
 import { StatIcon } from "./home/StatIcon";
 
@@ -22,6 +24,7 @@ export async function HomeView({
   organizers,
   categories,
   stats,
+  locale: requestedLocale,
 }: {
   page?: FrontPageData | null;
   platform: PlatformConfiguration;
@@ -30,41 +33,65 @@ export async function HomeView({
   organizers: Array<{ organizer: OrganizerProfile; items: PublicContent[] }>;
   categories: string[];
   stats: Array<{ label: string; value: string }>;
+  locale?: string;
 }) {
+  const locale = resolveSupportedLocale(platform, requestedLocale);
+  const t = (key: string, fallback: string) => translate(platform, locale, key, fallback);
+  const contentCardLabels = buildContentCardLabels(t);
   const hero = getFrontSection(page, "hero", "home_hero") ?? getFrontSection(page, "hero");
   const metrics = getFrontSection(page, "metrics", "home_metrics") ?? getFrontSection(page, "metrics");
   const featuredSection = getFrontSection(page, "feature_grid", "home_featured");
   const popularSection = getFrontSection(page, "feature_grid", "home_popular");
-  const organizersSection = getFrontSection(page, "organizer_highlights", "home_organizers")
-    ?? getFrontSection(page, "organizer_highlights");
+  const organizersSection = getFrontSection(page, "organizer_highlights", "home_organizers") ?? getFrontSection(page, "organizer_highlights");
   const displayedStats = sectionStats(metrics, stats);
-  const { accountAuthenticated, likeSummaries } = await getLikeRenderingContext([...featured, ...popular]);
+  const translatedStats = displayedStats.map((stat) => {
+    const normalizedLabel = stat.label.toLowerCase();
+    const key = normalizedLabel.includes("organisateur")
+      ? "home.stats.organizers"
+      : normalizedLabel.includes("utilisateur")
+        ? "home.stats.users"
+        : "home.stats.items";
+
+    return { ...stat, label: t(key, stat.label) };
+  });
+  const { accountAuthenticated, accountSessionKey, followSummaries, likeSummaries } = await getLikeRenderingContext([...featured, ...popular]);
+  const primaryCtaLabel = !hero?.primary_cta?.label || hero.primary_cta.label === "Explorer le catalogue"
+    ? t("home.hero.primary_cta", "Vérifier un ticket")
+    : hero.primary_cta.label;
+  const primaryCtaUrl = primaryCtaLabel === t("home.hero.primary_cta", "Vérifier un ticket")
+    ? "/verifier"
+    : hero?.primary_cta?.url || "/evenements";
 
   return (
     <>
       <section className="hero">
         <div className="hero__image">
           <img
-            alt={sectionText(hero?.title, "Scene premium et public pendant un evenement")}
+            alt={t("home.hero.image_alt", sectionText(hero?.title, "Scene premium et public pendant un evenement"))}
+            decoding="async"
+            fetchPriority="high"
             src={sectionText(hero?.image_url, "https://images.unsplash.com/photo-1505236858219-8359eb29e329?auto=format&fit=crop&w=1800&q=80")}
           />
         </div>
         <div className="shell hero__content">
           <div className="hero__copy">
-            <p className="eyebrow">{sectionText(hero?.eyebrow, `Marketplace publique · ${platform.brandName}`)}</p>
-            <h1>{sectionText(hero?.title, "Des experiences a reserver, soutenir ou rejoindre.")}</h1>
+            <p className="eyebrow">{t("home.hero.eyebrow", sectionText(hero?.eyebrow, `Marketplace publique · ${platform.brandName}`))}</p>
+            <h1>{t("home.hero.title", sectionText(hero?.title, "Des experiences a reserver, soutenir ou rejoindre."))}</h1>
             <p className="hero__lede">
-              {sectionText(
-                hero?.body,
-                "Un catalogue premium pour billets, formations, stands, candidatures et campagnes, avec des parcours d'achat clairs et une mise en avant forte des organisateurs.",
+              {t(
+                "home.hero.body",
+                sectionText(
+                  hero?.body,
+                  "Un catalogue premium pour billets, formations, stands, candidatures et campagnes, avec des parcours d'achat clairs et une mise en avant forte des organisateurs.",
+                ),
               )}
             </p>
             <div className="hero__actions">
-              <Link className="button" href={hero?.primary_cta?.url || "/evenements"}>
-                {hero?.primary_cta?.label || "Explorer le catalogue"}
+              <Link className="button" href={primaryCtaUrl}>
+                {primaryCtaLabel}
               </Link>
               <Link className="button button--ghost-light" href={hero?.secondary_cta?.url || "/devenir-organisateur"}>
-                {hero?.secondary_cta?.label || "Publier sur la plateforme"}
+                {t("home.hero.secondary_cta", hero?.secondary_cta?.label || "Publier sur la plateforme")}
               </Link>
             </div>
           </div>
@@ -75,7 +102,7 @@ export async function HomeView({
 
       <section className="stats-strip stats-strip--floating">
         <div className="shell stats-strip__grid">
-          {displayedStats.map((stat, index) => (
+          {translatedStats.map((stat, index) => (
             <article className="stat-tile" key={stat.label}>
               <span aria-hidden="true" className="stat-tile__icon">
                 <StatIcon index={index} />
@@ -94,52 +121,48 @@ export async function HomeView({
           <SectionHeader
             action={
               <Link className="button button--ghost" href="/recherche">
-                Tout voir
+                {t("common.view_all", "Tout voir")}
               </Link>
             }
-            description={featuredSection?.body ?? "Une vitrine riche et visuelle, avec des cartes denses et des CTA directs."}
-            eyebrow={sectionText(featuredSection?.eyebrow, "Selection editee")}
-            title={sectionText(featuredSection?.title, "A la une")}
+            description={t("home.featured.description", featuredSection?.body ?? "Une vitrine riche et visuelle, avec des cartes denses et des CTA directs.")}
+            eyebrow={t("home.featured.eyebrow", sectionText(featuredSection?.eyebrow, "Selection editee"))}
+            title={t("home.featured.title", sectionText(featuredSection?.title, "A la une"))}
           />
-          <div className="card-grid card-grid--three">
-            {featured.map((item) => (
-              <ContentCard
-                accountAuthenticated={accountAuthenticated}
-                initialLiked={likeSummaries[item.slug]?.liked}
-                item={item}
-                key={item.id}
-              />
-            ))}
-          </div>
+          <HomeContentCardGrid
+            accountAuthenticated={accountAuthenticated}
+            accountSessionKey={accountSessionKey}
+            followSummaries={followSummaries}
+            items={featured}
+            labels={contentCardLabels}
+            likeSummaries={likeSummaries}
+          />
         </div>
       </section>
 
       <section className="section section--light">
         <div className="shell">
           <SectionHeader
-            description={popularSection?.body ?? "Les contenus les plus consultes et les plus proches de la conversion."}
-            eyebrow={sectionText(popularSection?.eyebrow, "Tendances")}
-            title={sectionText(popularSection?.title, "Populaires cette semaine")}
+            description={t("home.popular.description", popularSection?.body ?? "Les contenus qui ont recu le plus de mentions j'aime cette semaine.")}
+            eyebrow={t("home.popular.eyebrow", sectionText(popularSection?.eyebrow, "Tendances"))}
+            title={t("home.popular.title", sectionText(popularSection?.title, "Populaires cette semaine"))}
           />
-          <div className="card-grid card-grid--three">
-            {popular.map((item) => (
-              <ContentCard
-                accountAuthenticated={accountAuthenticated}
-                initialLiked={likeSummaries[item.slug]?.liked}
-                item={item}
-                key={item.id}
-              />
-            ))}
-          </div>
+          <HomeContentCardGrid
+            accountAuthenticated={accountAuthenticated}
+            accountSessionKey={accountSessionKey}
+            followSummaries={followSummaries}
+            items={popular}
+            labels={contentCardLabels}
+            likeSummaries={likeSummaries}
+          />
         </div>
       </section>
 
       <section className="section">
         <div className="shell">
           <SectionHeader
-            description={organizersSection?.body ?? "Chaque tenant peut etre valorise comme une vraie page publique d'organisateur."}
-            eyebrow={sectionText(organizersSection?.eyebrow, "Organisateurs")}
-            title={sectionText(organizersSection?.title, "Profils publics mis en avant")}
+            description={t("home.organizers.description", organizersSection?.body ?? "Chaque organisateur peut etre valorise comme une vraie page publique.")}
+            eyebrow={t("home.organizers.eyebrow", sectionText(organizersSection?.eyebrow, "Organisateurs"))}
+            title={t("home.organizers.title", sectionText(organizersSection?.title, "Profils publics mis en avant"))}
           />
           <div className="organizer-grid">
             {organizers.map(({ organizer, items }) => (
@@ -174,4 +197,3 @@ export async function HomeView({
     </>
   );
 }
-

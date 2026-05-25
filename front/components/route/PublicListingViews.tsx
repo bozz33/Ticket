@@ -1,9 +1,14 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 
 import { CatalogFilters } from "@/components/CatalogFilters";
 import { ContentCard } from "@/components/ContentCard";
+import { buildContentCardLabels } from "@/components/content-card/labels";
 import { getLikeRenderingContext } from "@/components/route/content-engagement";
 import { Pagination } from "@/components/route/Pagination";
+import { getPlatformConfiguration } from "@/lib/data/public";
+import { contentEngagementKey, organizerFollowKey } from "@/lib/engagement";
+import { PUBLIC_LOCALE_COOKIE, resolveSupportedLocale, translate } from "@/lib/i18n/public-translations";
 import type { FrontPageData, FrontPageSection, PublicContent, SearchFilters } from "@/lib/types";
 
 function getFrontSection(page: FrontPageData | null | undefined, type: FrontPageSection["type"]): FrontPageSection | undefined {
@@ -44,8 +49,17 @@ export async function ModuleListingView({
   cities: string[];
 }) {
   const hero = getFrontSection(page, "hero");
-  const moduleHrefMode = module === "evenements" ? "query" : "route";
-  const { accountAuthenticated, likeSummaries } = await getLikeRenderingContext(items);
+  const platform = await getPlatformConfiguration();
+  const cookieStore = await cookies();
+  const locale = resolveSupportedLocale(platform, cookieStore.get(PUBLIC_LOCALE_COOKIE)?.value);
+  const t = (key: string, fallback: string) => translate(platform, locale, key, fallback);
+  const contentCardLabels = buildContentCardLabels(t);
+  const {
+    accountAuthenticated,
+    accountSessionKey,
+    followSummaries,
+    likeSummaries,
+  } = await getLikeRenderingContext(items);
 
   return (
     <>
@@ -64,28 +78,36 @@ export async function ModuleListingView({
         cities={cities}
         filters={filters}
         includeModule
-        moduleHrefMode={moduleHrefMode}
       />
 
       <section className="listing-section">
         <div className="shell">
           <div className="listing-top-bar">
             <p className="listing-count">
-              <strong>{totalItems}</strong> resultats
+              <strong>{totalItems}</strong> {t("listing.results", "resultats")}
             </p>
           </div>
 
           {items.length > 0 ? (
             <>
               <div className="card-grid card-grid--three">
-                {items.map((item) => (
-                  <ContentCard
-                    accountAuthenticated={accountAuthenticated}
-                    initialLiked={likeSummaries[item.slug]?.liked}
-                    item={item}
-                    key={item.id}
-                  />
-                ))}
+                {items.map((item) => {
+                  const likeSummary = likeSummaries[contentEngagementKey(item)];
+                  const followSummary = followSummaries[organizerFollowKey(item.organizerSlug)];
+
+                  return (
+                    <ContentCard
+                      accountAuthenticated={accountAuthenticated}
+                      accountSessionKey={accountSessionKey}
+                      initialFollowing={accountAuthenticated === true ? followSummary?.following ?? false : undefined}
+                      initialLiked={accountAuthenticated === true ? likeSummary?.liked ?? false : undefined}
+                      initialLikes={likeSummary?.likes ?? item.likesCount}
+                      item={item}
+                      key={item.id}
+                      labels={contentCardLabels}
+                    />
+                  );
+                })}
               </div>
               <Pagination
                 basePath={`/${module}`}
@@ -96,10 +118,10 @@ export async function ModuleListingView({
             </>
           ) : (
             <div className="empty-state">
-              <h3>Aucun {singular} ne correspond a ces filtres.</h3>
-              <p>Elargissez la recherche ou revenez au catalogue complet.</p>
+              <h3>{t("listing.empty_title", `Aucun ${singular} ne correspond a ces filtres.`)}</h3>
+              <p>{t("listing.empty_body", "Elargissez la recherche ou revenez au catalogue complet.")}</p>
               <Link className="button" href={`/${module}`}>
-                Reinitialiser les filtres
+                {t("listing.reset_filters", "Reinitialiser les filtres")}
               </Link>
             </div>
           )}
@@ -129,7 +151,17 @@ export async function SearchResultsView({
   cities: string[];
 }) {
   const hero = getFrontSection(page, "hero");
-  const { accountAuthenticated, likeSummaries } = await getLikeRenderingContext(items);
+  const platform = await getPlatformConfiguration();
+  const cookieStore = await cookies();
+  const locale = resolveSupportedLocale(platform, cookieStore.get(PUBLIC_LOCALE_COOKIE)?.value);
+  const t = (key: string, fallback: string) => translate(platform, locale, key, fallback);
+  const contentCardLabels = buildContentCardLabels(t);
+  const {
+    accountAuthenticated,
+    accountSessionKey,
+    followSummaries,
+    likeSummaries,
+  } = await getLikeRenderingContext(items);
 
   return (
     <>
@@ -155,21 +187,30 @@ export async function SearchResultsView({
         <div className="shell">
           <div className="listing-top-bar">
             <p className="listing-count">
-              <strong>{totalItems}</strong> resultats
+              <strong>{totalItems}</strong> {t("listing.results", "resultats")}
             </p>
           </div>
 
           {items.length > 0 ? (
             <>
               <div className="card-grid card-grid--three">
-                {items.map((item) => (
-                  <ContentCard
-                    accountAuthenticated={accountAuthenticated}
-                    initialLiked={likeSummaries[item.slug]?.liked}
-                    item={item}
-                    key={item.id}
-                  />
-                ))}
+                {items.map((item) => {
+                  const likeSummary = likeSummaries[contentEngagementKey(item)];
+                  const followSummary = followSummaries[organizerFollowKey(item.organizerSlug)];
+
+                  return (
+                    <ContentCard
+                      accountAuthenticated={accountAuthenticated}
+                      accountSessionKey={accountSessionKey}
+                      initialFollowing={accountAuthenticated === true ? followSummary?.following ?? false : undefined}
+                      initialLiked={accountAuthenticated === true ? likeSummary?.liked ?? false : undefined}
+                      initialLikes={likeSummary?.likes ?? item.likesCount}
+                      item={item}
+                      key={item.id}
+                      labels={contentCardLabels}
+                    />
+                  );
+                })}
               </div>
               <Pagination
                 basePath="/recherche"
@@ -180,10 +221,10 @@ export async function SearchResultsView({
             </>
           ) : (
             <div className="empty-state">
-              <h3>Aucun contenu ne correspond a ces filtres.</h3>
-              <p>Modifiez vos criteres ou explorez les catalogues par module.</p>
+              <h3>{t("listing.empty_content_title", "Aucun contenu ne correspond a ces filtres.")}</h3>
+              <p>{t("listing.empty_content_body", "Modifiez vos criteres ou explorez les catalogues par module.")}</p>
               <Link className="button" href="/recherche">
-                Reinitialiser
+                {t("listing.reset", "Reinitialiser")}
               </Link>
             </div>
           )}

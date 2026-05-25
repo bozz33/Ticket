@@ -51,6 +51,7 @@ class PublicPaymentController extends Controller
                 max(1, (int) $request->query('quantity', 1)),
                 $paymentMethod !== '' ? $paymentMethod : null,
                 $checkoutItemType,
+                $request->query('custom_amount') !== null ? max(1, (int) $request->query('custom_amount')) : null,
             ));
 
             return response()->json([
@@ -91,7 +92,7 @@ class PublicPaymentController extends Controller
         }
 
         try {
-            if ($buyer !== null) {
+            if ($buyer !== null && ! $isPublicCrowdfundingContribution) {
                 $this->buyerAccountReadiness->assertReadyForSensitiveAction($buyer, 'acheter ou réserver');
             }
 

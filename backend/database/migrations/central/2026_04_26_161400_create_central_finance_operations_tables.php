@@ -11,7 +11,6 @@ return new class extends Migration
         Schema::connection('central')->create('platform_transactions', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('tenant_id')->nullable()->constrained('tenants')->nullOnDelete();
-            $table->foreignId('plan_id')->nullable()->constrained('plans')->nullOnDelete();
             $table->foreignId('payment_gateway_id')->nullable()->constrained('payment_gateways')->nullOnDelete();
             $table->string('transaction_reference')->unique();
             $table->string('gateway_reference')->nullable()->index();

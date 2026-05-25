@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
+use App\Models\City;
+use App\Models\Event;
+use App\Models\EventTicket;
+use App\Models\Offer;
+use App\Models\Order;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -23,12 +28,18 @@ class PublicReceiptVerificationController extends Controller
             return response()->json(['message' => 'Reçu introuvable.'], 404);
         }
 
-        $record->loadMissing(['order.accessPasses', 'order.offer']);
+        $record->loadMissing([
+            'order.accessPasses.offer.offerable',
+            'order.accessPasses.passable',
+            'order.offer.offerable',
+            'order.orderable',
+        ]);
 
         $buyerPhone = (string) ($record->order?->buyer_phone ?? '');
         $buyerEmail = (string) ($record->buyer_email ?? '');
         $gatewayReference = (string) data_get($record->meta ?? [], 'gateway_reference', $record->order?->transaction_reference);
         $gatewayTransactionId = data_get($record->meta ?? [], 'gateway_transaction_id');
+        $event = $this->eventFromOrder($record->order);
 
         return response()->json([
             'tenant' => $this->tenantContext->get()?->only(['id', 'public_id', 'name', 'slug']),
@@ -48,8 +59,88 @@ class PublicReceiptVerificationController extends Controller
                 'gateway_transaction_id' => $gatewayTransactionId,
                 'offer_name' => $record->order?->offer?->name,
                 'access_passes_count' => $record->order?->accessPasses?->count() ?? 0,
+                'event' => $this->eventPayload($event),
             ],
         ]);
+    }
+
+    private function eventFromOrder(?Order $order): ?Event
+    {
+        if (! $order instanceof Order) {
+            return null;
+        }
+
+        foreach ($order->accessPasses ?? [] as $pass) {
+            $event = $this->eventFromSubject($pass->passable) ?? $this->eventFromOffer($pass->offer);
+
+            if ($event instanceof Event) {
+                return $event;
+            }
+        }
+
+        return $this->eventFromSubject($order->orderable) ?? $this->eventFromOffer($order->offer);
+    }
+
+    private function eventFromOffer(?Offer $offer): ?Event
+    {
+        if (! $offer instanceof Offer) {
+            return null;
+        }
+
+        $offer->loadMissing('offerable');
+
+        return $this->eventFromSubject($offer->offerable);
+    }
+
+    private function eventFromSubject(mixed $subject): ?Event
+    {
+        if ($subject instanceof Event) {
+            return $subject;
+        }
+
+        if ($subject instanceof EventTicket) {
+            $subject->loadMissing('event');
+
+            return $subject->event;
+        }
+
+        if ($subject instanceof Offer) {
+            return $this->eventFromOffer($subject);
+        }
+
+        return null;
+    }
+
+    private function eventPayload(?Event $event): ?array
+    {
+        if (! $event instanceof Event) {
+            return null;
+        }
+
+        $event->loadMissing('dates');
+        $primaryDate = $event->dates->first();
+        $cityName = $event->city_id ? City::query()->whereKey($event->city_id)->value('name') : null;
+        $startsAt = $primaryDate?->starts_at ?? data_get($event->meta ?? [], 'schedule.starts_at');
+        $endsAt = $primaryDate?->ends_at ?? data_get($event->meta ?? [], 'schedule.ends_at');
+        $locationParts = array_values(array_filter([
+            $event->venue_name,
+            $event->venue_address,
+            $cityName,
+            $event->country_code,
+        ], fn ($value): bool => filled($value)));
+
+        return [
+            'public_id' => $event->public_id,
+            'title' => $event->title,
+            'slug' => $event->slug,
+            'starts_at' => $startsAt instanceof \DateTimeInterface ? $startsAt->format(DATE_ATOM) : $startsAt,
+            'ends_at' => $endsAt instanceof \DateTimeInterface ? $endsAt->format(DATE_ATOM) : $endsAt,
+            'venue_name' => $event->venue_name,
+            'venue_address' => $event->venue_address,
+            'city' => $cityName,
+            'country_code' => $event->country_code,
+            'location' => implode(', ', $locationParts),
+        ];
     }
 
     private function maskEmail(string $email): ?string

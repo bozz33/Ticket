@@ -103,6 +103,7 @@ export function ApplicationFieldRenderer({
     return (
       <PhoneApplicationField
         countries={countries}
+        countryCode={countryCode}
         error={error}
         field={field}
         onValueChange={onValueChange}

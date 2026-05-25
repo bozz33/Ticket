@@ -36,6 +36,7 @@ export function PaymentSuccessView({
   const currency = verification?.amounts.currency ?? item.currency;
   const resolvedReference = buildPaymentReference(item, selectedOffer, paymentReference);
   const resolvedPaidAt = normalizePaidAt(paidAt);
+  const isCrowdfunding = item.module === "crowdfunding";
   const paymentLabel = verification?.payment_label ?? (total === 0 ? "Confirmation immédiate" : "Paiement sécurisé");
   const receiptHref = `/checkout/${item.module}/${item.slug}/recu${buildPaymentQuery(
     selectedOffer,
@@ -50,10 +51,12 @@ export function PaymentSuccessView({
       <section className="page-hero page-hero--compact">
         <div className="shell page-hero__content">
           <p className="eyebrow">{resolvedConfirmed ? "Paiement confirme" : "Paiement en attente"}</p>
-          <h1>{resolvedConfirmed ? "Reservation enregistree" : "Verification du paiement en cours"}</h1>
+          <h1>{resolvedConfirmed ? (isCrowdfunding ? "Contribution enregistree" : "Reservation enregistree") : "Verification du paiement en cours"}</h1>
           <p>
             {resolvedConfirmed
-              ? "Le paiement a ete valide et un recapitulatif est deja disponible."
+              ? isCrowdfunding
+                ? "Le paiement a ete valide et la progression de la campagne sera mise a jour."
+                : "Le paiement a ete valide et un recapitulatif est deja disponible."
               : "Le paiement n'est pas encore confirme. Verifiez le statut avant de considérer la commande comme finalisée."}
           </p>
         </div>
@@ -68,10 +71,12 @@ export function PaymentSuccessView({
               </svg>
             </span>
             <p className="eyebrow">{resolvedConfirmed ? "Succes" : "Statut a verifier"}</p>
-            <h2>{resolvedConfirmed ? "Votre commande est confirmee" : "Votre paiement n'est pas encore confirme"}</h2>
+            <h2>{resolvedConfirmed ? (isCrowdfunding ? "Votre contribution est confirmee" : "Votre commande est confirmee") : "Votre paiement n'est pas encore confirme"}</h2>
             <p className="section-copy">
               {resolvedConfirmed
-                ? `${platform.brandName} a centralise la confirmation, la reference de paiement et le recapitulatif de commande.`
+                ? isCrowdfunding
+                  ? `${platform.brandName} a centralise la confirmation et la reference de contribution. Aucun pass ni reçu n'est émis pour ce soutien.`
+                  : `${platform.brandName} a centralise la confirmation, la reference de paiement et le recapitulatif de commande.`
                 : `${platform.brandName} attend encore une confirmation definitive du paiement ou une re-verification du serveur.`}
             </p>
 
@@ -99,15 +104,15 @@ export function PaymentSuccessView({
             </div>
 
             <div className="success-card__actions">
-              {resolvedConfirmed ? (
+              {resolvedConfirmed && !isCrowdfunding ? (
                 <Link className="button" href={receiptHref}>
                   Voir le recu
                 </Link>
-              ) : (
+              ) : !resolvedConfirmed ? (
                 <Link className="button" href={`/${item.module}/${item.slug}?tenant=${encodeURIComponent(item.organizerSlug)}`}>
                   Revenir au checkout
                 </Link>
-              )}
+              ) : null}
               <Link className="button button--ghost" href={`/${item.module}/${item.slug}?tenant=${encodeURIComponent(item.organizerSlug)}`}>
                 Retour au contenu
               </Link>

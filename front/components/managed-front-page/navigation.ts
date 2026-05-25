@@ -14,12 +14,14 @@ export function fallbackPrimaryLinks(platform: PlatformConfiguration): Navigatio
 }
 
 export function fallbackUtilityLinks(platform: PlatformConfiguration): NavigationLink[] {
-  return hasLinks(platform.menus.header_utility)
+  const links = hasLinks(platform.menus.header_utility)
     ? platform.menus.header_utility
     : [
         { href: "/a-propos", label: "A propos" },
-        { href: "/remboursement", label: "Remboursement" },
+        { href: "/remboursement", label: "CGV & remboursements" },
         { href: "/faq", label: "FAQ" },
         { href: "/mentions-legales", label: "Mentions legales" },
       ];
+
+  return links.map((link) => (link.href === "/remboursement" ? { ...link, label: "CGV & remboursements" } : link));
 }

@@ -15,7 +15,6 @@ use App\Models\KpiSnapshot;
 use App\Models\PaymentGateway;
 use App\Models\PaymentIncident;
 use App\Models\PayoutBatch;
-use App\Models\Plan;
 use App\Models\PlatformSetting;
 use App\Models\PlatformSupportTicket;
 use App\Models\PlatformTransaction;
@@ -27,8 +26,8 @@ use App\Observers\PlatformAuditObserver;
 use App\Services\AuditService;
 use App\Services\FeatureFlagService;
 use App\Services\FinancePolicyService;
+use App\Services\PlatformMailSettings;
 use App\Services\PlatformSettingsService;
-use App\Services\SubscriptionGateService;
 use App\Support\Tenancy\TenantContext;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -55,7 +54,6 @@ class AppServiceProvider extends ServiceProvider
         $this->app->singleton(FeatureFlagService::class, fn (): FeatureFlagService => new FeatureFlagService);
         $this->app->singleton(FinancePolicyService::class, fn (): FinancePolicyService => new FinancePolicyService);
         $this->app->singleton(PlatformSettingsService::class, fn (): PlatformSettingsService => new PlatformSettingsService);
-        $this->app->singleton(SubscriptionGateService::class, fn (): SubscriptionGateService => new SubscriptionGateService);
         $this->app->singleton(TenantContext::class, fn (): TenantContext => new TenantContext);
     }
 
@@ -75,6 +73,8 @@ class AppServiceProvider extends ServiceProvider
         ]);
 
         $this->configureRateLimiting();
+
+        app(PlatformMailSettings::class)->apply();
 
         ResetPassword::createUrlUsing(function (object $user, string $token): string {
             $baseUrl = rtrim((string) config('ticket.public_frontend_url', config('app.url')), '/');
@@ -111,7 +111,6 @@ class AppServiceProvider extends ServiceProvider
             GatewayWebhookLog::class,
             IncidentLog::class,
             KpiSnapshot::class,
-            Plan::class,
             PaymentGateway::class,
             PaymentIncident::class,
             PlatformSetting::class,
@@ -150,6 +149,22 @@ class AppServiceProvider extends ServiceProvider
                 $this->perMinuteLimit(
                     (int) config('ticket.rate_limits.tenant_auth_per_minute', 5),
                     sprintf('tenant-auth:%s:%s:%s', $tenant, $email, $ip),
+                ),
+            ];
+        });
+
+        RateLimiter::for('tenant-engagement', function (Request $request): array {
+            $tenant = (string) $request->route('tenant', 'tenant');
+            $tenantUser = $request->attributes->get('tenant_user');
+            $userId = is_object($tenantUser) && method_exists($tenantUser, 'getKey')
+                ? (string) $tenantUser->getKey()
+                : 'guest';
+            $ip = (string) $request->ip();
+
+            return [
+                $this->perMinuteLimit(
+                    (int) config('ticket.rate_limits.tenant_engagement_per_minute', 120),
+                    sprintf('tenant-engagement:%s:%s:%s', $tenant, $userId, $ip),
                 ),
             ];
         });

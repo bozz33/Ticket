@@ -42,16 +42,9 @@ class ReceiptService
 
     public function findByIdentifier(string $identifier): ?Receipt
     {
-        if (Str::isUuid($identifier)) {
-            return Receipt::query()
-                ->with(['order.accessPasses', 'order.offer'])
-                ->where('public_id', $identifier)
-                ->first();
-        }
-
         return Receipt::query()
             ->with(['order.accessPasses', 'order.offer'])
-            ->where('reference', $identifier)
+            ->where(fn (Builder $query) => $this->applyIdentifierLookup($query, $identifier))
             ->first();
     }
 
@@ -59,24 +52,31 @@ class ReceiptService
     {
         $email = Str::lower($user->email);
 
-        if (Str::isUuid($identifier)) {
-            return Receipt::query()
-                ->with(['order.accessPasses', 'order.offer'])
-                ->where(function (Builder $query) use ($user, $email): void {
-                    $query->where('buyer_user_id', $user->getKey())
-                        ->orWhereRaw('LOWER(buyer_email) = ?', [$email]);
-                })
-                ->where('public_id', $identifier)
-                ->first();
-        }
-
         return Receipt::query()
             ->with(['order.accessPasses', 'order.offer'])
             ->where(function (Builder $query) use ($user, $email): void {
                 $query->where('buyer_user_id', $user->getKey())
                     ->orWhereRaw('LOWER(buyer_email) = ?', [$email]);
             })
-            ->where('reference', $identifier)
+            ->where(fn (Builder $query) => $this->applyIdentifierLookup($query, $identifier))
             ->first();
+    }
+
+    private function applyIdentifierLookup(Builder $query, string $identifier): void
+    {
+        $query->where('reference', $identifier)
+            ->orWhere('meta->transaction_reference', $identifier)
+            ->orWhere('meta->gateway_reference', $identifier)
+            ->orWhere('meta->gateway_transaction_id', $identifier)
+            ->orWhereHas('order', function (Builder $orderQuery) use ($identifier): void {
+                $orderQuery->where('reference', $identifier)
+                    ->orWhere('transaction_reference', $identifier)
+                    ->orWhere('meta->gateway_reference', $identifier)
+                    ->orWhere('meta->gateway_transaction_id', $identifier);
+            });
+
+        if (Str::isUuid($identifier)) {
+            $query->orWhere('public_id', $identifier);
+        }
     }
 }

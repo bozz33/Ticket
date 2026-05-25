@@ -146,8 +146,32 @@ export function useApplicationFormController(item: PublicContent) {
     (fieldKey: string, countryCode: string) => {
       clearDependentCities(fieldKey);
       updateValue(fieldKey, countryCode);
+      const country = countries.find((entry) => entry.iso2 === countryCode);
+      const dependentPhoneFields = visibleFields.filter(
+        (field) => field.type === "phone" && field.country_field === fieldKey,
+      );
+
+      if (dependentPhoneFields.length > 0) {
+        setValues((current) => {
+          const next = { ...current };
+
+          for (const field of dependentPhoneFields) {
+            const currentPhoneValue = typeof next[field.key] === "object" && next[field.key] !== null
+              ? (next[field.key] as Record<string, string>)
+              : {};
+
+            next[field.key] = {
+              ...currentPhoneValue,
+              country_code: countryCode,
+              dial_code: country?.phone_code ? `+${country.phone_code.replace(/\D+/g, "")}` : "",
+            };
+          }
+
+          return next;
+        });
+      }
     },
-    [clearDependentCities, updateValue],
+    [clearDependentCities, countries, updateValue, visibleFields],
   );
 
   const handleCityInputChange = useCallback(

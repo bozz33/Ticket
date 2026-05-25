@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { type ChangeEvent, type FormEvent, useEffect, useState } from "react";
 
+import { accountAvatarSrc } from "@/components/account/layout/helpers";
 import type { AccountUser } from "@/lib/types";
 
 import {
@@ -199,7 +200,7 @@ export function useProfileEditor(initialUser: AccountUser | null) {
 
   return {
     avatarError,
-    avatarSrc: avatarPreview ?? (user?.avatar_url ? `/api/account/avatar-image?v=${encodeURIComponent(user.avatar_url)}` : null),
+    avatarSrc: avatarPreview ?? accountAvatarSrc(user?.avatar_url),
     avatarSuccess,
     error,
     form,

@@ -33,7 +33,6 @@ class StoreTenantRequest extends FormRequest
             'database_username' => ['nullable', 'string', 'max:255'],
             'database_password' => ['nullable', 'string', 'max:255'],
             'database_options' => ['nullable', 'array'],
-            'plan_id' => ['nullable', 'integer', Rule::exists('central.plans', 'id')],
             'admin' => ['required', 'array'],
             'admin.name' => ['nullable', 'string', 'max:255'],
             'admin.username' => ['nullable', 'string', 'min:3', 'max:120', 'alpha_dash'],

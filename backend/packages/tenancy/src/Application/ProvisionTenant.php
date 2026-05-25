@@ -2,9 +2,7 @@
 
 namespace Ticket\Tenancy\Application;
 
-use App\Enums\SubscriptionStatus;
 use App\Enums\TenantStatus;
-use App\Models\Plan;
 use App\Models\Role;
 use App\Models\Tenant;
 use App\Models\User;
@@ -71,7 +69,6 @@ class ProvisionTenant
         app(SyncCentralCategoriesToTenant::class)->handle($tenant);
 
         $tenantAdmin = $this->provisionTenantAdmin($tenant, $payload);
-        $subscription = $this->assignInitialPlan($tenant, $payload);
         app(DomainEventPublisher::class)->publish(
             'tenancy.tenant.provisioned',
             [
@@ -79,7 +76,6 @@ class ProvisionTenant
                 'tenant_public_id' => $tenant->public_id,
                 'tenant_slug' => $tenant->slug,
                 'status' => $tenant->status?->value ?? $tenant->status,
-                'subscription_id' => $subscription?->getKey(),
             ],
             Tenant::class,
             (string) $tenant->getKey(),
@@ -87,9 +83,8 @@ class ProvisionTenant
         );
 
         return [
-            'tenant' => $tenant->fresh(['profile', 'domains', 'statusHistories', 'subscriptions.plan']),
+            'tenant' => $tenant->fresh(['profile', 'domains', 'statusHistories']),
             'tenant_admin' => $tenantAdmin,
-            'subscription' => $subscription?->load('plan'),
         ];
     }
 
@@ -145,26 +140,4 @@ class ProvisionTenant
         ];
     }
 
-    protected function assignInitialPlan(Tenant $tenant, array $payload)
-    {
-        $planId = $payload['plan_id'] ?? null;
-
-        if ($planId === null) {
-            return null;
-        }
-
-        $plan = Plan::query()->findOrFail($planId);
-        $now = now();
-        $trialEndsAt = $plan->trial_days > 0 ? $now->copy()->addDays($plan->trial_days) : null;
-
-        return $tenant->subscriptions()->create([
-            'plan_id' => $plan->getKey(),
-            'status' => $trialEndsAt !== null ? SubscriptionStatus::Trialing : SubscriptionStatus::Active,
-            'started_at' => $now,
-            'trial_ends_at' => $trialEndsAt,
-            'meta' => [
-                'source' => 'ProvisionTenant',
-            ],
-        ]);
-    }
 }

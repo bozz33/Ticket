@@ -51,6 +51,42 @@ class PublicCatalogProjectionReaderTest extends TestCase
         $this->assertSame('Jazz Night', $item['title']);
     }
 
+    public function test_projection_reader_excludes_ended_items_unless_past_items_are_requested(): void
+    {
+        PublicCatalogItem::query()->create($this->projectionRow([
+            'tenant_id' => 1,
+            'tenant_public_id' => 'tenant-public-a',
+            'tenant_slug' => 'tenant-a',
+            'tenant_name' => 'Tenant A',
+            'module' => 'evenements',
+            'item_public_id' => 'evt-ended',
+            'item_slug' => 'past-concert',
+            'title' => 'Past Concert',
+            'summary' => 'Concert terminé',
+            'category' => 'Culture',
+            'city' => 'Abidjan',
+            'price_from' => 5000,
+            'is_free' => false,
+            'published_at' => now()->subDays(10),
+            'starts_at' => now()->subDays(3),
+            'ends_at' => now()->subDay(),
+            'search_text' => 'tenant a past concert culture abidjan',
+        ]));
+
+        $current = $this->reader()->list(['module' => 'evenements'], 1, 10);
+        $withPast = $this->reader()->list(['module' => 'evenements', 'include_past' => 'true'], 1, 10);
+
+        $this->assertSame(['Jazz Night'], collect($current['items'])->pluck('title')->all());
+        $this->assertContains('Past Concert', collect($withPast['items'])->pluck('title')->all());
+    }
+
+    public function test_projection_reader_sorts_weekly_likes_from_engagement_columns(): void
+    {
+        $result = $this->reader()->list(['sort' => 'weekly_likes'], 1, 10);
+
+        $this->assertSame('Jazz Night', $result['items'][0]['title']);
+    }
+
     private function reader(): PublicCatalogProjectionReader
     {
         return new PublicCatalogProjectionReader(new PublicCatalogModules);
@@ -76,6 +112,8 @@ class PublicCatalogProjectionReaderTest extends TestCase
             $table->unsignedBigInteger('price_from')->default(0);
             $table->boolean('is_free')->default(true);
             $table->boolean('is_featured')->default(false);
+            $table->unsignedInteger('likes_count')->default(0);
+            $table->unsignedInteger('weekly_likes_count')->default(0);
             $table->unsignedInteger('popularity_score')->default(0);
             $table->timestamp('published_at')->nullable();
             $table->timestamp('starts_at')->nullable();
@@ -102,7 +140,11 @@ class PublicCatalogProjectionReaderTest extends TestCase
             'city' => 'Abidjan',
             'price_from' => 10000,
             'is_free' => false,
+            'likes_count' => 2,
+            'weekly_likes_count' => 2,
             'published_at' => now(),
+            'starts_at' => now()->addDay(),
+            'ends_at' => now()->addDays(2),
             'search_text' => 'tenant a jazz night concert jazz culture abidjan',
         ]));
 
@@ -120,7 +162,11 @@ class PublicCatalogProjectionReaderTest extends TestCase
             'city' => 'Dakar',
             'price_from' => 0,
             'is_free' => true,
+            'likes_count' => 5,
+            'weekly_likes_count' => 0,
             'published_at' => now()->subDay(),
+            'starts_at' => now()->addDays(5),
+            'ends_at' => now()->addDays(7),
             'search_text' => 'tenant b laravel pro formation tech dakar',
         ]));
     }
@@ -138,7 +184,11 @@ class PublicCatalogProjectionReaderTest extends TestCase
             'country' => 'CI',
             'priceFrom' => $overrides['price_from'],
             'isFree' => $overrides['is_free'],
+            'likesCount' => $overrides['likes_count'] ?? 0,
+            'weeklyLikesCount' => $overrides['weekly_likes_count'] ?? 0,
             'publishedAt' => $overrides['published_at']->toIso8601String(),
+            'startsAt' => isset($overrides['starts_at']) ? $overrides['starts_at']?->toIso8601String() : null,
+            'endsAt' => isset($overrides['ends_at']) ? $overrides['ends_at']?->toIso8601String() : null,
             'organizerSlug' => $overrides['tenant_slug'],
             'speakers' => [],
             'tiers' => [],

@@ -31,6 +31,10 @@ export default async function CheckoutReceiptPage({
     notFound();
   }
 
+  if (module === "crowdfunding") {
+    notFound();
+  }
+
   const search = await searchParams;
   const offer = Array.isArray(search.offer) ? search.offer[0] : search.offer;
   const ticket = Array.isArray(search.ticket) ? search.ticket[0] : search.ticket;

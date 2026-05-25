@@ -91,7 +91,7 @@ class Event extends Model
                 ['sort_order' => 0],
                 [
                     'starts_at' => $startsAt,
-                    'ends_at' => $schedule['ends_at'] ?? null,
+                    'ends_at' => null,
                     'timezone' => $event->timezone ?: 'UTC',
                     'is_all_day' => false,
                     'meta' => [],

@@ -6,6 +6,7 @@ use App\Enums\TenantStatus;
 use App\Models\CallForProject;
 use App\Models\Category;
 use App\Models\City;
+use App\Models\ContentLike;
 use App\Models\CrowdfundingCampaign;
 use App\Models\Event;
 use App\Models\EventTicket;
@@ -16,6 +17,7 @@ use App\Models\Tenant;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -83,7 +85,11 @@ class PublicContentService
             ->where('is_active', true);
 
         if ($module === 'evenements') {
-            $recordQuery->withCount('likes');
+            $recordQuery->withCount([
+                'likes',
+                'likes as weekly_legacy_likes_count' => fn (Builder $likesQuery): Builder => $likesQuery
+                    ->where('created_at', '>=', CarbonImmutable::now()->startOfWeek()),
+            ]);
             $this->excludeEndedEvents($recordQuery);
         }
 
@@ -617,7 +623,7 @@ class PublicContentService
 
         if ($module === 'evenements') {
             $base[] = 'dates';
-            $base['tickets'] = fn ($q) => $q->with('ticketCategory')->where('is_active', true)->orderBy('sort_order');
+            $base['tickets'] = fn ($q) => $q->where('is_active', true)->orderBy('sort_order');
         }
 
         return $base;
@@ -630,7 +636,11 @@ class PublicContentService
             ->whereNotNull('published_at');
 
         if ($module === 'evenements') {
-            $query->withCount('likes');
+            $query->withCount([
+                'likes',
+                'likes as weekly_legacy_likes_count' => fn (Builder $likesQuery): Builder => $likesQuery
+                    ->where('created_at', '>=', CarbonImmutable::now()->startOfWeek()),
+            ]);
             $this->excludeEndedEvents($query);
         }
 
@@ -676,6 +686,9 @@ class PublicContentService
     private function applySort(Collection $items, string $sort): Collection
     {
         return match ($sort) {
+            'weekly_likes' => $items
+                ->sortByDesc(fn ($i) => ((int) ($i['weeklyLikesCount'] ?? 0) * 100000) + (int) ($i['likesCount'] ?? 0))
+                ->values(),
             'popular' => $items->sortByDesc(fn ($i) => (int) $i['popular'])->values(),
             'price' => $items->sortBy(fn ($i) => $i['priceFrom'])->values(),
             default => $items->sortByDesc(fn ($i) => $i['publishedAt'])->values(),
@@ -778,7 +791,7 @@ class PublicContentService
 
     private function transform(Model $model, string $module): array
     {
-        $category = $model->category;
+        $category = in_array($module, ['appels-a-projets', 'crowdfunding'], true) ? null : $model->category;
         $org = $model->organizationProfile;
         $offers = $model->relationLoaded('offers') ? $model->offers : collect();
         $tickets = $model instanceof Event && $model->relationLoaded('tickets') ? $model->tickets : collect();
@@ -811,6 +824,7 @@ class PublicContentService
 
         // Dates
         [$startsAt, $endsAt] = $this->extractDates($model, $module);
+        $activeUntil = $this->activeUntil($model, $module, $endsAt);
 
         // City
         $cityName = '';
@@ -818,18 +832,23 @@ class PublicContentService
             $cityName = $this->getCityName($model->city_id ?? null);
         }
 
+        if ($cityName === '') {
+            $cityName = (string) ($meta['city'] ?? '');
+        }
+
         // Country
-        $country = $model->country_code ?? '';
+        $country = $model->country_code ?? $meta['country_code'] ?? tenant()?->country_code ?? '';
 
         // Remaining seats
         $totalQty = $sellableItems->sum('quantity_total');
         $soldQty = $sellableItems->sum('quantity_sold');
         $reservedQty = $tickets->sum('quantity_reserved');
         $remaining = $totalQty > 0 ? ($totalQty - $soldQty - $reservedQty) : null;
+        [$likesCount, $weeklyLikesCount] = $this->likeCounts($model, $module);
 
         // Organizer
         $organizers = $org
-            ? [['name' => $org->display_name ?? '', 'role' => 'Organisateur', 'imageUrl' => $org->logo_url ?? '']]
+            ? [['name' => $org->display_name ?? '', 'role' => 'Organisateur', 'imageUrl' => $this->publicImageUrl($org->logo_url ?? '')]]
             : [];
 
         // Cover image (not on all models — stored in meta as fallback)
@@ -849,11 +868,12 @@ class PublicContentService
             'category' => $category?->name ?? '',
             'city' => $cityName,
             'country' => $country,
-            'venueName' => $model->venue_name ?? null,
-            'address' => $model->venue_address ?? null,
+            'venueName' => $model->venue_name ?? $meta['venue_name'] ?? null,
+            'address' => $model->venue_address ?? $meta['venue_address'] ?? null,
             'format' => $meta['format'] ?? null,
             'startsAt' => $startsAt,
             'endsAt' => $endsAt,
+            'activeUntil' => $activeUntil,
             'applicationOpensAt' => $model instanceof CallForProject
                 ? $model->application_opens_at?->toIso8601String()
                 : null,
@@ -869,7 +889,8 @@ class PublicContentService
             'publicStatus' => $model->public_status_code ?? '',
             'featured' => (bool) ($meta['featured'] ?? false),
             'popular' => (bool) ($meta['popular'] ?? false),
-            'likesCount' => (int) ($model->likes_count ?? 0),
+            'likesCount' => $likesCount,
+            'weeklyLikesCount' => $weeklyLikesCount,
             'badges' => $badges,
             'highlights' => (array) ($meta['highlights'] ?? []),
             'organizerSlug' => tenant()?->slug ?? '',
@@ -910,13 +931,19 @@ class PublicContentService
             return null;
         }
 
+        $schema = $this->callForProjectApplicationFormService->schemaFor($callForProject);
+
+        if ($schema === null) {
+            return null;
+        }
+
         return [
             'id' => $form->public_id,
-            'title' => $form->title,
-            'description' => $form->description,
-            'submit_label' => $form->submit_label,
-            'success_message' => $form->success_message,
-            'schema' => $form->schema ?? ['fields' => []],
+            'title' => $schema['title'] ?? $form->title,
+            'description' => $schema['description'] ?? $form->description,
+            'submit_label' => $schema['submit_label'] ?? $form->submit_label,
+            'success_message' => $schema['success_message'] ?? $form->success_message,
+            'schema' => Arr::only($schema, ['title', 'description', 'submit_label', 'success_message', 'fields']),
             'settings' => $form->settings ?? [],
         ];
     }
@@ -928,14 +955,112 @@ class PublicContentService
 
             return [
                 $dates->first()?->starts_at?->toIso8601String(),
-                $dates->last()?->ends_at?->toIso8601String(),
+                null,
             ];
         }
 
+        $meta = (array) ($model->meta ?? []);
+        $eventAt = $this->parseOptionalIsoDate($meta['event_at'] ?? null);
         $startsAt = isset($model->starts_at) ? $model->starts_at?->toIso8601String() : null;
-        $endsAt = isset($model->ends_at) ? $model->ends_at?->toIso8601String() : null;
 
-        return [$startsAt, $endsAt];
+        if ($module === 'appels-a-projets') {
+            return [$eventAt, null];
+        }
+
+        return [$eventAt ?? $startsAt, null];
+    }
+
+    private function activeUntil(Model $model, string $module, ?string $endsAt): ?string
+    {
+        if ($module === 'appels-a-projets' && $model instanceof CallForProject) {
+            return $model->application_closes_at?->toIso8601String()
+                ?? $this->parseOptionalIsoDate((array) ($model->meta ?? [])['event_at'] ?? null);
+        }
+
+        if ($module === 'crowdfunding' && $model instanceof CrowdfundingCampaign) {
+            return $model->ends_at?->toIso8601String()
+                ?? $this->parseOptionalIsoDate((array) ($model->meta ?? [])['event_at'] ?? null);
+        }
+
+        return $endsAt;
+    }
+
+    private function parseOptionalIsoDate(mixed $value): ?string
+    {
+        if (! is_string($value) || trim($value) === '') {
+            return null;
+        }
+
+        try {
+            return CarbonImmutable::parse($value)->toIso8601String();
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    private function contentLikesCount(string $module, string $slug): int
+    {
+        if ($slug === '') {
+            return 0;
+        }
+
+        return ContentLike::query()
+            ->where('module', $module)
+            ->where('content_slug', $slug)
+            ->count();
+    }
+
+    private function weeklyContentLikesCount(string $module, string $slug): int
+    {
+        if ($slug === '') {
+            return 0;
+        }
+
+        return ContentLike::query()
+            ->where('module', $module)
+            ->where('content_slug', $slug)
+            ->where('created_at', '>=', CarbonImmutable::now()->startOfWeek())
+            ->count();
+    }
+
+    private function likeCounts(Model $model, string $module): array
+    {
+        $slug = (string) ($model->slug ?? '');
+
+        if (! $model instanceof Event) {
+            return [
+                $this->contentLikesCount($module, $slug),
+                $this->weeklyContentLikesCount($module, $slug),
+            ];
+        }
+
+        $contentUserIds = ContentLike::query()
+            ->where('module', 'evenements')
+            ->where('content_slug', $slug)
+            ->pluck('user_id')
+            ->all();
+        $weeklyContentUserIds = ContentLike::query()
+            ->where('module', 'evenements')
+            ->where('content_slug', $slug)
+            ->where('created_at', '>=', CarbonImmutable::now()->startOfWeek())
+            ->pluck('user_id')
+            ->all();
+
+        try {
+            $legacyUserIds = $model->likes()->pluck('user_id')->all();
+            $weeklyLegacyUserIds = $model->likes()
+                ->where('created_at', '>=', CarbonImmutable::now()->startOfWeek())
+                ->pluck('user_id')
+                ->all();
+        } catch (\Throwable) {
+            $legacyUserIds = [];
+            $weeklyLegacyUserIds = [];
+        }
+
+        return [
+            collect($contentUserIds)->merge($legacyUserIds)->unique()->count(),
+            collect($weeklyContentUserIds)->merge($weeklyLegacyUserIds)->unique()->count(),
+        ];
     }
 
     private function excludeEndedEvents(Builder $query): void
@@ -984,9 +1109,9 @@ class PublicContentService
             'title' => $ticket->name,
             'subtitle' => $ticket->description,
             'type' => $ticket->ticket_type,
-            'category' => $ticket->ticketCategory?->name,
-            'categoryCode' => $ticket->ticketCategory?->code,
-            'categoryColor' => $ticket->ticketCategory?->color,
+            'category' => null,
+            'categoryCode' => null,
+            'categoryColor' => null,
             'price' => $ticket->price_amount,
             'currency' => $ticket->currency_code,
             'remaining' => $availability['remaining'],
@@ -1003,8 +1128,12 @@ class PublicContentService
         ];
     }
 
-    private function publicImageUrl(?string $path): string
+    private function publicImageUrl(mixed $path): string
     {
+        if (is_array($path)) {
+            $path = array_values(array_filter($path, fn ($entry): bool => is_string($entry) && trim($entry) !== ''))[0] ?? '';
+        }
+
         $path = trim((string) $path);
 
         if ($path === '' || Str::startsWith($path, ['http://', 'https://', 'data:', '/'])) {

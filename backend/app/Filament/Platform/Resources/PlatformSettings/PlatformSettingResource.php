@@ -8,11 +8,14 @@ use App\Filament\Platform\Resources\PlatformSettings\Pages\ListPlatformSettings;
 use App\Filament\Platform\Resources\PlatformSettings\Schemas\PlatformSettingForm;
 use App\Filament\Platform\Resources\PlatformSettings\Tables\PlatformSettingsTable;
 use App\Models\PlatformSetting;
+use App\Services\FinancePolicyService;
+use App\Services\PlatformMailSettings;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
+use Illuminate\Database\Eloquent\Builder;
 use UnitEnum;
 
 class PlatformSettingResource extends Resource
@@ -23,17 +26,17 @@ class PlatformSettingResource extends Resource
 
     protected static ?string $permissionPrefix = 'platform.platform_settings';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Front public';
+    protected static string|UnitEnum|null $navigationGroup = 'CMS front public';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cog-6-tooth';
 
-    protected static ?string $navigationLabel = 'Configuration front';
+    protected static ?string $navigationLabel = 'Identité & front public';
 
     protected static ?int $navigationSort = 5;
 
-    protected static ?string $modelLabel = 'Paramètre global';
+    protected static ?string $modelLabel = 'Paramètre front';
 
-    protected static ?string $pluralModelLabel = 'Configuration globale';
+    protected static ?string $pluralModelLabel = 'Identité & front public';
 
     protected static ?string $recordTitleAttribute = 'key';
 
@@ -54,5 +57,20 @@ class PlatformSettingResource extends Resource
             'create' => CreatePlatformSetting::route('/create'),
             'edit' => EditPlatformSetting::route('/{record}/edit'),
         ];
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        return parent::getEloquentQuery()
+            ->where('is_public', true)
+            ->where(fn (Builder $query): Builder => $query
+                ->whereNull('group')
+                ->orWhere('group', '!=', 'seo'))
+            ->whereNotIn('key', [
+                FinancePolicyService::SETTING_KEY,
+                PlatformMailSettings::SETTING_KEY,
+                'mobile_money_providers',
+                'default_currency',
+            ]);
     }
 }

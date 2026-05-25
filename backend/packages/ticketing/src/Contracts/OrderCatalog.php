@@ -10,7 +10,7 @@ interface OrderCatalog
 {
     public function list(?string $status = null, int $perPage = 50): Collection;
 
-    public function listForBuyer(User $user, ?string $status = null): Collection;
+    public function listForBuyer(User $user, ?string $status = null, int $limit = 100): Collection;
 
     public function findByIdentifier(string $identifier): ?Order;
 

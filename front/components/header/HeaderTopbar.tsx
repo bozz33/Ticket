@@ -1,13 +1,21 @@
+"use client";
+
+import { translateNavigationLink } from "@/lib/i18n/public-translations";
 import type { NavigationLink, PlatformConfiguration } from "@/lib/types";
 
 import { HeaderLink } from "./HeaderLink";
+import { usePublicLocale } from "./LanguageSwitcher";
 
 type HeaderTopbarProps = {
+  locale?: string;
   platform: PlatformConfiguration;
   topbarLinks: NavigationLink[];
 };
 
-export function HeaderTopbar({ platform, topbarLinks }: HeaderTopbarProps) {
+export function HeaderTopbar({ locale: initialLocale, platform, topbarLinks }: HeaderTopbarProps) {
+  const { locale, t } = usePublicLocale(platform, initialLocale);
+  const translatedTopbarLinks = topbarLinks.map((link) => translateNavigationLink(platform, locale, link));
+
   return (
     <div className="topbar">
       <div className="shell topbar__inner">
@@ -48,12 +56,12 @@ export function HeaderTopbar({ platform, topbarLinks }: HeaderTopbarProps) {
           </a>
           <span className="topbar__badge">
             <span className="topbar__badge-dot" aria-hidden="true" />
-            Disponible 24h/24
+            {t("header.available", "Disponible 24h/24")}
           </span>
         </div>
 
         <div className="topbar__meta">
-          {topbarLinks.map((link, index) => (
+          {translatedTopbarLinks.map((link, index) => (
             <HeaderLink link={link} key={`topbar-${link.href}-${index}`} />
           ))}
           <span className="topbar__secure">
@@ -70,7 +78,7 @@ export function HeaderTopbar({ platform, topbarLinks }: HeaderTopbarProps) {
               <rect height="11" rx="2" width="14" x="5" y="11" />
               <path d="M8 11V7a4 4 0 0 1 8 0v4" />
             </svg>
-            Paiement sécurisé
+            {t("header.secure_payment", "Paiement sécurisé")}
           </span>
         </div>
       </div>

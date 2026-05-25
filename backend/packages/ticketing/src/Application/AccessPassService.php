@@ -3,6 +3,7 @@
 namespace Ticket\Ticketing\Application;
 
 use App\Models\AccessPass;
+use App\Models\Receipt;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
@@ -57,16 +58,26 @@ class AccessPassService
     public function findByIdentifier(string $identifier): ?AccessPass
     {
         if (Str::isUuid($identifier)) {
-            return AccessPass::query()
+            $pass = AccessPass::query()
                 ->with(['order', 'offer', 'scans' => fn ($q) => $q->latest('scanned_at')->limit(20)])
                 ->where('public_id', $identifier)
                 ->first();
+
+            if ($pass instanceof AccessPass) {
+                return $pass;
+            }
         }
 
-        return AccessPass::query()
+        $pass = AccessPass::query()
             ->with(['order', 'offer', 'scans' => fn ($q) => $q->latest('scanned_at')->limit(20)])
             ->where('access_code', $identifier)
             ->first();
+
+        if ($pass instanceof AccessPass) {
+            return $pass;
+        }
+
+        return $this->findByReceiptIdentifier($identifier);
     }
 
     public function findByIdentifierForBuyer(User $user, string $identifier): ?AccessPass
@@ -107,6 +118,25 @@ class AccessPassService
         return AccessPass::query()
             ->with(['order', 'offer'])
             ->where('access_code', $accessCode)
+            ->first();
+    }
+
+    private function findByReceiptIdentifier(string $identifier): ?AccessPass
+    {
+        $receipt = Receipt::query()
+            ->with(['order.accessPasses' => fn ($query) => $query->with(['order', 'offer', 'scans' => fn ($scanQuery) => $scanQuery->latest('scanned_at')->limit(20)])])
+            ->where('reference', $identifier)
+            ->orWhere('meta->transaction_reference', $identifier)
+            ->orWhere('meta->gateway_reference', $identifier)
+            ->when(Str::isUuid($identifier), fn (Builder $query) => $query->orWhere('public_id', $identifier))
+            ->first();
+
+        if (! $receipt?->order) {
+            return null;
+        }
+
+        return $receipt->order->accessPasses
+            ->sortBy(fn (AccessPass $pass): int => $pass->isConsumable() ? 0 : 1)
             ->first();
     }
 }

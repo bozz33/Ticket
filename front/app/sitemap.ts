@@ -1,11 +1,18 @@
 import type { MetadataRoute } from "next";
 
-import { getAllContent, getFrontPagesIndex, getOrganizerHighlights } from "@/lib/data/public";
+import { getAllContent, getFrontPagesIndex, getOrganizerHighlights, getPlatformConfiguration } from "@/lib/data/public";
 import { metadataBase } from "@/lib/metadata";
 
 const baseUrl = metadataBase.toString().replace(/\/$/, "");
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const platform = await getPlatformConfiguration();
+  const sitemapSettings = platform.seo?.sitemap;
+
+  if (sitemapSettings?.enabled === false) {
+    return [];
+  }
+
   const staticRoutes = [
     "/",
     "/evenements",
@@ -15,15 +22,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/crowdfunding",
     "/categories",
     "/compte",
+    "/politique-confidentialite",
+    "/conditions-generales-de-vente",
+    "/conditions-generales-utilisation",
   ].map((path) => ({
     url: `${baseUrl}${path}`,
     lastModified: new Date(),
   }));
 
   const [contentItems, organizers, frontPages] = await Promise.all([
-    getAllContent(),
-    getOrganizerHighlights(),
-    getFrontPagesIndex(),
+    sitemapSettings?.includeCatalog === false ? Promise.resolve([]) : getAllContent(),
+    sitemapSettings?.includeOrganizers === false ? Promise.resolve([]) : getOrganizerHighlights(),
+    sitemapSettings?.includeFrontPages === false ? Promise.resolve([]) : getFrontPagesIndex(),
   ]);
 
   const cmsRoutes = frontPages

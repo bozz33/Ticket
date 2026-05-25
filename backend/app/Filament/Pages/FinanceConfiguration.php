@@ -9,7 +9,6 @@ use App\Filament\Platform\Resources\Refunds\RefundResource;
 use App\Filament\Platform\Resources\Settlements\SettlementResource;
 use App\Models\PayoutPolicy;
 use App\Services\FinancePolicyService;
-use Filament\Facades\Filament;
 use Filament\Pages\Page;
 
 class FinanceConfiguration extends Page
@@ -26,33 +25,11 @@ class FinanceConfiguration extends Page
 
     public static function shouldRegisterNavigation(): bool
     {
-        return static::canAccess();
+        return false;
     }
 
     public static function canAccess(): bool
     {
-        $user = Filament::auth()->user();
-
-        if ($user === null) {
-            return false;
-        }
-
-        if (method_exists($user, 'isSuperAdmin') && $user->isSuperAdmin()) {
-            return true;
-        }
-
-        foreach ([
-            'platform.platform_settings.view',
-            'platform.payout_policies.view',
-            'platform.refunds.view',
-            'platform.settlements.view',
-            'platform.platform_transactions.view',
-        ] as $permission) {
-            if (method_exists($user, 'can') && $user->can($permission)) {
-                return true;
-            }
-        }
-
         return false;
     }
 

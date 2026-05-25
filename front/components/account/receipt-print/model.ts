@@ -31,7 +31,7 @@ export function buildReceiptPrintModel(receipt: AccountReceipt, tenantSlug: stri
   const providerReference = metaString(receipt, "gateway_reference") ?? paymentReference ?? "—";
   const paymentMethod =
     metaString(receipt, "payment_method_label") ?? metaString(receipt, "payment_method") ?? "Paiement électronique";
-  const verificationUrl = buildPublicUrl(`/verifier/recu/${tenantSlug}/${encodeURIComponent(receipt.reference)}`);
+  const verificationUrl = buildPublicUrl(`/verifier?tenant=${encodeURIComponent(tenantSlug)}&ref=${encodeURIComponent(receipt.reference)}`);
   const offerName = receipt.order?.offer?.name ?? metaString(receipt, "offer_name") ?? "Achat Ticket";
   const quantity = receipt.order?.quantity ?? 1;
   const unitAmount =

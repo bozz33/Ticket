@@ -6,7 +6,6 @@ use App\Enums\CommercialModule;
 use App\Enums\MonetizationMode;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CommercialPolicy extends Model
 {
@@ -17,7 +16,6 @@ class CommercialPolicy extends Model
     protected $fillable = [
         'module',
         'monetization_mode',
-        'plan_id',
         'commission_rate',
         'flat_fee_amount',
         'currency_code',
@@ -37,8 +35,4 @@ class CommercialPolicy extends Model
         ];
     }
 
-    public function plan(): BelongsTo
-    {
-        return $this->belongsTo(Plan::class);
-    }
 }

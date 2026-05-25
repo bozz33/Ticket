@@ -3,8 +3,11 @@
 use App\Enums\TenantStatus;
 use App\Models\Tenant;
 use App\Support\ReferenceData\CountryReferenceImporter;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Schema;
 use Ticket\Notifications\Contracts\OutboxDispatcher;
 use Ticket\PublicCatalog\Application\PublicCatalogProjector;
 use Ticket\Ticketing\Contracts\EventTicketInventory;
@@ -200,3 +203,148 @@ Artisan::command('ticket:dispatch-outbox {--limit=100 : Maximum messages to disp
 
     return $summary['failed'] > 0 ? 1 : 0;
 })->purpose('Dispatch pending domain outbox messages');
+
+Artisan::command('ticket:production-check', function (): int {
+    $failures = 0;
+
+    $check = function (string $label, bool $passes, string $details = '') use (&$failures): void {
+        if ($passes) {
+            $this->info(sprintf('[OK] %s%s', $label, $details !== '' ? " — {$details}" : ''));
+
+            return;
+        }
+
+        $failures++;
+        $this->error(sprintf('[FAIL] %s%s', $label, $details !== '' ? " — {$details}" : ''));
+    };
+
+    $warn = function (string $label, bool $passes, string $details = ''): void {
+        if ($passes) {
+            $this->info(sprintf('[OK] %s%s', $label, $details !== '' ? " — {$details}" : ''));
+
+            return;
+        }
+
+        $this->warn(sprintf('[WARN] %s%s', $label, $details !== '' ? " — {$details}" : ''));
+    };
+
+    $check('APP_ENV production', app()->environment('production'), sprintf('current=%s', app()->environment()));
+    $check('APP_DEBUG disabled', config('app.debug') === false, sprintf('current=%s', config('app.debug') ? 'true' : 'false'));
+    $check('APP_KEY configured', filled(config('app.key')));
+    $check('APP_URL configured', filled(config('app.url')));
+    $check('PUBLIC_FRONTEND_URL configured', filled(config('ticket.public_frontend_url')));
+
+    $check('Central DB reachable', rescue(fn (): bool => DB::connection(config('ticket.central_connection', 'central'))->select('select 1') !== [], false));
+    $warn('Tenant DB reachable', rescue(fn (): bool => DB::connection(config('ticket.tenant_connection', 'tenant'))->select('select 1') !== [], false));
+    $warn('Platform settings table exists', rescue(fn (): bool => Schema::connection(config('ticket.central_connection', 'central'))->hasTable('platform_settings'), false));
+
+    $check('Storage directory writable', File::isWritable(storage_path()));
+    $check('Logs directory writable', File::isWritable(storage_path('logs')));
+    $check('Public storage linked or available', File::exists(public_path('storage')) || File::exists(storage_path('app/public')));
+
+    $check('Queue driver not sync', config('queue.default') !== 'sync', sprintf('current=%s', config('queue.default')));
+    $check('Cache driver not array', config('cache.default') !== 'array', sprintf('current=%s', config('cache.default')));
+    $warn('Session secure cookies enabled', (bool) config('session.secure'), sprintf('current=%s', config('session.secure') ? 'true' : 'false'));
+
+    $mailMailer = (string) config('mail.default');
+    $warn('Mail transport configured', ! in_array($mailMailer, ['array', 'log'], true), sprintf('current=%s', $mailMailer));
+    $warn('Mail sender address configured', filled(config('mail.from.address')));
+
+    $allowedOrigins = (array) config('cors.allowed_origins', []);
+    $check('CORS origins configured', count($allowedOrigins) > 0);
+    $warn('CORS does not allow wildcard origin', ! in_array('*', $allowedOrigins, true));
+
+    $warn('Backups path configured or present', filled(env('BACKUP_PATH')) || File::exists(storage_path('app/backups')));
+    $warn('Payments log channel configured', filled(config('ticket.logging.payments_channel')));
+    $warn('Security log channel configured', filled(config('ticket.logging.security_channel')));
+
+    if ($failures > 0) {
+        $this->error(sprintf('Production check completed with %d blocking failure(s).', $failures));
+
+        return 1;
+    }
+
+    $this->info('Production check completed without blocking failures.');
+
+    return 0;
+})->purpose('Validate key production readiness settings without mutating data');
+
+Artisan::command('ticket:resource-audit', function (): int {
+    $resourceFiles = collect(File::allFiles(app_path('Filament')))
+        ->filter(fn (\SplFileInfo $file): bool => str_ends_with($file->getFilename(), 'Resource.php'))
+        ->values();
+
+    $sourceFiles = collect(array_merge(
+        File::allFiles(app_path()),
+        File::exists(base_path('packages')) ? File::allFiles(base_path('packages')) : [],
+        File::allFiles(base_path('routes')),
+    ))->filter(fn (\SplFileInfo $file): bool => $file->getExtension() === 'php')->values();
+
+    $rows = $resourceFiles->map(function (\SplFileInfo $file) use ($sourceFiles): array {
+        $path = $file->getRealPath();
+        $contents = File::get($path);
+        $relativePath = str_replace(base_path().DIRECTORY_SEPARATOR, '', $path);
+
+        preg_match('/namespace\s+([^;]+);/', $contents, $namespaceMatch);
+        preg_match('/class\s+([A-Za-z0-9_]+)/', $contents, $classMatch);
+        preg_match('/protected static \?string \$model = ([^;]+)::class;/', $contents, $modelMatch);
+
+        $resourceClass = trim(($namespaceMatch[1] ?? '').'\\'.($classMatch[1] ?? ''));
+        $modelBase = $modelMatch[1] ?? null;
+        $modelClass = null;
+        $table = '—';
+        $rowCount = 'n/a';
+        $usageCount = 0;
+        $recommendation = 'review';
+
+        if ($modelBase !== null) {
+            preg_match('/use\s+([^;]*\\\\'.preg_quote($modelBase, '/').');/', $contents, $useMatch);
+            $modelClass = $useMatch[1] ?? 'App\\Models\\'.$modelBase;
+        }
+
+        if ($modelClass !== null && class_exists($modelClass)) {
+            try {
+                $model = new $modelClass;
+                $table = $model->getTable();
+                $connection = $model->getConnectionName() ?: config('database.default');
+                $rowCount = Schema::connection($connection)->hasTable($table)
+                    ? (string) DB::connection($connection)->table($table)->count()
+                    : 'missing';
+            } catch (\Throwable) {
+                $rowCount = 'error';
+            }
+
+            $modelShort = class_basename($modelClass);
+            $usageCount = $sourceFiles
+                ->reject(fn (\SplFileInfo $sourceFile): bool => $sourceFile->getRealPath() === $path)
+                ->filter(fn (\SplFileInfo $sourceFile): bool => str_contains(File::get($sourceFile->getRealPath()), $modelShort))
+                ->count();
+        }
+
+        $hidden = str_contains($contents, 'HiddenFromNavigation')
+            || preg_match('/shouldRegisterNavigation[\s\S]*?return false;/', $contents) === 1;
+
+        if ($usageCount >= 5 || in_array($modelBase, ['Tenant', 'FeatureFlag', 'PlatformSetting', 'PaymentGateway', 'PlatformTransaction', 'Refund', 'Settlement', 'Order', 'Receipt', 'AccessPass', 'Event', 'CallForProject', 'CrowdfundingCampaign', 'User', 'Role'], true)) {
+            $recommendation = 'keep';
+        } elseif ($hidden) {
+            $recommendation = 'hidden/review';
+        } elseif ($rowCount === '0' || $usageCount <= 2) {
+            $recommendation = 'candidate';
+        }
+
+        return [
+            'resource' => class_basename($resourceClass),
+            'model' => $modelBase ?? '—',
+            'table' => $table,
+            'rows' => $rowCount,
+            'usages' => (string) $usageCount,
+            'nav' => $hidden ? 'hidden' : 'visible',
+            'recommendation' => $recommendation,
+            'path' => $relativePath,
+        ];
+    })->sortBy(['recommendation', 'resource'])->values()->all();
+
+    $this->table(['Resource', 'Model', 'Table', 'Rows', 'Usages', 'Nav', 'Recommendation', 'Path'], $rows);
+
+    return 0;
+})->purpose('Audit Filament resources, model tables, row counts and coarse code usage');

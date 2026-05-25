@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ReceiptPrintDocument } from "@/components/account/receipt-print/ReceiptPrintDocument";
 import { getAuthToken, getTenantSlug } from "@/lib/auth";
 import { getAccountReceipt } from "@/lib/data/account";
+import { getPlatformConfiguration } from "@/lib/data/public";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,12 @@ export default async function ReceiptPrintPage({
 
   if (!token) notFound();
 
-  const receipt = await getAccountReceipt(tenantSlug, token, ref);
+  const [receipt, platform] = await Promise.all([
+    getAccountReceipt(tenantSlug, token, ref),
+    getPlatformConfiguration(),
+  ]);
 
   if (!receipt) notFound();
 
-  return <ReceiptPrintDocument receipt={receipt} tenantSlug={tenantSlug} />;
+  return <ReceiptPrintDocument platform={platform} receipt={receipt} tenantSlug={tenantSlug} />;
 }

@@ -4,9 +4,10 @@ export const AUTO_APPLY_DELAY_MS = 400;
 
 export const DEFAULT_MODULE_TABS: Array<{ value: ModuleRoute | "all"; label: string }> = [
   { value: "all", label: "Tous" },
+  { value: "evenements", label: "Événements" },
   { value: "formations", label: "Formations" },
   { value: "stands", label: "Stands" },
-  { value: "appels-a-projets", label: "Appels a projets" },
+  { value: "appels-a-projets", label: "Appels à projets" },
   { value: "crowdfunding", label: "Crowdfunding" },
 ];
 

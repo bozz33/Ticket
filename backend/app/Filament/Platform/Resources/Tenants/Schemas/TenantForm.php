@@ -2,10 +2,8 @@
 
 namespace App\Filament\Platform\Resources\Tenants\Schemas;
 
-use App\Models\Plan;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Placeholder;
-use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -76,14 +74,13 @@ class TenantForm
                 TextInput::make('admin.locale')->label('Locale')->maxLength(10)->columnSpan(1),
                 TextInput::make('admin.timezone')->label('Timezone')->maxLength(100)->columnSpan(2),
             ])->columns(6),
-            Section::make('Activation & souscription')->schema([
+            Section::make('Activation & configuration')->schema([
                 Toggle::make('activate')->label('Activer immédiatement')->default(true)->inline(false)->columnSpan(2),
-                Select::make('plan_id')->label('Plan initial')->options(fn (): array => Plan::query()->where('is_active', true)->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload()->columnSpan(2),
                 KeyValue::make('meta')->label('Métadonnées')->columnSpanFull(),
                 Placeholder::make('provisioning_note')
                     ->label('Provisioning automatique')
                     ->content('La base de données et le dossier de stockage du tenant sont créés automatiquement à la création, puis nettoyés à la suppression. Aucun sous-domaine n\'est créé automatiquement.')
-                    ->columnSpan(4),
+                    ->columnSpan(6),
             ])->columns(6),
         ]);
     }

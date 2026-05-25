@@ -50,7 +50,7 @@ export function AboutStorySection({ galleryImages, heroImage, summary }: AboutSt
             </p>
             <p>
               Côté super-admin, les équipes pilotent la publication, les pages front, les frais, les remboursements et
-              l&apos;observabilité. Côté organisateur, chaque tenant dispose d&apos;un panel de gestion orienté métier pour ses
+              l&apos;observabilité. Côté organisateur, chaque espace dispose d&apos;un panel de gestion orienté métier pour ses
               contenus, ses offres, ses accès et ses demandes.
             </p>
           </div>

@@ -7,7 +7,7 @@ export async function getAccountOrders(
   token: string,
 ): Promise<AccountOrder[]> {
   const p = await apiFetch<{ data: AccountOrder[] }>(
-    `/api/v1/tenants/${tenantSlug}/orders`,
+    `/api/v1/tenants/${tenantSlug}/orders?limit=100`,
     token,
   );
   return (p?.data ?? []).map((order) => normalizeAccountOrderRecord(order));

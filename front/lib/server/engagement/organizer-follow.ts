@@ -1,12 +1,13 @@
 import { type NextRequest, NextResponse } from "next/server";
 
-import { getAuthToken } from "@/lib/auth";
+import { getMarketplaceAuthTokenForTenant } from "@/lib/auth";
 import { applyMutationRateLimit, validateMutationOrigin } from "@/lib/request-security";
 import { normalizeTenantSlug } from "@/lib/tenant";
 
 import { apiBaseUrl, normalizedNumber } from "./common";
 
 const PUBLIC_FOLLOWERS_REVALIDATE = 120;
+const ORGANIZER_FOLLOW_PROXY_TIMEOUT_MS = 15000;
 
 type OrganizerFollowContext = { params: Promise<{ slug: string }> };
 
@@ -49,6 +50,7 @@ async function proxyFollowStatus(token: string, slug: string) {
   try {
     const response = await fetch(`${apiBaseUrl}/api/v1/tenants/${encodeURIComponent(slug)}/organization-profile/follow`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(ORGANIZER_FOLLOW_PROXY_TIMEOUT_MS),
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -70,7 +72,7 @@ export async function getOrganizerFollowStatus(_request: NextRequest, context: O
     return NextResponse.json({ error: "Tenant invalide." }, { status: 422 });
   }
 
-  const token = await getAuthToken();
+  const token = await getMarketplaceAuthTokenForTenant(tenantSlug, { persist: true });
 
   if (!token) {
     return NextResponse.json({
@@ -81,6 +83,19 @@ export async function getOrganizerFollowStatus(_request: NextRequest, context: O
   }
 
   const proxied = await proxyFollowStatus(token, tenantSlug);
+
+  if (proxied?.response.status === 401) {
+    const exchangedToken = await getMarketplaceAuthTokenForTenant(tenantSlug, { forceExchange: true, persist: true });
+    const retried = exchangedToken ? await proxyFollowStatus(exchangedToken, tenantSlug) : null;
+
+    if (retried?.response.ok) {
+      return NextResponse.json({
+        authenticated: true,
+        followers: retried.payload?.data?.followers ?? (await getPublicFollowers(tenantSlug)),
+        following: Boolean(retried.payload?.data?.following),
+      });
+    }
+  }
 
   if (!proxied || !proxied.response.ok) {
     return NextResponse.json({
@@ -111,17 +126,11 @@ export async function mutateOrganizerFollow(
   const rateLimitError = applyMutationRateLimit(
     request,
     method === "POST" ? "organizer-follow" : "organizer-unfollow",
-    20,
+    80,
   );
 
   if (rateLimitError) {
     return rateLimitError;
-  }
-
-  const token = await getAuthToken();
-
-  if (!token) {
-    return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
   }
 
   const { slug } = await context.params;
@@ -131,13 +140,57 @@ export async function mutateOrganizerFollow(
     return NextResponse.json({ error: "Tenant invalide." }, { status: 422 });
   }
 
+  const token = await getMarketplaceAuthTokenForTenant(tenantSlug, { persist: true });
+
+  if (!token) {
+    return NextResponse.json({ error: "Non authentifié." }, { status: 401 });
+  }
+
   if (!apiBaseUrl) {
     return NextResponse.json({ error: "API backend indisponible." }, { status: 500 });
   }
 
   try {
+    let response = await proxyFollowMutation(token, tenantSlug, method);
+
+    if (response?.response.status === 401) {
+      const exchangedToken = await getMarketplaceAuthTokenForTenant(tenantSlug, { forceExchange: true, persist: true });
+      response = exchangedToken ? await proxyFollowMutation(exchangedToken, tenantSlug, method) : null;
+    }
+
+    if (!response) {
+      return NextResponse.json({ error: "Impossible de contacter le serveur." }, { status: 503 });
+    }
+
+    if (!response.response.ok) {
+      return NextResponse.json(
+        {
+          error: response.payload?.message ?? response.payload?.error ?? "Impossible de mettre à jour le suivi.",
+        },
+        { status: response.response.status },
+      );
+    }
+
+    return NextResponse.json({
+      authenticated: true,
+      followers: response.payload?.data?.followers ?? (await getPublicFollowers(tenantSlug)),
+      following: Boolean(response.payload?.data?.following),
+      message: response.payload?.message,
+    });
+  } catch {
+    return NextResponse.json({ error: "Impossible de contacter le serveur." }, { status: 503 });
+  }
+}
+
+async function proxyFollowMutation(token: string, tenantSlug: string, method: "POST" | "DELETE") {
+  if (!apiBaseUrl) {
+    return null;
+  }
+
+  try {
     const response = await fetch(`${apiBaseUrl}/api/v1/tenants/${encodeURIComponent(tenantSlug)}/organization-profile/follow`, {
       cache: "no-store",
+      signal: AbortSignal.timeout(ORGANIZER_FOLLOW_PROXY_TIMEOUT_MS),
       headers: {
         Accept: "application/json",
         Authorization: `Bearer ${token}`,
@@ -146,22 +199,8 @@ export async function mutateOrganizerFollow(
     });
     const payload = await response.json().catch(() => null);
 
-    if (!response.ok) {
-      return NextResponse.json(
-        {
-          error: payload?.message ?? payload?.error ?? "Impossible de mettre à jour l'abonnement.",
-        },
-        { status: response.status },
-      );
-    }
-
-    return NextResponse.json({
-      authenticated: true,
-      followers: payload?.data?.followers ?? (await getPublicFollowers(tenantSlug)),
-      following: Boolean(payload?.data?.following),
-      message: payload?.message,
-    });
+    return { payload, response };
   } catch {
-    return NextResponse.json({ error: "Impossible de contacter le serveur." }, { status: 503 });
+    return null;
   }
 }

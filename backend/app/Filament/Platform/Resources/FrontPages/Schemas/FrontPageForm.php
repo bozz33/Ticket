@@ -5,9 +5,11 @@ namespace App\Filament\Platform\Resources\FrontPages\Schemas;
 use App\Enums\FrontPageSectionType;
 use App\Enums\FrontPageStatus;
 use Filament\Forms\Components\DateTimePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Repeater;
 use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TagsInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
@@ -87,7 +89,61 @@ class FrontPageForm
                     TextInput::make('seo_title')->label('SEO title')->maxLength(255)->columnSpan(3),
                     Textarea::make('seo_description')->label('SEO description')->rows(3)->columnSpan(3),
                     TextInput::make('seo_image_url')->label('SEO image')->url()->maxLength(255)->columnSpanFull(),
-                    KeyValue::make('meta')->label('Meta page')->columnSpanFull(),
+                    TagsInput::make('meta.seo.keywords')
+                        ->label('Mots-clés SEO')
+                        ->columnSpan(3),
+                    TextInput::make('meta.seo.canonical_url')
+                        ->label('URL canonique')
+                        ->url()
+                        ->maxLength(255)
+                        ->columnSpan(3),
+                    Select::make('meta.seo.robots_index')
+                        ->label('Indexation')
+                        ->options(['index' => 'Index', 'noindex' => 'No index'])
+                        ->native(false)
+                        ->columnSpan(2),
+                    Select::make('meta.seo.robots_follow')
+                        ->label('Liens')
+                        ->options(['follow' => 'Follow', 'nofollow' => 'No follow'])
+                        ->native(false)
+                        ->columnSpan(2),
+                    Select::make('meta.seo.max_image_preview')
+                        ->label('Aperçu image')
+                        ->options(['large' => 'Large', 'standard' => 'Standard', 'none' => 'Aucun'])
+                        ->native(false)
+                        ->columnSpan(2),
+                    TextInput::make('meta.seo.og_title')->label('OG title')->maxLength(255)->columnSpan(3),
+                    Textarea::make('meta.seo.og_description')->label('OG description')->rows(3)->columnSpan(3),
+                    FileUpload::make('meta.seo.og_image')
+                        ->label('Image Open Graph')
+                        ->image()
+                        ->disk('public')
+                        ->directory('front/seo')
+                        ->visibility('public')
+                        ->maxSize(2048)
+                        ->columnSpan(3),
+                    TextInput::make('meta.seo.og_image_alt')->label('Texte alternatif OG')->maxLength(255)->columnSpan(3),
+                    TextInput::make('meta.seo.twitter_title')->label('Twitter title')->maxLength(255)->columnSpan(3),
+                    Textarea::make('meta.seo.twitter_description')->label('Twitter description')->rows(3)->columnSpan(3),
+                    FileUpload::make('meta.seo.twitter_image')
+                        ->label('Image Twitter')
+                        ->image()
+                        ->disk('public')
+                        ->directory('front/seo')
+                        ->visibility('public')
+                        ->maxSize(2048)
+                        ->columnSpan(3),
+                    Select::make('meta.seo.twitter_card')
+                        ->label('Twitter card')
+                        ->options(['summary' => 'Summary', 'summary_large_image' => 'Summary large image'])
+                        ->native(false)
+                        ->columnSpan(3),
+                    Textarea::make('meta.seo.structured_data_json')
+                        ->label('JSON-LD page')
+                        ->rows(6)
+                        ->columnSpanFull(),
+                    Textarea::make('meta.summary')->label('Résumé interne')->rows(2)->columnSpan(3),
+                    KeyValue::make('meta.extra')->label('Meta extra')->columnSpan(3),
                 ])->columns(6),
                 Section::make('Sections')->schema([
                     Repeater::make('sections')

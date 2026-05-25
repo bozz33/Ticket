@@ -54,13 +54,16 @@ const connectSources = isProduction
 const scriptSources = isProduction
   ? ["'self'", "'unsafe-inline'"]
   : ["'self'", "'unsafe-inline'", "'unsafe-eval'"];
+const imageSources = isProduction
+  ? unique(["'self'", "data:", "blob:", "https:", apiOrigin, siteOrigin])
+  : ["'self'", "data:", "blob:", "http:", "https:"];
 const contentSecurityPolicy = [
   "default-src 'self'",
   "base-uri 'self'",
   "frame-ancestors 'self'",
   "form-action 'self'",
   "object-src 'none'",
-  "img-src 'self' data: blob: https:",
+  `img-src ${imageSources.join(" ")}`,
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   `script-src ${scriptSources.join(" ")}`,

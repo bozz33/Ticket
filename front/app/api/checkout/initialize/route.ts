@@ -29,6 +29,7 @@ export async function POST(request: NextRequest) {
     ticket?: string;
     quantity?: number;
     payment_method?: string;
+    custom_amount?: number;
     buyer_name?: string;
     buyer_email?: string;
     buyer_phone?: string;
@@ -83,6 +84,9 @@ export async function POST(request: NextRequest) {
       ticket: ticket || undefined,
       quantity: Number.isFinite(Number(payload.quantity)) ? Math.max(1, Math.trunc(Number(payload.quantity))) : 1,
       payment_method: payload.payment_method,
+      custom_amount: Number.isFinite(Number(payload.custom_amount))
+        ? Math.max(1, Math.trunc(Number(payload.custom_amount)))
+        : undefined,
       buyer_name: payload.buyer_name,
       buyer_email: payload.buyer_email,
       buyer_phone: payload.buyer_phone,

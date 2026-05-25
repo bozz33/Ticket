@@ -216,6 +216,7 @@
   font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
+  text-decoration: none;
 }
 
 .ac-notifications__list {
@@ -264,11 +265,16 @@
 }
 
 .ac-notifications__body {
+  border: 0;
+  background: transparent;
   min-width: 0;
   display: flex;
   flex: 1;
   flex-direction: column;
   gap: 4px;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
 }
 
 .ac-notifications__actions {
@@ -315,6 +321,13 @@
   margin-bottom: 32px;
 }
 
+.ac-page-header--split {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
 .ac-page-title {
   font-family: var(--font-display);
   font-size: clamp(1.4rem, 2vw, 1.9rem);
@@ -326,6 +339,136 @@
 .ac-page-sub {
   font-size: 0.9rem;
   color: var(--text-soft);
+}
+
+.ac-notification-center {
+  display: grid;
+  gap: 12px;
+}
+
+.ac-notification-row {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.04);
+}
+
+.ac-notification-row:hover {
+  border-color: rgba(213, 154, 54, 0.38);
+  background: var(--bg-alt);
+}
+
+.ac-notification-row__dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.ac-notification-row.is-unread .ac-notification-row__dot {
+  background: var(--accent);
+}
+
+.ac-notification-row__content {
+  display: grid;
+  gap: 5px;
+}
+
+.ac-notification-row__content strong {
+  color: var(--text);
+}
+
+.ac-notification-row__content span {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.ac-notification-row__content small,
+.ac-notification-row__status {
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.ac-notification-row__status {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--bg-alt);
+}
+
+.ac-notification-detail {
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: calc(var(--radius) * 1.5);
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.ac-notification-detail__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.ac-notification-detail__head h1 {
+  margin: 6px 0 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 2.1vw, 2rem);
+}
+
+.ac-notification-detail__body {
+  margin: 0;
+  color: var(--text);
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.ac-notification-detail__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+}
+
+.ac-notification-detail__meta div {
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--bg-alt);
+}
+
+.ac-notification-detail__meta dt {
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.ac-notification-detail__meta dd {
+  margin: 0;
+  color: var(--text);
+  font-weight: 700;
+}
+
+.ac-notification-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .ac-home-grid {
@@ -1238,5 +1381,122 @@
   .ac-qr-wrap svg {
     width: 140px;
     height: 140px;
+  }
+}
+
+@media print {
+  body {
+    margin: 0 !important;
+    background: #fff !important;
+  }
+
+  .ac-layout {
+    display: block !important;
+    min-height: 0 !important;
+  }
+
+  .ac-sidebar,
+  .ac-main__topbar {
+    display: none !important;
+  }
+
+  .ac-main {
+    padding: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .receipt-document {
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    gap: 18px !important;
+  }
+
+  .receipt-invoice {
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    padding: 18mm 20mm !important;
+    overflow: hidden !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .receipt-invoice__header {
+    grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr) !important;
+    margin-bottom: 22px !important;
+  }
+
+  .receipt-invoice__issuer,
+  .receipt-invoice__number {
+    text-align: right !important;
+  }
+
+  .receipt-invoice__number {
+    margin-bottom: 26px !important;
+  }
+
+  .receipt-invoice__parties {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    margin-bottom: 12px !important;
+  }
+
+  .receipt-invoice__box {
+    min-height: 95px !important;
+    padding: 14px 16px !important;
+  }
+
+  .receipt-invoice__box h2,
+  .receipt-invoice__conditions h2 {
+    margin-bottom: 10px !important;
+  }
+
+  .receipt-invoice__box p,
+  .receipt-invoice__conditions p {
+    font-size: 0.72rem !important;
+    line-height: 1.45 !important;
+  }
+
+  .receipt-invoice__table {
+    margin-top: 12px !important;
+  }
+
+  .receipt-invoice__table-head {
+    display: grid !important;
+  }
+
+  .receipt-invoice__table-head,
+  .receipt-invoice__table-row {
+    grid-template-columns: minmax(0, 1fr) 80px 130px !important;
+  }
+
+  .receipt-invoice__table-row {
+    min-height: 84px !important;
+  }
+
+  .receipt-invoice__table-head span,
+  .receipt-invoice__table-row > * {
+    padding: 11px 12px !important;
+  }
+
+  .receipt-invoice__settlement {
+    grid-template-columns: minmax(0, 1fr) 250px !important;
+    gap: 18px !important;
+    margin: 12px 0 18px !important;
+  }
+
+  .receipt-invoice__qr-box {
+    padding: 12px !important;
+  }
+
+  .receipt-invoice__qr-box canvas {
+    width: 108px !important;
+    height: 108px !important;
+  }
+
+  .receipt-invoice__conditions {
+    min-height: 86px !important;
+    padding: 16px !important;
   }
 }

@@ -5,7 +5,6 @@ declare(strict_types=1);
 use App\Http\Middleware\AuthenticatePlatformApi;
 use App\Http\Middleware\AuthenticateTenantApi;
 use App\Http\Middleware\EnsureTenantCategoriesAreSynced;
-use App\Http\Middleware\EnsureTenantSubscriptionIsActive;
 use App\Http\Middleware\InitializeTenancyByRouteParameter;
 use App\Http\Responses\ApiResponse;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -35,7 +34,6 @@ return Application::configure(basePath: dirname(__DIR__))
             'auth.tenant.api' => AuthenticateTenantApi::class,
             'initialize.tenant.route' => InitializeTenancyByRouteParameter::class,
             'tenant.categories.synced' => EnsureTenantCategoriesAreSynced::class,
-            'tenant.subscription.active' => EnsureTenantSubscriptionIsActive::class,
             'signed' => ValidateSignature::class,
         ]);
     })

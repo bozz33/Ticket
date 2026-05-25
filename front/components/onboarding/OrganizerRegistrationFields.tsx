@@ -1,4 +1,5 @@
 type OrganizerRegistrationFieldsProps = {
+  disabled: boolean;
   email: string;
   orgName: string;
   password: string;
@@ -26,6 +27,7 @@ const labelStyle = {
 } as const;
 
 export function OrganizerRegistrationFields({
+  disabled,
   email,
   orgName,
   password,
@@ -41,6 +43,7 @@ export function OrganizerRegistrationFields({
         </label>
         <input
           id="organizer-org-name"
+          disabled={disabled}
           onChange={(event) => setOrgName(event.target.value)}
           placeholder="Association des arts de Dakar"
           required
@@ -56,6 +59,7 @@ export function OrganizerRegistrationFields({
         </label>
         <input
           id="organizer-email"
+          disabled={disabled}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="contact@organisation.com"
           required
@@ -71,6 +75,7 @@ export function OrganizerRegistrationFields({
         </label>
         <input
           id="organizer-password"
+          disabled={disabled}
           minLength={8}
           onChange={(event) => setPassword(event.target.value)}
           placeholder="8 caractères minimum"

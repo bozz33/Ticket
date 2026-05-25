@@ -7,7 +7,19 @@ import { formatDateRange, formatMoney } from "@/lib/utils";
 
 import { ShareLinks } from "./ShareLinks";
 
-export function StickySummary({ item }: { item: PublicContent }) {
+export function StickySummary({
+  accountAuthenticated,
+  accountSessionKey,
+  initialLiked,
+  initialLikes,
+  item,
+}: {
+  accountAuthenticated?: boolean;
+  accountSessionKey?: string;
+  initialLiked?: boolean;
+  initialLikes?: number;
+  item: PublicContent;
+}) {
   const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const organizerName = item.organizers[0]?.name ?? "Equipe organisatrice";
   const applicationHref = item.module === "appels-a-projets" && item.applicationForm
@@ -88,8 +100,12 @@ export function StickySummary({ item }: { item: PublicContent }) {
         <div className="detail-like-panel">
           <span>J'aime</span>
           <EventLikeButton
+            accountSessionKey={accountSessionKey}
             eventSlug={item.slug}
-            initialCount={item.likesCount}
+            initialAuthenticated={accountAuthenticated}
+            initialCount={initialLikes ?? item.likesCount}
+            initialLiked={initialLiked}
+            module={item.module}
             tenantSlug={item.organizerSlug}
             variant="detail"
           />
@@ -97,7 +113,7 @@ export function StickySummary({ item }: { item: PublicContent }) {
       ) : null}
       <div className="detail-trust-box">
         <strong>{applicationHref ? "Candidature securisee" : isCrowdfunding ? "Contribution securisee" : "Checkout securise"}</strong>
-        <p>{applicationHref ? "Formulaire public valide cote serveur, villes et pays locaux, pieces jointes controlees." : isCrowdfunding ? "Paiement verifie, recu genere et progression de collecte mise a jour automatiquement." : "Confirmation, verification paiement et recapitulatif centralises pour chaque commande."}</p>
+        <p>{applicationHref ? "Formulaire public valide cote serveur, villes et pays locaux, pieces jointes controlees." : isCrowdfunding ? "Paiement verifie, contribution enregistree et progression de collecte mise a jour automatiquement." : "Confirmation, verification paiement et recapitulatif centralises pour chaque commande."}</p>
       </div>
       <ShareLinks item={item} />
     </aside>

@@ -1,4 +1,4 @@
-import { PublicContent, SearchFilters, SortOption } from "@/lib/types";
+import type { PublicContent, SearchFilters, SortOption } from "@/lib/types";
 
 export const staticPageHeroImages = {
   accueil: "https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1800&q=80",
@@ -15,7 +15,7 @@ export type StaticPageHeroKey = keyof typeof staticPageHeroImages;
 
 export function getStaticPageHeroImage(page: StaticPageHeroKey): string {
   return staticPageHeroImages[page];
- }
+}
 
 export function formatMoney(amount: number, currency: string): string {
   return new Intl.NumberFormat("fr-FR", {
@@ -30,10 +30,16 @@ export function formatDateLabel(value?: string): string {
     return "Date a venir";
   }
 
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date a venir";
+  }
+
   return new Intl.DateTimeFormat("fr-FR", {
     dateStyle: "medium",
     timeStyle: "short",
-  }).format(new Date(value));
+  }).format(date);
 }
 
 export function formatDateRange(item: PublicContent): string {

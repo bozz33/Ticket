@@ -24,7 +24,7 @@ class PublicContentController extends Controller
 
     public function globalIndex(Request $request): JsonResponse
     {
-        $filters = $request->only(['module', 'q', 'category', 'city', 'date_from', 'date_to', 'price', 'sort', 'featured']);
+        $filters = $request->only(['module', 'q', 'category', 'city', 'date_from', 'date_to', 'price', 'sort', 'featured', 'include_past']);
         $page = max(1, (int) $request->query('page', 1));
         $perPage = min(48, max(1, (int) $request->query('per_page', 12)));
 
@@ -59,7 +59,7 @@ class PublicContentController extends Controller
 
     public function index(Request $request, string $tenant): JsonResponse
     {
-        $filters = $request->only(['module', 'q', 'category', 'city', 'date_from', 'date_to', 'price', 'sort', 'featured']);
+        $filters = $request->only(['module', 'q', 'category', 'city', 'date_from', 'date_to', 'price', 'sort', 'featured', 'include_past']);
         $page = max(1, (int) $request->query('page', 1));
         $perPage = min(48, max(1, (int) $request->query('per_page', 12)));
 

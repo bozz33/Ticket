@@ -166,6 +166,89 @@ class PublicPaymentControllerTest extends TestCase
         $this->assertSame('redirect', $response->getData(true)['data']['mode'] ?? null);
     }
 
+    public function test_initialize_allows_authenticated_crowdfunding_even_when_profile_is_incomplete(): void
+    {
+        $buyer = new User;
+        $buyer->forceFill([
+            'id' => 44,
+            'name' => 'Buyer Contributor',
+            'first_name' => null,
+            'last_name' => null,
+            'email' => 'contributor@example.test',
+            'phone' => null,
+            'is_active' => true,
+            'email_verified_at' => null,
+        ]);
+
+        $tenant = Mockery::mock(Tenant::class)->makePartial();
+        $tenant->forceFill([
+            'id' => 9,
+            'public_id' => 'tenant-public-id-3',
+            'name' => 'Crowd Tenant',
+            'slug' => 'crowd-tenant',
+        ]);
+        $tenant->shouldReceive('run')
+            ->once()
+            ->andReturnUsing(static fn (callable $callback) => $callback());
+        $tenant->shouldReceive('only')
+            ->andReturn([
+                'id' => 9,
+                'public_id' => 'tenant-public-id-3',
+                'name' => 'Crowd Tenant',
+                'slug' => 'crowd-tenant',
+            ]);
+
+        $tenantContext = Mockery::mock(TenantContext::class);
+        $tenantContext->shouldReceive('get')->once()->andReturn($tenant);
+
+        $capturedPayload = null;
+
+        $checkoutManager = Mockery::mock(CheckoutManager::class);
+        $checkoutManager->shouldReceive('initialize')
+            ->once()
+            ->with($tenant, Mockery::on(function (array $payload) use (&$capturedPayload): bool {
+                $capturedPayload = $payload;
+
+                return true;
+            }))
+            ->andReturn([
+                'mode' => 'redirect',
+                'reference' => 'PAY-XOF-260522-1445-CROWD1',
+                'authorization_url' => 'https://paystack.test/crowdfunding',
+            ]);
+
+        $tokenService = Mockery::mock(TenantTokenService::class);
+        $apiToken = Mockery::mock(UserApiToken::class)->makePartial();
+        $apiToken->setRelation('user', $buyer);
+        $apiToken->shouldReceive('touchLastUsed')->once();
+
+        $tokenService->shouldReceive('findToken')
+            ->once()
+            ->with('plain-token')
+            ->andReturn($apiToken);
+
+        $controller = new PublicPaymentController($tenantContext, $checkoutManager, $tokenService, app(BuyerAccountReadiness::class));
+
+        $request = $this->initializeRequest('crowd-tenant', [
+            'offer' => 'offer-public-id',
+            'quantity' => 1,
+            'custom_amount' => 15000,
+            'content_module' => 'crowdfunding',
+            'content_slug' => 'campagne-payante-demo-2026',
+            'callback_url' => 'http://localhost:3000/checkout/crowdfunding/campagne-payante-demo-2026/succes?offer=offer-public-id',
+        ]);
+        $request->headers->set('Authorization', 'Bearer plain-token');
+
+        $response = $controller->initialize($request, 'crowd-tenant');
+
+        $this->assertSame(201, $response->getStatusCode());
+        $this->assertNotNull($capturedPayload);
+        $this->assertSame(44, $capturedPayload['buyer_user_id']);
+        $this->assertSame('contributor@example.test', $capturedPayload['buyer_email']);
+        $this->assertSame(15000, $capturedPayload['custom_amount']);
+        $this->assertSame('redirect', $response->getData(true)['data']['mode'] ?? null);
+    }
+
     private function initializeRequest(string $tenant, array $payload): PublicPaymentInitializeRequest
     {
         $baseRequest = Request::create(

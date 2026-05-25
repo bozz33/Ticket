@@ -2,10 +2,8 @@
 
 namespace App\Filament\Platform\Resources\Tenants\Pages;
 
-use App\Enums\SubscriptionStatus;
 use App\Filament\Platform\Resources\Tenants\TenantResource;
 use App\Filament\Support\Pages\EditRecordPage;
-use App\Models\Plan;
 use App\Models\Tenant;
 use App\Models\User;
 use Filament\Support\Enums\Width;
@@ -21,16 +19,14 @@ class EditTenant extends EditRecordPage
     protected function mutateFormDataBeforeFill(array $data): array
     {
         /** @var Tenant $record */
-        $record = $this->getRecord()->load(['profile', 'domains', 'subscriptions']);
+        $record = $this->getRecord()->load(['profile', 'domains']);
         $admin = $record->run(fn () => User::query()->orderBy('id')->first());
-        $activeSubscription = $record->subscriptions->first(fn ($subscription) => in_array($subscription->status?->value ?? $subscription->status, [SubscriptionStatus::Active->value, SubscriptionStatus::Trialing->value], true));
 
         $data['display_name'] = $record->profile?->display_name;
         $data['description'] = $record->profile?->description;
         $data['email'] = $record->profile?->email;
         $data['phone'] = $record->profile?->phone;
         $data['website_url'] = $record->profile?->website_url;
-        $data['plan_id'] = $activeSubscription?->plan_id;
         $data['admin'] = [
             'name' => $admin?->name,
             'username' => $admin?->username,
@@ -106,31 +102,6 @@ class EditTenant extends EditRecordPage
             $admin->update($update);
         });
 
-        $planId = $data['plan_id'] ?? null;
-        if ($planId !== null) {
-            $current = $record->subscriptions()->whereIn('status', [SubscriptionStatus::Active->value, SubscriptionStatus::Trialing->value])->latest('id')->first();
-
-            if ($current === null || (int) $current->plan_id !== (int) $planId) {
-                $record->subscriptions()->whereIn('status', [SubscriptionStatus::Active->value, SubscriptionStatus::Trialing->value])->update([
-                    'status' => SubscriptionStatus::Replaced->value,
-                    'cancelled_at' => now(),
-                ]);
-
-                $plan = Plan::query()->findOrFail($planId);
-                $trialEndsAt = $plan->trial_days > 0 ? now()->addDays($plan->trial_days) : null;
-
-                $record->subscriptions()->create([
-                    'plan_id' => $plan->getKey(),
-                    'status' => $trialEndsAt !== null ? SubscriptionStatus::Trialing->value : SubscriptionStatus::Active->value,
-                    'started_at' => now(),
-                    'trial_ends_at' => $trialEndsAt,
-                    'meta' => [
-                        'source' => 'FilamentEditTenant',
-                    ],
-                ]);
-            }
-        }
-
-        return $record->fresh(['profile', 'domains', 'subscriptions']);
+        return $record->fresh(['profile', 'domains']);
     }
 }

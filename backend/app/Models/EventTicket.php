@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Validation\ValidationException;
 
 class EventTicket extends Model
 {
@@ -55,6 +56,35 @@ class EventTicket extends Model
             'sort_order' => 'integer',
             'meta' => 'array',
         ];
+    }
+
+    protected static function booted(): void
+    {
+        static::saving(function (self $ticket): void {
+            if ($ticket->sales_start_at && $ticket->sales_end_at && $ticket->sales_start_at->greaterThan($ticket->sales_end_at)) {
+                throw ValidationException::withMessages([
+                    'sales_end_at' => 'La fin des ventes doit être après le début des ventes.',
+                ]);
+            }
+
+            try {
+                $eventDate = $ticket->event?->dates()->first()?->starts_at;
+            } catch (\Throwable) {
+                $eventDate = null;
+            }
+
+            if ($eventDate && $ticket->sales_start_at && $ticket->sales_start_at->greaterThan($eventDate)) {
+                throw ValidationException::withMessages([
+                    'sales_start_at' => 'Le début des ventes ne peut pas dépasser la date et heure de l’événement.',
+                ]);
+            }
+
+            if ($eventDate && $ticket->sales_end_at && $ticket->sales_end_at->greaterThan($eventDate)) {
+                throw ValidationException::withMessages([
+                    'sales_end_at' => 'La fin des ventes ne peut pas dépasser la date et heure de l’événement.',
+                ]);
+            }
+        });
     }
 
     public function event(): BelongsTo

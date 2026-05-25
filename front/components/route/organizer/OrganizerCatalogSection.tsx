@@ -1,17 +1,20 @@
 import { ContentCard } from "@/components/ContentCard";
 import { Pagination } from "@/components/route/Pagination";
 import { SectionHeader } from "@/components/route/SectionHeader";
-import type { EventLikeSummaryMap } from "@/components/route/content-engagement";
+import type { ContentLikeSummaryMap, OrganizerFollowSummaryMap } from "@/components/route/content-engagement";
+import { contentEngagementKey, organizerFollowKey } from "@/lib/engagement";
 import type { PublicContent, SearchFilters } from "@/lib/types";
 
 import type { OrganizerViewOrganizer } from "./types";
 
 type OrganizerCatalogSectionProps = {
   accountAuthenticated?: boolean;
+  accountSessionKey?: string;
   currentPage: number;
+  followSummaries: OrganizerFollowSummaryMap;
   filters: SearchFilters;
   items: PublicContent[];
-  likeSummaries: EventLikeSummaryMap;
+  likeSummaries: ContentLikeSummaryMap;
   organizer: OrganizerViewOrganizer;
   totalItems: number;
   totalPages: number;
@@ -19,7 +22,9 @@ type OrganizerCatalogSectionProps = {
 
 export function OrganizerCatalogSection({
   accountAuthenticated,
+  accountSessionKey,
   currentPage,
+  followSummaries,
   filters,
   items,
   likeSummaries,
@@ -46,14 +51,22 @@ export function OrganizerCatalogSection({
         {items.length > 0 ? (
           <>
             <div className="card-grid card-grid--three">
-              {items.map((item) => (
-                <ContentCard
-                  accountAuthenticated={accountAuthenticated}
-                  initialLiked={likeSummaries[item.slug]?.liked}
-                  item={item}
-                  key={item.id}
-                />
-              ))}
+              {items.map((item) => {
+                const likeSummary = likeSummaries[contentEngagementKey(item)];
+                const followSummary = followSummaries[organizerFollowKey(item.organizerSlug)];
+
+                return (
+                  <ContentCard
+                    accountAuthenticated={accountAuthenticated}
+                    accountSessionKey={accountSessionKey}
+                    initialFollowing={accountAuthenticated === true ? followSummary?.following ?? false : undefined}
+                    initialLiked={accountAuthenticated === true ? likeSummary?.liked ?? false : undefined}
+                    initialLikes={likeSummary?.likes ?? item.likesCount}
+                    item={item}
+                    key={item.id}
+                  />
+                );
+              })}
             </div>
             <Pagination
               basePath={`/organisateurs/${organizer.slug}`}

@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 
@@ -10,10 +11,17 @@ import { formatNotificationDate } from "./helpers";
 export function NotificationBell({ user }: { user: AccountUser | null }) {
   const router = useRouter();
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const mountedRef = useRef(false);
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<AccountNotification[]>([]);
   const [unreadCount, setUnreadCount] = useState(user?.unread_notifications_count ?? 0);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    mountedRef.current = true;
+
+    return () => { mountedRef.current = false; };
+  }, []);
 
   const loadNotifications = useCallback(async () => {
     if (!user) return;
@@ -30,22 +38,20 @@ export function NotificationBell({ user }: { user: AccountUser | null }) {
         unreadCount?: number;
       };
 
-      setNotifications(payload.notifications ?? []);
-      setUnreadCount(Number(payload.unreadCount ?? 0));
+      if (mountedRef.current) {
+        setNotifications(payload.notifications ?? []);
+        setUnreadCount(Number(payload.unreadCount ?? 0));
+      }
     } finally {
-      setIsLoading(false);
+      if (mountedRef.current) {
+        setIsLoading(false);
+      }
     }
   }, [user]);
 
   useEffect(() => {
     setUnreadCount(user?.unread_notifications_count ?? 0);
   }, [user?.unread_notifications_count]);
-
-  useEffect(() => {
-    if (user) {
-      loadNotifications();
-    }
-  }, [loadNotifications, user]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -82,16 +88,6 @@ export function NotificationBell({ user }: { user: AccountUser | null }) {
     }
   }
 
-  async function markAllAsRead() {
-    const response = await fetch("/api/account/notifications", { method: "PATCH" });
-
-    if (!response.ok) return;
-
-    const payload = (await response.json()) as { unreadCount?: number };
-    setUnreadCount(Number(payload.unreadCount ?? 0));
-    setNotifications((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? new Date().toISOString() })));
-  }
-
   async function markOneAsRead(notification: AccountNotification) {
     if (notification.read_at) {
       return;
@@ -108,19 +104,19 @@ export function NotificationBell({ user }: { user: AccountUser | null }) {
       unreadCount?: number;
     };
 
-    setUnreadCount(Number(payload.unreadCount ?? 0));
-    setNotifications((current) =>
-      current.map((item) => (item.id === notification.id ? payload.notification ?? { ...item, read_at: new Date().toISOString() } : item)),
-    );
+    if (mountedRef.current) {
+      setUnreadCount(Number(payload.unreadCount ?? 0));
+      setNotifications((current) =>
+        current.map((item) => (item.id === notification.id ? payload.notification ?? { ...item, read_at: new Date().toISOString() } : item)),
+      );
+    }
   }
 
   async function openNotification(notification: AccountNotification) {
     await markOneAsRead(notification);
 
-    if (notification.action_url) {
-      setIsOpen(false);
-      router.push(notification.action_url);
-    }
+    setIsOpen(false);
+    router.push(`/compte/notifications/${encodeURIComponent(notification.id)}`);
   }
 
   return (
@@ -128,6 +124,7 @@ export function NotificationBell({ user }: { user: AccountUser | null }) {
       <button
         aria-label="Notifications"
         aria-expanded={isOpen}
+        aria-controls="account-notifications-popover"
         className="ac-notifications__trigger"
         type="button"
         disabled={!user}
@@ -141,14 +138,12 @@ export function NotificationBell({ user }: { user: AccountUser | null }) {
       </button>
 
       {isOpen ? (
-        <div className="ac-notifications__popover">
+        <div className="ac-notifications__popover" id="account-notifications-popover" role="dialog" aria-label="Notifications">
           <div className="ac-notifications__head">
             <span>Notifications</span>
-            {unreadCount > 0 ? (
-              <button className="ac-notifications__read-all" type="button" onClick={markAllAsRead}>
-                Tout lire
-              </button>
-            ) : null}
+            <Link className="ac-notifications__read-all" href="/compte/notifications" onClick={() => setIsOpen(false)}>
+              Tout lire
+            </Link>
           </div>
 
           <div className="ac-notifications__list">
@@ -161,22 +156,20 @@ export function NotificationBell({ user }: { user: AccountUser | null }) {
                     key={notification.id}
                   >
                     <span className="ac-notifications__dot" />
-                    <span className="ac-notifications__body">
+                    <button className="ac-notifications__body" type="button" onClick={() => openNotification(notification)}>
                       <span className="ac-notifications__title">{notification.title}</span>
                       {notification.body ? <span className="ac-notifications__text">{notification.body}</span> : null}
                       {notification.created_at ? <span className="ac-notifications__date">{formatNotificationDate(notification.created_at)}</span> : null}
-                    </span>
+                    </button>
                     <span className="ac-notifications__actions">
                       {!notification.read_at ? (
                         <button className="ac-notifications__mark-read" type="button" onClick={() => markOneAsRead(notification)}>
                           Lire
                         </button>
                       ) : null}
-                      {notification.action_url ? (
-                        <button className="ac-notifications__open" type="button" onClick={() => openNotification(notification)}>
-                          Ouvrir
-                        </button>
-                      ) : null}
+                      <button className="ac-notifications__open" type="button" onClick={() => openNotification(notification)}>
+                        Ouvrir
+                      </button>
                     </span>
                   </div>
                 ))

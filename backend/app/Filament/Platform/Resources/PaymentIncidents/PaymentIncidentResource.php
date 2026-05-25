@@ -38,6 +38,11 @@ class PaymentIncidentResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';
 
     protected static ?string $recordTitleAttribute = 'summary';
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false;
+    }
+
 
     public static function form(Schema $schema): Schema
     {

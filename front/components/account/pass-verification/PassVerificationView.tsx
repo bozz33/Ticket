@@ -10,7 +10,7 @@ export function MissingTenantVerificationView() {
     <MissingVerificationView
       actionHref="/contact"
       actionLabel="Contacter le support"
-      body="Le tenant public n'est pas configuré pour cette vérification."
+      body="L'espace public organisateur n'est pas configuré pour cette vérification."
       title="Vérification indisponible"
     />
   );

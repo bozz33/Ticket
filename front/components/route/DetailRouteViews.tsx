@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ContentCard } from "@/components/ContentCard";
 import { getLikeRenderingContext } from "@/components/route/content-engagement";
 import { SectionHeader } from "@/components/route/SectionHeader";
+import { contentEngagementKey, organizerFollowKey } from "@/lib/engagement";
 import type { PublicContent } from "@/lib/types";
 import { formatDateRange } from "@/lib/utils";
 
@@ -23,7 +24,13 @@ export async function ModuleDetailView({
 
   const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
   const organizerName = item.organizers[0]?.name ?? "Organisateur";
-  const { accountAuthenticated, likeSummaries } = await getLikeRenderingContext([item, ...related]);
+  const {
+    accountAuthenticated,
+    accountSessionKey,
+    followSummaries,
+    likeSummaries,
+  } = await getLikeRenderingContext([item, ...related]);
+  const itemLikeSummary = likeSummaries[contentEngagementKey(item)];
 
   return (
     <>
@@ -79,7 +86,13 @@ export async function ModuleDetailView({
           <div>
             <DetailBlocks item={item} />
           </div>
-          <StickySummary item={item} />
+          <StickySummary
+            accountAuthenticated={accountAuthenticated}
+            accountSessionKey={accountSessionKey}
+            initialLiked={accountAuthenticated === true ? itemLikeSummary?.liked ?? false : undefined}
+            initialLikes={itemLikeSummary?.likes ?? item.likesCount}
+            item={item}
+          />
         </div>
       </section>
 
@@ -95,18 +108,25 @@ export async function ModuleDetailView({
             title={`Autres ${item.moduleTitle.toLowerCase()}`}
           />
           <div className="card-grid card-grid--three">
-            {related.map((candidate) => (
-              <ContentCard
-                accountAuthenticated={accountAuthenticated}
-                initialLiked={likeSummaries[candidate.slug]?.liked}
-                item={candidate}
-                key={candidate.id}
-              />
-            ))}
+            {related.map((candidate) => {
+              const likeSummary = likeSummaries[contentEngagementKey(candidate)];
+              const followSummary = followSummaries[organizerFollowKey(candidate.organizerSlug)];
+
+              return (
+                <ContentCard
+                  accountAuthenticated={accountAuthenticated}
+                  accountSessionKey={accountSessionKey}
+                  initialFollowing={accountAuthenticated === true ? followSummary?.following ?? false : undefined}
+                  initialLiked={accountAuthenticated === true ? likeSummary?.liked ?? false : undefined}
+                  initialLikes={likeSummary?.likes ?? candidate.likesCount}
+                  item={candidate}
+                  key={candidate.id}
+                />
+              );
+            })}
           </div>
         </div>
       </section>
     </>
   );
 }
-

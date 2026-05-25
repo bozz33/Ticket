@@ -6,6 +6,12 @@ test.describe("public front smoke", () => {
 
     await expect(page.locator("main")).toBeVisible();
     await expect(page.locator("body")).toContainText("Ticket");
+    const mobileMenuToggle = page.getByRole("button", { name: "Ouvrir le menu" });
+
+    if ((await mobileMenuToggle.count()) === 1 && await mobileMenuToggle.isVisible()) {
+      await mobileMenuToggle.click();
+    }
+
     await expect(page.getByRole("navigation", { name: "Navigation principale" })).toBeVisible();
   });
 

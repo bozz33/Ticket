@@ -10,7 +10,7 @@ export async function getHomePageData() {
       getPlatformConfiguration(),
       getFrontPageData("/"),
       fetchContentPage({ sort: "recent" }, 1, 8),
-      fetchContentPage({ sort: "popular" }, 1, 8),
+      fetchContentPage({ module: "evenements", sort: "weekly_likes" }, 1, 8),
       getOrganizerHighlights(),
     ]);
     const featured = featuredResult.items.length > 0

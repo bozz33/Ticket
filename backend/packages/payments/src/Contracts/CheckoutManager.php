@@ -12,6 +12,7 @@ interface CheckoutManager
         int $requestedQuantity = 1,
         ?string $paymentMethod = null,
         ?string $checkoutItemType = null,
+        ?int $customAmount = null,
     ): array;
 
     public function initialize(Tenant $tenant, array $payload): array;

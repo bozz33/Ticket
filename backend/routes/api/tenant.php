@@ -5,6 +5,7 @@ use App\Http\Controllers\Api\V1\OrganizationProfileController;
 use App\Http\Controllers\Api\V1\TenantAccessPassCheckinController;
 use App\Http\Controllers\Api\V1\TenantAccessPassController;
 use App\Http\Controllers\Api\V1\TenantCategoryController;
+use App\Http\Controllers\Api\V1\TenantContentLikeController;
 use App\Http\Controllers\Api\V1\TenantContextController;
 use App\Http\Controllers\Api\V1\TenantDocumentController;
 use App\Http\Controllers\Api\V1\TenantEventController;
@@ -52,9 +53,9 @@ Route::middleware(['initialize.tenant.route', 'auth.tenant.api'])->prefix('tenan
     Route::put('/organization-profile', [OrganizationProfileController::class, 'upsert']);
     Route::get('/organization-profile/follow', [TenantOrganizationFollowController::class, 'show']);
     Route::post('/organization-profile/follow', [TenantOrganizationFollowController::class, 'store'])
-        ->middleware('throttle:tenant-auth');
+        ->middleware('throttle:tenant-engagement');
     Route::delete('/organization-profile/follow', [TenantOrganizationFollowController::class, 'destroy'])
-        ->middleware('throttle:tenant-auth');
+        ->middleware('throttle:tenant-engagement');
     Route::get('/settings', [TenantSettingController::class, 'index']);
     Route::put('/settings', [TenantSettingController::class, 'upsert']);
     Route::get('/tags', TenantTagController::class);
@@ -69,9 +70,16 @@ Route::middleware(['initialize.tenant.route', 'auth.tenant.api'])->prefix('tenan
     Route::get('/events/{event}', [TenantEventController::class, 'show']);
     Route::get('/events/{event}/like', [TenantEventLikeController::class, 'show']);
     Route::post('/events/{event}/like', [TenantEventLikeController::class, 'store'])
-        ->middleware('throttle:tenant-auth');
+        ->middleware('throttle:tenant-engagement');
     Route::delete('/events/{event}/like', [TenantEventLikeController::class, 'destroy'])
-        ->middleware('throttle:tenant-auth');
+        ->middleware('throttle:tenant-engagement');
+
+    Route::get('/content/likes', [TenantContentLikeController::class, 'index']);
+    Route::get('/content/{module}/{content}/like', [TenantContentLikeController::class, 'show']);
+    Route::post('/content/{module}/{content}/like', [TenantContentLikeController::class, 'store'])
+        ->middleware('throttle:tenant-engagement');
+    Route::delete('/content/{module}/{content}/like', [TenantContentLikeController::class, 'destroy'])
+        ->middleware('throttle:tenant-engagement');
 
     Route::get('/orders', [TenantOrderController::class, 'index']);
     Route::get('/orders/{order}', [TenantOrderController::class, 'show']);

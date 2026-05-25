@@ -37,20 +37,6 @@ class FeatureFlagService
             return (bool) $override->is_enabled;
         }
 
-        if ($flag->requires_subscription && ! $tenant->hasActiveSubscription()) {
-            return false;
-        }
-
-        $subscription = $tenant->activeSubscription();
-
-        if ($subscription !== null) {
-            $subscription->loadMissing('plan');
-        }
-
-        if ($subscription !== null && $subscription->plan !== null && $subscription->plan->definesFeature($code)) {
-            return true;
-        }
-
         return (bool) $flag->default_enabled;
     }
 }

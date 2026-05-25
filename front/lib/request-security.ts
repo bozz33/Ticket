@@ -102,7 +102,18 @@ export function applyMutationRateLimit(request: NextRequest, key: string, maxReq
 
   if (recentEntries.length >= maxRequests) {
     mutationRateBuckets.set(bucketKey, recentEntries);
-    return NextResponse.json({ error: "Trop de tentatives. Réessayez plus tard." }, { status: 429 });
+    const oldestEntry = recentEntries[0] ?? now;
+    const retryAfterSeconds = Math.max(1, Math.ceil((oldestEntry + WINDOW_MS - now) / 1000));
+
+    return NextResponse.json(
+      { error: "Trop de tentatives. Réessayez plus tard." },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfterSeconds),
+        },
+      },
+    );
   }
 
   recentEntries.push(now);

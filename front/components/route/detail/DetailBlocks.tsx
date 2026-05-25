@@ -20,6 +20,7 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
     : "?offer=%s";
   const hasEventTickets = item.module === "evenements" && (item.tickets?.length ?? 0) > 0;
   const isCrowdfunding = item.module === "crowdfunding";
+  const showSupplementaryBlocks = !isCrowdfunding;
   const offerEyebrow = isCrowdfunding ? "Contribution" : "Offres";
   const offerTitle = isCrowdfunding ? "Choisissez un palier de soutien" : defaults.offerTitle;
 
@@ -104,20 +105,22 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
         </section>
       ) : null}
 
-      <section className="detail-block">
-        <SectionHeader eyebrow="Calendrier" title="Moments importants" />
-        <div className="timeline">
-          {timeline.map((entry) => (
-            <article className="timeline__item" key={`${entry.label}-${entry.dateLabel}`}>
-              <p>{entry.dateLabel}</p>
-              <h3>{entry.label}</h3>
-              <span>{entry.description}</span>
-            </article>
-          ))}
-        </div>
-      </section>
+      {showSupplementaryBlocks ? (
+        <section className="detail-block">
+          <SectionHeader eyebrow="Calendrier" title="Moments importants" />
+          <div className="timeline">
+            {timeline.map((entry) => (
+              <article className="timeline__item" key={`${entry.label}-${entry.dateLabel}`}>
+                <p>{entry.dateLabel}</p>
+                <h3>{entry.label}</h3>
+                <span>{entry.description}</span>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
-      {conditions.length > 0 || requiredDocuments.length > 0 ? (
+      {showSupplementaryBlocks && (conditions.length > 0 || requiredDocuments.length > 0) ? (
         <section className="detail-block">
           <div className="two-column-text">
             <div>
@@ -144,7 +147,7 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
         </section>
       ) : null}
 
-      {faq.length > 0 ? (
+      {showSupplementaryBlocks && faq.length > 0 ? (
         <section className="detail-block">
           <SectionHeader eyebrow="FAQ" title="Questions frequentes" />
           <div className="faq-list">

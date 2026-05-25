@@ -17,9 +17,9 @@ class LaravelOrderCatalog implements OrderCatalog
         return $this->orders->list($status, $perPage);
     }
 
-    public function listForBuyer(User $user, ?string $status = null): Collection
+    public function listForBuyer(User $user, ?string $status = null, int $limit = 100): Collection
     {
-        return $this->orders->listForBuyer($user, $status);
+        return $this->orders->listForBuyer($user, $status, $limit);
     }
 
     public function findByIdentifier(string $identifier): ?Order

@@ -4,11 +4,20 @@ import type { OrganizerCatalogStats } from "@/lib/types";
 import type { OrganizerViewOrganizer } from "./types";
 
 type OrganizerHeroProps = {
+  accountAuthenticated?: boolean;
+  accountSessionKey?: string;
+  initialFollowing?: boolean;
   organizer: OrganizerViewOrganizer;
   stats: OrganizerCatalogStats;
 };
 
-export function OrganizerHero({ organizer, stats }: OrganizerHeroProps) {
+export function OrganizerHero({
+  accountAuthenticated,
+  accountSessionKey,
+  initialFollowing,
+  organizer,
+  stats,
+}: OrganizerHeroProps) {
   const eventCount = stats.byModule.evenements ?? 0;
 
   return (
@@ -45,7 +54,10 @@ export function OrganizerHero({ organizer, stats }: OrganizerHeroProps) {
         </div>
         <aside className="organizer-profile__hero-card">
           <OrganizerFollowCard
+            accountSessionKey={accountSessionKey}
+            initialAuthenticated={accountAuthenticated}
             initialFollowers={organizer.followers}
+            initialFollowing={initialFollowing}
             organizerName={organizer.name}
             slug={organizer.slug}
           />

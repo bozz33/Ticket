@@ -67,6 +67,15 @@ export function renderFeatureGrid(section: FrontPageSection | undefined, light =
         <div className="support-grid">
           {section.items.map((item, index) => (
             <article className="explore-tile" key={`${section.key}-${index}`}>
+              {item.image_url ? (
+                <img
+                  alt={item.title || item.label || section.title || "Illustration"}
+                  decoding="async"
+                  loading="lazy"
+                  src={item.image_url}
+                  style={{ borderRadius: "18px", height: "150px", objectFit: "cover", width: "100%" }}
+                />
+              ) : null}
               {item.title ? <h2 style={{ margin: 0, fontSize: "1.1rem" }}>{item.title}</h2> : null}
               {item.body ? <p style={{ margin: 0 }}>{item.body}</p> : null}
               {item.href ? (

@@ -83,8 +83,8 @@ export function ReceiptsTable({ receipts }: { receipts: AccountReceipt[] }) {
                   </td>
                   <td>{formatDate(receipt.issued_at ?? receipt.created_at)}</td>
                   <td className="ac-table__action-cell">
-                    <Link className="ac-table__action" href={`/compte/recus/${receipt.reference}`}>
-                      Ouvrir
+                    <Link className="ac-table__action" href={`/compte/recus/${receipt.reference}/imprimer`}>
+                      Voir le reçu
                     </Link>
                   </td>
                 </tr>
@@ -96,7 +96,7 @@ export function ReceiptsTable({ receipts }: { receipts: AccountReceipt[] }) {
 
       <div className="ac-table-mobile">
         {rows.map((receipt) => (
-          <Link className="ac-table-card" href={`/compte/recus/${receipt.reference}`} key={receipt.id}>
+          <article className="ac-table-card" key={receipt.id}>
             <div className="ac-table-card__top">
               <div>
                 <p className="ac-table-card__title">{receipt.reference}</p>
@@ -125,7 +125,12 @@ export function ReceiptsTable({ receipts }: { receipts: AccountReceipt[] }) {
                 <dd>{receipt.buyer_phone ?? receipt.order?.buyer_phone ?? "—"}</dd>
               </div>
             </dl>
-          </Link>
+            <div className="ac-table-card__actions">
+              <Link className="ac-table__action" href={`/compte/recus/${receipt.reference}/imprimer`}>
+                Voir le reçu
+              </Link>
+            </div>
+          </article>
         ))}
       </div>
 

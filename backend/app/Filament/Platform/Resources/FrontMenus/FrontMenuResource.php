@@ -23,7 +23,7 @@ class FrontMenuResource extends Resource
 
     protected static ?string $permissionPrefix = 'platform.front_menus';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Front public';
+    protected static string|UnitEnum|null $navigationGroup = 'CMS front public';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bars-3-bottom-left';
 

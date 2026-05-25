@@ -148,11 +148,6 @@ class Tenant extends Model implements TenantWithDatabase
         return $this->hasMany(TenantStatusHistory::class)->latest();
     }
 
-    public function subscriptions(): HasMany
-    {
-        return $this->hasMany(TenantSubscription::class)->latest();
-    }
-
     public function featureOverrides(): HasMany
     {
         return $this->hasMany(TenantFeatureFlag::class);
@@ -196,21 +191,6 @@ class Tenant extends Model implements TenantWithDatabase
     public function auditLogs(): HasMany
     {
         return $this->hasMany(PlatformAuditLog::class);
-    }
-
-    public function activeSubscription(): ?TenantSubscription
-    {
-        return $this->subscriptions
-            ->first(fn (TenantSubscription $subscription) => in_array($subscription->status?->value ?? $subscription->status, ['active', 'trialing'], true))
-            ?? $this->subscriptions()
-                ->whereIn('status', ['active', 'trialing'])
-                ->latest('id')
-                ->first();
-    }
-
-    public function hasActiveSubscription(): bool
-    {
-        return $this->activeSubscription() !== null;
     }
 
     public function resolveRouteBinding($value, $field = null): ?Model

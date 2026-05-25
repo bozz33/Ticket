@@ -1,14 +1,16 @@
-import { ManagedFrontPageRoute, getManagedPageMetadata } from "@/components/ManagedFrontPageRoute";
+import { OrganizerLandingPage } from "@/components/static-pages/OrganizerLandingPage";
+import { createMetadata } from "@/lib/metadata";
 
 export const revalidate = 300;
 
 export async function generateMetadata() {
-  return getManagedPageMetadata("/devenir-organisateur", {
+  return createMetadata({
     title: "Devenir organisateur — Ticket",
-    description: "Publiez et vendez sur la plateforme Ticket avec un backoffice tenant et un front public unifié.",
+    description: "Créez votre espace organisateur Ticket pour publier, vendre, suivre vos commandes et contrôler les accès.",
+    path: "/devenir-organisateur",
   });
 }
 
 export default async function BecomeOrganizerPage() {
-  return <ManagedFrontPageRoute path="/devenir-organisateur" />;
+  return <OrganizerLandingPage />;
 }

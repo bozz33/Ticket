@@ -6,6 +6,20 @@ export function initials(name: string): string {
     .join("");
 }
 
+export function accountAvatarSrc(value: string | null | undefined): string | null {
+  const avatar = value?.trim();
+
+  if (!avatar) {
+    return null;
+  }
+
+  if (/^(https?:|data:)/i.test(avatar) || avatar.startsWith("/")) {
+    return avatar;
+  }
+
+  return `/api/account/avatar-image?v=${encodeURIComponent(avatar)}`;
+}
+
 export function formatNotificationDate(value: string | null): string {
   if (!value) return "";
 

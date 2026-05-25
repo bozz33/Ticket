@@ -124,6 +124,19 @@ export interface AccountAccessPass {
   meta: Record<string, unknown> | null;
 }
 
+export interface PublicVerificationEvent {
+  public_id?: string | null;
+  title?: string | null;
+  slug?: string | null;
+  starts_at?: string | null;
+  ends_at?: string | null;
+  venue_name?: string | null;
+  venue_address?: string | null;
+  city?: string | null;
+  country_code?: string | null;
+  location?: string | null;
+}
+
 export interface PublicPassVerification {
   public_id: string;
   type: AccessPassType;
@@ -133,6 +146,7 @@ export interface PublicPassVerification {
   used_at: string | null;
   expires_at: string | null;
   qr_payload: { code: string; type: string; public_id: string };
+  event?: PublicVerificationEvent | null;
 }
 
 export interface PublicReceiptVerification {
@@ -151,4 +165,5 @@ export interface PublicReceiptVerification {
   gateway_transaction_id?: string | number | null;
   offer_name: string | null;
   access_passes_count: number;
+  event?: PublicVerificationEvent | null;
 }

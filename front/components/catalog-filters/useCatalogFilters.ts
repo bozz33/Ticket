@@ -42,7 +42,7 @@ export function useCatalogFilters({
       ? queryDrivenModule
       : moduleHrefMode === "query"
         ? queryDrivenModule
-        : ((isDedicatedModuleRoute ? (baseModule === "evenements" ? "all" : baseModule) : queryDrivenModule) as
+        : ((isDedicatedModuleRoute ? baseModule : queryDrivenModule) as
             | ModuleRoute
             | "all"));
 
@@ -110,6 +110,14 @@ export function useCatalogFilters({
       }
 
       if (moduleHrefMode === "query") {
+        if (moduleValue === "all") {
+          return `/recherche${buildSearchQuery({
+            ...filters,
+            module: "all",
+            page: 1,
+          })}`;
+        }
+
         return `${action}${buildSearchQuery({
           ...filters,
           module: moduleValue,

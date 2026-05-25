@@ -6,7 +6,8 @@ import { AuthTicketLogo } from "./AuthTicketLogo";
 import { useForgotPasswordForm } from "./useForgotPasswordForm";
 
 export function ForgotPasswordForm() {
-  const { email, error, handleSubmit, loading, loginHref, setEmail, success } = useForgotPasswordForm();
+  const { email, error, handleSubmit, isReady, loading, loginHref, setEmail, success } = useForgotPasswordForm();
+  const isDisabled = !isReady || loading;
 
   return (
     <div className="ac-login-wrap">
@@ -23,6 +24,7 @@ export function ForgotPasswordForm() {
             <input
               autoComplete="email"
               className="ac-form__input"
+              disabled={isDisabled}
               id="email"
               onChange={(event) => setEmail(event.target.value)}
               placeholder="votre@email.com"
@@ -35,7 +37,7 @@ export function ForgotPasswordForm() {
           {error ? <p className="ac-form__error">{error}</p> : null}
           {success ? <p className="ac-form__success">{success}</p> : null}
 
-          <button className="ac-form__submit" disabled={loading} type="submit">
+          <button className="ac-form__submit" disabled={isDisabled} type="submit">
             {loading ? "Envoi…" : "Envoyer le lien"}
           </button>
 

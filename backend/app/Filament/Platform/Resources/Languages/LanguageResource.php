@@ -21,11 +21,16 @@ class LanguageResource extends Resource
 
     protected static ?string $permissionPrefix = 'platform.references';
 
-    protected static string|UnitEnum|null $navigationGroup = 'Référentiels';
+    protected static string|UnitEnum|null $navigationGroup = 'Langues & traductions';
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-language';
 
+    protected static ?string $navigationLabel = 'Langues';
+
+    protected static ?int $navigationSort = 40;
+
     protected static ?string $recordTitleAttribute = 'name';
+
 
     public static function form(Schema $schema): Schema
     {

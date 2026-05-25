@@ -12,6 +12,7 @@ use Ticket\PublicCatalog\Domain\PublicCatalogModules;
 class PublicCatalogProjectionReader
 {
     private ?bool $ready = null;
+    private ?bool $hasEngagementColumns = null;
 
     public function __construct(
         private readonly PublicCatalogModules $modules,
@@ -66,6 +67,7 @@ class PublicCatalogProjectionReader
             ->where('module', $module)
             ->where('item_slug', $slug);
 
+        $this->excludeEndedContent($query);
         $this->applyTenantFilter($query, $tenantSlug);
 
         $item = $query
@@ -82,6 +84,7 @@ class PublicCatalogProjectionReader
         }
 
         $query = PublicCatalogItem::query();
+        $this->excludeEndedContent($query);
 
         if (is_string($module) && $this->modules->has($module)) {
             $query->where('module', $module);
@@ -113,7 +116,10 @@ class PublicCatalogProjectionReader
             return null;
         }
 
-        $items = $this->payloads(PublicCatalogItem::query()->orderByDesc('published_at'));
+        $query = PublicCatalogItem::query();
+        $this->excludeEndedContent($query);
+
+        $items = $this->payloads($query->orderByDesc('published_at'));
         $totalItems = $items->count();
         $freeItems = $items->filter(fn (array $item): bool => (bool) ($item['isFree'] ?? false))->count();
         $moduleCards = collect($this->modules->keys())
@@ -170,7 +176,10 @@ class PublicCatalogProjectionReader
             return null;
         }
 
-        return $this->payloads(PublicCatalogItem::query()->whereNotNull($field)->orderBy($field))
+        $query = PublicCatalogItem::query()->whereNotNull($field);
+        $this->excludeEndedContent($query);
+
+        return $this->payloads($query->orderBy($field))
             ->filter(fn (array $item): bool => filled($item[$field === 'category' ? 'category' : 'city'] ?? null))
             ->groupBy(fn (array $item): string => (string) $item[$field === 'category' ? 'category' : 'city'])
             ->sortKeys()
@@ -189,7 +198,10 @@ class PublicCatalogProjectionReader
             return null;
         }
 
-        $speakers = $this->payloads($this->applySort(PublicCatalogItem::query(), 'popular'))
+        $query = PublicCatalogItem::query();
+        $this->excludeEndedContent($query);
+
+        $speakers = $this->payloads($this->applySort($query, 'popular'))
             ->flatMap(function (array $item): array {
                 return collect($item['speakers'] ?? [])
                     ->filter(fn ($speaker): bool => is_array($speaker) && filled($speaker['name'] ?? null))
@@ -270,6 +282,7 @@ class PublicCatalogProjectionReader
             ->where('module', $module)
             ->where('item_slug', '!=', $slug);
 
+        $this->excludeEndedContent($query);
         $this->applyTenantFilter($query, $tenantSlug ?: (string) ($target['organizerSlug'] ?? ''));
 
         $category = (string) ($target['category'] ?? '');
@@ -287,6 +300,10 @@ class PublicCatalogProjectionReader
     {
         $query = PublicCatalogItem::query();
         $module = $filters['module'] ?? null;
+
+        if (($filters['include_past'] ?? null) !== 'true') {
+            $this->excludeEndedContent($query);
+        }
 
         if (is_string($module) && $this->modules->has($module)) {
             $query->where('module', $module);
@@ -334,13 +351,55 @@ class PublicCatalogProjectionReader
         return $query;
     }
 
+    private function excludeEndedContent(Builder $query): void
+    {
+        $now = CarbonImmutable::now();
+
+        $query->where(function (Builder $activeQuery) use ($now): void {
+            $activeQuery->where(function (Builder $withEndQuery) use ($now): void {
+                $withEndQuery->whereNotNull('ends_at')
+                    ->where('ends_at', '>=', $now);
+            })->orWhere(function (Builder $withoutEndQuery) use ($now): void {
+                $withoutEndQuery->whereNull('ends_at')
+                    ->where(function (Builder $startsQuery) use ($now): void {
+                        $startsQuery->whereNull('starts_at')
+                            ->orWhere('starts_at', '>=', $now);
+                    });
+            });
+        });
+    }
+
     private function applySort(Builder $query, string $sort): Builder
     {
         return match ($sort) {
+            'weekly_likes' => $this->hasEngagementColumns()
+                ? $query
+                    ->orderByDesc('weekly_likes_count')
+                    ->orderByDesc('likes_count')
+                    ->orderByDesc('published_at')
+                    ->orderByDesc('id')
+                : $query->orderByDesc('popularity_score')->orderByDesc('published_at'),
             'popular' => $query->orderByDesc('popularity_score')->orderByDesc('published_at'),
             'price' => $query->orderBy('price_from')->orderByDesc('published_at'),
             default => $query->orderByDesc('published_at')->orderByDesc('id'),
         };
+    }
+
+    private function hasEngagementColumns(): bool
+    {
+        if ($this->hasEngagementColumns !== null) {
+            return $this->hasEngagementColumns;
+        }
+
+        try {
+            $connection = config('ticket.central_connection', 'central');
+            $this->hasEngagementColumns = Schema::connection($connection)->hasColumn('public_catalog_items', 'likes_count')
+                && Schema::connection($connection)->hasColumn('public_catalog_items', 'weekly_likes_count');
+        } catch (\Throwable) {
+            $this->hasEngagementColumns = false;
+        }
+
+        return $this->hasEngagementColumns;
     }
 
     private function applyTenantFilter(Builder $query, ?string $tenantSlug): void

@@ -14,7 +14,7 @@ test.describe("backend-backed buyer journeys", () => {
     await page.goto(`/checkout/${moduleName}/${slug}?tenant=${tenant}`);
 
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.getByRole("button", { name: /continuer|payer|réserver/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /continuer|payer|réserver|réservation|candidater/i })).toBeVisible();
   });
 
   test("opens a seeded receipt verification page", async ({ page }) => {

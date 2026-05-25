@@ -1,6 +1,6 @@
 "use client";
 
-import { type FormEvent, useState } from "react";
+import { type FormEvent, useEffect, useState } from "react";
 
 import { firstInvalid, validateEmail, validatePassword, validateRequired } from "@/lib/client/form-validation";
 
@@ -15,8 +15,13 @@ export function useOrganizerRegistrationForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isReady, setIsReady] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState<OrganizerRegistrationSuccess | null>(null);
+
+  useEffect(() => {
+    setIsReady(true);
+  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -63,6 +68,7 @@ export function useOrganizerRegistrationForm() {
   return {
     email,
     error,
+    isReady,
     loading,
     orgName,
     password,

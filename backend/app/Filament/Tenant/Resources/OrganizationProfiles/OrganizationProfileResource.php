@@ -7,6 +7,8 @@ use App\Models\OrganizationProfile;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
 use Filament\Actions\EditAction;
+use Filament\Forms\Components\ColorPicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
@@ -48,10 +50,24 @@ class OrganizationProfileResource extends Resource
                     TextInput::make('email')->label('Email')->email()->maxLength(255),
                     TextInput::make('phone')->label('Téléphone')->maxLength(50),
                     TextInput::make('website_url')->label('Site web')->url()->maxLength(255),
-                    TextInput::make('logo_url')->label('Logo URL')->url()->maxLength(255),
-                    TextInput::make('banner_url')->label('Bannière URL')->url()->maxLength(255),
-                    TextInput::make('primary_color')->label('Couleur primaire')->maxLength(20),
-                    TextInput::make('secondary_color')->label('Couleur secondaire')->maxLength(20),
+                    FileUpload::make('logo_url')
+                        ->label('Logo organisation')
+                        ->helperText('Format recommandé : PNG/SVG carré 256 x 256 px minimum. Utilisé sur la fiche organisateur et les éléments liés au tenant.')
+                        ->image()
+                        ->disk('public')
+                        ->directory('tenant/organization/logos')
+                        ->visibility('public')
+                        ->maxSize(1024),
+                    FileUpload::make('banner_url')
+                        ->label('Bannière organisation')
+                        ->helperText('Format recommandé : 1600 x 600 px minimum.')
+                        ->image()
+                        ->disk('public')
+                        ->directory('tenant/organization/banners')
+                        ->visibility('public')
+                        ->maxSize(3072),
+                    ColorPicker::make('primary_color')->label('Couleur primaire'),
+                    ColorPicker::make('secondary_color')->label('Couleur secondaire'),
                     TextInput::make('address_line_1')->label('Adresse ligne 1')->maxLength(255),
                     TextInput::make('address_line_2')->label('Adresse ligne 2')->maxLength(255),
                     TextInput::make('city')->label('Ville')->maxLength(120),

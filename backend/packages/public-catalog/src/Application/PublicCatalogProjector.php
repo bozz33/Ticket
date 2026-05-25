@@ -92,10 +92,12 @@ class PublicCatalogProjector
             'price_from' => max(0, (int) ($item['priceFrom'] ?? 0)),
             'is_free' => (bool) ($item['isFree'] ?? false),
             'is_featured' => (bool) ($item['featured'] ?? false),
+            'likes_count' => max(0, (int) ($item['likesCount'] ?? 0)),
+            'weekly_likes_count' => max(0, (int) ($item['weeklyLikesCount'] ?? 0)),
             'popularity_score' => $this->popularityScore($item),
             'published_at' => $this->parseDate($item['publishedAt'] ?? null),
             'starts_at' => $this->parseDate($item['startsAt'] ?? $item['applicationOpensAt'] ?? null),
-            'ends_at' => $this->parseDate($item['endsAt'] ?? $item['deadlineAt'] ?? null),
+            'ends_at' => $this->parseDate($item['activeUntil'] ?? $item['endsAt'] ?? $item['deadlineAt'] ?? null),
             'search_text' => $this->searchText($tenant, $item),
             'payload' => $item,
         ];
@@ -103,7 +105,8 @@ class PublicCatalogProjector
 
     private function popularityScore(array $item): int
     {
-        $score = (int) ($item['likesCount'] ?? 0);
+        $score = ((int) ($item['weeklyLikesCount'] ?? 0) * 100000)
+            + (int) ($item['likesCount'] ?? 0);
 
         if ((bool) ($item['popular'] ?? false)) {
             $score += 1000;

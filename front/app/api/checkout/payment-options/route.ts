@@ -30,12 +30,18 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Tenant non configuré." }, { status: 503 });
   }
 
+  const customAmountParam = searchParams.get("custom_amount");
+  const customAmount = customAmountParam !== null && Number.isFinite(Number(customAmountParam))
+    ? Math.max(1, Math.trunc(Number(customAmountParam)))
+    : undefined;
+
   const paymentOptions = await getCheckoutPaymentOptions(
     ticket || offer,
     parseQuantity(searchParams.get("quantity")),
     searchParams.get("payment_method")?.trim() || undefined,
     tenantSlug,
     ticket ? "ticket" : "offer",
+    customAmount,
   );
 
   if (!paymentOptions) {

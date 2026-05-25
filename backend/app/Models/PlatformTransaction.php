@@ -15,7 +15,6 @@ class PlatformTransaction extends Model
 
     protected $fillable = [
         'tenant_id',
-        'plan_id',
         'payment_gateway_id',
         'transaction_reference',
         'gateway_reference',
@@ -58,11 +57,6 @@ class PlatformTransaction extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
-    }
-
-    public function plan(): BelongsTo
-    {
-        return $this->belongsTo(Plan::class);
     }
 
     public function paymentGateway(): BelongsTo

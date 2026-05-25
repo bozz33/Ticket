@@ -43,7 +43,7 @@ export function ProfileInfoForm({
               <div className="ac-verification-callout">
                 <div>
                   <strong>Adresse e-mail non vérifiée</strong>
-                  <p>La vérification de l&apos;e-mail et le profil complet sont requis avant les actions sensibles: achats, réservations, abonnements et candidatures.</p>
+                  <p>La vérification de l&apos;e-mail et le profil complet sont requis avant les actions sensibles: achats, réservations, suivis organisateurs et candidatures.</p>
                 </div>
                 <button
                   className="ac-profile-form__button ac-profile-form__button--inline"

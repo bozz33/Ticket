@@ -9,6 +9,7 @@ import { ErrorMessage, fieldLabel } from "./shared";
 
 type PhoneApplicationFieldProps = {
   countries: PublicReferenceCountry[];
+  countryCode: string;
   error: string | null;
   field: CallForProjectApplicationField;
   value: FormValue;
@@ -17,12 +18,15 @@ type PhoneApplicationFieldProps = {
 
 export function PhoneApplicationField({
   countries,
+  countryCode,
   error,
   field,
   value,
   onValueChange,
 }: PhoneApplicationFieldProps) {
   const currentValue = (value as PhoneFormValue | undefined) ?? {};
+  const isLinkedToCountry = Boolean(field.country_field);
+  const selectedCountryCode = isLinkedToCountry ? countryCode : String(currentValue.country_code ?? "");
 
   return (
     <label className="contact-form-label">
@@ -30,6 +34,7 @@ export function PhoneApplicationField({
       <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "minmax(140px, 180px) minmax(0, 1fr)" }}>
         <select
           aria-label={`${field.label} - indicatif`}
+          disabled={isLinkedToCountry}
           id={fieldControlId(field.key, "country")}
           onChange={(event) => {
             const country = countries.find((entry) => entry.iso2 === event.target.value);
@@ -39,7 +44,7 @@ export function PhoneApplicationField({
               dial_code: normalizeDialCode(country?.phone_code),
             });
           }}
-          value={String(currentValue.country_code ?? "")}
+          value={selectedCountryCode}
         >
           <option value="">Indicatif</option>
           {countries

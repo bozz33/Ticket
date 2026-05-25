@@ -229,7 +229,6 @@ class PaymentWebhookServiceTest extends TestCase
         Schema::connection('central')->create('platform_transactions', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('tenant_id')->nullable();
-            $table->foreignId('plan_id')->nullable();
             $table->foreignId('payment_gateway_id')->nullable();
             $table->string('transaction_reference')->unique();
             $table->string('gateway_reference')->nullable();

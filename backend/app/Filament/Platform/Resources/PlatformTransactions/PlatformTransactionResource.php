@@ -4,7 +4,6 @@ namespace App\Filament\Platform\Resources\PlatformTransactions;
 
 use App\Filament\Platform\Resources\PlatformTransactions\Pages\ListPlatformTransactions;
 use App\Models\PaymentGateway;
-use App\Models\Plan;
 use App\Models\PlatformTransaction;
 use App\Models\Tenant;
 use App\Support\Filament\Concerns\HasPanelPermission;
@@ -44,12 +43,10 @@ class PlatformTransactionResource extends Resource
             ->components([
                 Section::make('Transaction')->schema([
                     Select::make('tenant_id')->label('Tenant')->options(fn (): array => Tenant::query()->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload()->columnSpan(2),
-                    Select::make('plan_id')->label('Plan')->options(fn (): array => Plan::query()->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload()->columnSpan(2),
                     Select::make('payment_gateway_id')->label('Gateway')->options(fn (): array => PaymentGateway::query()->orderBy('name')->pluck('name', 'id')->all())->searchable()->preload()->columnSpan(2),
                     TextInput::make('transaction_reference')->label('Référence interne')->required()->maxLength(255)->columnSpan(3),
                     TextInput::make('gateway_reference')->label('Référence gateway')->maxLength(255)->columnSpan(3),
                     Select::make('type')->label('Type')->options([
-                        'subscription' => 'Souscription',
                         'gateway_charge' => 'Encaissement gateway',
                         'refund' => 'Remboursement',
                         'settlement' => 'Reversement',
@@ -83,7 +80,6 @@ class PlatformTransactionResource extends Resource
                     ->label('Référence')
                     ->searchable(),
                 TextColumn::make('tenant.name')->label('Tenant')->searchable(),
-                TextColumn::make('plan.name')->label('Plan')->toggleable(),
                 TextColumn::make('paymentGateway.name')->label('Gateway')->toggleable(),
                 TextColumn::make('type')->label('Type')->badge(),
                 TextColumn::make('status')->label('Statut')->badge(),
@@ -112,7 +108,6 @@ class PlatformTransactionResource extends Resource
                 SelectFilter::make('type')
                     ->label('Type')
                     ->options([
-                        'subscription' => 'Souscription',
                         'gateway_charge' => 'Encaissement gateway',
                         'refund' => 'Remboursement',
                         'settlement' => 'Reversement',

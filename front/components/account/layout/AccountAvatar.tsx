@@ -4,11 +4,10 @@ import { useEffect, useState } from "react";
 
 import type { AccountUser } from "@/lib/types";
 
-import { initials } from "./helpers";
+import { accountAvatarSrc, initials } from "./helpers";
 
 export function AccountAvatar({ user, className }: { user: AccountUser | null; className: string }) {
-  const avatarVersion = user?.avatar_url?.trim() ?? "";
-  const avatarSrc = avatarVersion ? `/api/account/avatar-image?v=${encodeURIComponent(avatarVersion)}` : null;
+  const avatarSrc = accountAvatarSrc(user?.avatar_url);
   const [hasImageError, setHasImageError] = useState(false);
 
   useEffect(() => {

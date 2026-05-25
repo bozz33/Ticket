@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
 const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
-const PUBLIC_PLATFORM_REVALIDATE = 120;
 
 export async function GET() {
   if (!apiBaseUrl) {
@@ -10,8 +9,7 @@ export async function GET() {
 
   try {
     const response = await fetch(`${apiBaseUrl}/api/v1/public/platform/configuration`, {
-      cache: "force-cache",
-      next: { revalidate: PUBLIC_PLATFORM_REVALIDATE },
+      cache: "no-store",
       headers: {
         Accept: "application/json",
       },
@@ -21,7 +19,7 @@ export async function GET() {
     return NextResponse.json(payload, {
       status: response.status,
       headers: {
-        "Cache-Control": `public, max-age=0, s-maxage=${PUBLIC_PLATFORM_REVALIDATE}, stale-while-revalidate=${PUBLIC_PLATFORM_REVALIDATE}`,
+        "Cache-Control": "no-store",
       },
     });
   } catch {
