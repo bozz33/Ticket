@@ -8,8 +8,8 @@ use App\Filament\Platform\Resources\PlatformTransactions\PlatformTransactionReso
 use App\Filament\Platform\Resources\Refunds\RefundResource;
 use App\Filament\Platform\Resources\Settlements\SettlementResource;
 use App\Models\PayoutPolicy;
-use App\Services\FinancePolicyService;
 use Filament\Pages\Page;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 
 class FinanceConfiguration extends Page
 {
@@ -45,8 +45,8 @@ class FinanceConfiguration extends Page
 
     protected function getViewData(): array
     {
-        $financeSetting = app(FinancePolicyService::class)->ensureSetting();
-        $financePolicy = app(FinancePolicyService::class)->current();
+        $financeSetting = app(FinancePolicyCatalog::class)->ensureSetting();
+        $financePolicy = app(FinancePolicyCatalog::class)->current();
         $activePayoutPolicy = PayoutPolicy::query()
             ->where('is_active', true)
             ->orderBy('priority')

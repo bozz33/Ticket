@@ -11,11 +11,13 @@ use App\Models\Offer;
 use App\Models\Order;
 use App\Models\Receipt;
 use App\Notifications\BuyerOrderConfirmedNotification;
+use App\Support\Microservices\DomainEventBridge;
 use App\Support\References\ReferenceGenerator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Ticket\Payments\Contracts\CheckoutItemResolver;
+use Ticket\Notifications\Domain\DomainEventNames;
 
 class OrderFulfillmentService
 {
@@ -24,6 +26,7 @@ class OrderFulfillmentService
     public function __construct(
         private readonly ReferenceGenerator $referenceGenerator,
         private readonly CheckoutItemResolver $checkoutItems,
+        private readonly DomainEventBridge $events,
     ) {}
 
     /**
@@ -159,7 +162,7 @@ class OrderFulfillmentService
                 );
             } else {
                 $this->ensureReceipt($order);
-                $this->ensureAccessPasses($order, $offer, $offerableType, array_merge($metadata, [
+                $accessPasses = $this->ensureAccessPasses($order, $offer, $offerableType, array_merge($metadata, [
                     'orderable_type' => $orderableType,
                     'orderable_id' => $orderableId,
                     'checkout_item_type' => $checkoutItemType,
@@ -169,6 +172,7 @@ class OrderFulfillmentService
             }
 
             $this->notifyBuyer($order);
+            $this->publishOrderPaidEvent($order, $accessPasses ?? []);
 
             return $order->fresh(['receipt', 'accessPasses']);
         });
@@ -260,12 +264,71 @@ class OrderFulfillmentService
         $order->buyer->notify(new BuyerOrderConfirmedNotification($order));
     }
 
-    private function ensureAccessPasses(Order $order, ?Offer $offer, string $offerableType, array $checkout): void
+    private function publishOrderPaidEvent(Order $order, array $accessPasses): void
+    {
+        if (! $order->wasRecentlyCreated) {
+            return;
+        }
+
+        $payload = [
+            'order_id' => $order->getKey(),
+            'order_reference' => $order->reference,
+            'transaction_reference' => $order->transaction_reference,
+            'buyer_email' => $order->buyer_email,
+            'buyer_name' => $order->buyer_name,
+            'total_amount' => $order->total_amount,
+            'currency_code' => $order->currency_code,
+            'access_passes_count' => count($accessPasses),
+            'access_passes' => array_map(fn (AccessPass $pass): array => [
+                'id' => $pass->getKey(),
+                'access_code' => $pass->access_code,
+                'holder_email' => $pass->holder_email,
+                'holder_name' => $pass->holder_name,
+                'type' => $pass->type,
+                'status' => $pass->status,
+                'meta' => $pass->meta ?? [],
+            ], $accessPasses),
+            'channels' => ['email'],
+            'template_key' => DomainEventNames::ORDER_PAID,
+        ];
+
+        $metadata = [
+            'module' => 'payments',
+            'tenant_id' => tenant('id'),
+            'channels' => ['email'],
+            'template_key' => DomainEventNames::ORDER_PAID,
+        ];
+
+        $this->events->publish(DomainEventNames::ORDER_PAID, $payload, 'orders', (string) $order->getKey(), $metadata);
+
+        foreach ($accessPasses as $accessPass) {
+            $this->events->publish(DomainEventNames::ACCESS_PASS_ISSUED, [
+                'order_id' => $order->getKey(),
+                'order_reference' => $order->reference,
+                'access_pass_id' => $accessPass->getKey(),
+                'access_code' => $accessPass->access_code,
+                'holder_email' => $accessPass->holder_email,
+                'holder_name' => $accessPass->holder_name,
+                'type' => $accessPass->type,
+                'status' => $accessPass->status,
+                'meta' => $accessPass->meta ?? [],
+                'channels' => ['email'],
+                'template_key' => DomainEventNames::ACCESS_PASS_ISSUED,
+            ], 'access_passes', (string) $accessPass->getKey(), [
+                'module' => 'ticketing',
+                'tenant_id' => tenant('id'),
+                'channels' => ['email'],
+                'template_key' => DomainEventNames::ACCESS_PASS_ISSUED,
+            ]);
+        }
+    }
+
+    private function ensureAccessPasses(Order $order, ?Offer $offer, string $offerableType, array $checkout): array
     {
         $existingCount = $order->accessPasses()->count();
 
         if ($existingCount >= $order->quantity) {
-            return;
+            return [];
         }
 
         $passType = $offer !== null
@@ -275,8 +338,10 @@ class OrderFulfillmentService
         $needed = $order->quantity - $existingCount;
         [$passableType, $passableId] = $this->passableTarget($offer, $checkout);
 
+        $createdPasses = [];
+
         for ($i = 0; $i < $needed; $i++) {
-            AccessPass::query()->create([
+            $createdPasses[] = AccessPass::query()->create([
                 'access_code' => $this->generateAccessCode($order, $i + $existingCount),
                 'order_id' => $order->id,
                 'offer_id' => $offer?->id,
@@ -302,13 +367,11 @@ class OrderFulfillmentService
             ] + $this->passableAttributes($passableType, $passableId));
         }
 
-        if ($this->checkoutItems->confirm(array_merge($checkout, ['order_id' => $order->getKey()]), $needed)) {
-            return;
-        }
-
-        if ($offer !== null) {
+        if (! $this->checkoutItems->confirm(array_merge($checkout, ['order_id' => $order->getKey()]), $needed) && $offer !== null) {
             $offer->increment('quantity_sold', $needed);
         }
+
+        return $createdPasses;
     }
 
     private function generateReference(string $prefix, ?string $currencyCode = null): string

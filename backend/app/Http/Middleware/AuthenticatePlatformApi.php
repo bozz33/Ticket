@@ -2,15 +2,15 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\Auth\PlatformTokenService;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Ticket\IdentityAccess\Contracts\PlatformTokenIssuer;
 
 class AuthenticatePlatformApi
 {
-    public function __construct(private readonly PlatformTokenService $tokenService) {}
+    public function __construct(private readonly PlatformTokenIssuer $tokenService) {}
 
     public function handle(Request $request, Closure $next): Response
     {

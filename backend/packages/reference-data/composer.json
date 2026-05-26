@@ -1,0 +1,14 @@
+{
+    "name": "ticket/reference-data",
+    "type": "library",
+    "description": "Internal reference data bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\ReferenceData\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

@@ -10,7 +10,6 @@ use App\Models\Order;
 use App\Models\PaymentGateway;
 use App\Models\PlatformTransaction;
 use App\Models\Tenant;
-use App\Services\FinancePolicyService;
 use App\Services\PlatformSettingsService;
 use App\Support\Payments\GatewayAmountConverter;
 use App\Support\References\ReferenceGenerator;
@@ -19,6 +18,7 @@ use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Domain\CheckoutItem;
 use Ticket\Payments\Domain\CheckoutReservation;
@@ -28,7 +28,7 @@ use Ticket\Ticketing\Contracts\OrderCatalog;
 class PublicPaymentService
 {
     public function __construct(
-        private readonly FinancePolicyService $financePolicyService,
+        private readonly FinancePolicyCatalog $financePolicyService,
         private readonly PlatformSettingsService $platformSettingsService,
         private readonly OrderFulfillmentService $orderFulfillmentService,
         private readonly OrderCatalog $orderCatalog,

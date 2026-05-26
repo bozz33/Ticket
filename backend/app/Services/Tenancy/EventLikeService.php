@@ -2,6 +2,6 @@
 
 namespace App\Services\Tenancy;
 
-use Ticket\Ticketing\Application\EventLikeService as BaseEventLikeService;
+use Ticket\Engagement\Application\EventLikeService as BaseEventLikeService;
 
 class EventLikeService extends BaseEventLikeService {}

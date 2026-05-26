@@ -5,15 +5,15 @@ namespace App\Http\Controllers\Api\V1\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Auth\PlatformLoginRequest;
 use App\Models\PlatformUser;
-use App\Services\Auth\PlatformTokenService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\ValidationException;
+use Ticket\IdentityAccess\Contracts\PlatformTokenIssuer;
 
 class PlatformAuthController extends Controller
 {
-    public function __construct(private readonly PlatformTokenService $tokenService) {}
+    public function __construct(private readonly PlatformTokenIssuer $tokenService) {}
 
     public function login(PlatformLoginRequest $request): JsonResponse
     {

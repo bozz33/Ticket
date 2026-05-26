@@ -1,0 +1,14 @@
+{
+    "name": "ticket/cms",
+    "type": "library",
+    "description": "Internal public CMS bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Cms\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

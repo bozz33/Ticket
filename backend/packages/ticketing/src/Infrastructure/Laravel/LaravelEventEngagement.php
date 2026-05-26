@@ -4,12 +4,12 @@ namespace Ticket\Ticketing\Infrastructure\Laravel;
 
 use App\Models\Event;
 use App\Models\User;
-use Ticket\Ticketing\Application\EventLikeService;
+use Ticket\Engagement\Contracts\EventEngagementWorkflow;
 use Ticket\Ticketing\Contracts\EventEngagement;
 
 class LaravelEventEngagement implements EventEngagement
 {
-    public function __construct(private readonly EventLikeService $likes) {}
+    public function __construct(private readonly EventEngagementWorkflow $likes) {}
 
     public function summary(?User $user, Event $event): array
     {

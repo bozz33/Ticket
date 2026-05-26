@@ -2,14 +2,16 @@
 
 use App\Enums\TenantStatus;
 use App\Models\Tenant;
-use App\Support\ReferenceData\CountryReferenceImporter;
-use Illuminate\Support\Facades\DB;
+use App\Support\Microservices\MicroserviceClientFactory;
+use App\Support\Microservices\MicroserviceRegistry;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Ticket\Notifications\Contracts\OutboxDispatcher;
 use Ticket\PublicCatalog\Application\PublicCatalogProjector;
+use Ticket\ReferenceData\Contracts\CountryReferenceImport;
 use Ticket\Ticketing\Contracts\EventTicketInventory;
 use Ticket\Ticketing\Contracts\EventTicketOfferBridge;
 
@@ -69,7 +71,7 @@ Artisan::command('ticket:import-reference-countries {path?}', function (?string 
             ? base_path('database/data/reference_countries_states_cities.json')
             : base_path('database/data/reference_countries.json'));
 
-    $result = app(CountryReferenceImporter::class)->importFromFile($resolvedPath);
+    $result = app(CountryReferenceImport::class)->importFromFile($resolvedPath);
 
     $this->info(sprintf(
         'Reference import completed: %d countries processed, %d cities processed. Active totals: %d countries, %d cities.',
@@ -204,6 +206,102 @@ Artisan::command('ticket:dispatch-outbox {--limit=100 : Maximum messages to disp
     return $summary['failed'] > 0 ? 1 : 0;
 })->purpose('Dispatch pending domain outbox messages');
 
+Artisan::command('ticket:outbox-stats', function (): int {
+    $stats = app(OutboxDispatcher::class)->stats();
+
+    $rows = collect(['pending', 'processing', 'published', 'failed'])
+        ->map(fn (string $status): array => [$status, $stats[$status] ?? 0])
+        ->all();
+
+    $this->table(['Status', 'Total'], $rows);
+
+    return 0;
+})->purpose('Display domain outbox message counts by status');
+
+Artisan::command('ticket:retry-outbox {--limit=100 : Maximum failed messages to retry} {--delay=60 : Delay in seconds before messages become available}', function (): int {
+    $summary = app(OutboxDispatcher::class)->retryFailed((int) $this->option('limit'), (int) $this->option('delay'));
+
+    $this->info(sprintf(
+        'Outbox retry scheduled: %d message(s), delay %d second(s).',
+        $summary['retried'],
+        $summary['delay_seconds'],
+    ));
+
+    return 0;
+})->purpose('Move failed domain outbox messages back to pending with a delay');
+
+Artisan::command('ticket:sync-front-menus', function (): int {
+    $connection = DB::connection('central');
+    $now = now();
+    $menus = [
+        [
+            'key' => 'header_top_left',
+            'title' => 'Header top gauche',
+            'location' => 'header_top_left',
+            'items' => [
+                ['label' => 'support@ticket.africa', 'href' => 'mailto:support@ticket.africa', 'icon' => 'mail'],
+                ['label' => '+225 27 22 40 11 00', 'href' => 'tel:+2252722401100', 'icon' => 'phone'],
+                ['label' => 'Disponible 24h/24', 'href' => '#availability', 'icon' => 'status'],
+            ],
+        ],
+        [
+            'key' => 'header_top_right',
+            'title' => 'Header top droite',
+            'location' => 'header_top_right',
+            'items' => [
+                ['label' => 'CGV & remboursements', 'href' => '/remboursement'],
+                ['label' => 'FAQ', 'href' => '/faq'],
+                ['label' => 'Mentions légales', 'href' => '/mentions-legales'],
+                ['label' => 'Paiement sécurisé', 'href' => '#secure-payment', 'icon' => 'lock'],
+            ],
+        ],
+        [
+            'key' => 'header_actions',
+            'title' => 'Header actions',
+            'location' => 'header_actions',
+            'items' => [
+                ['label' => 'Mon compte', 'href' => '/compte', 'icon' => 'user'],
+                ['label' => 'Devenir organisateur', 'href' => '/devenir-organisateur', 'icon' => 'organizer'],
+            ],
+        ],
+    ];
+
+    foreach ($menus as $menu) {
+        $connection->table('front_menus')->updateOrInsert(
+            ['key' => $menu['key']],
+            [
+                'title' => $menu['title'],
+                'location' => $menu['location'],
+                'is_active' => true,
+                'settings' => json_encode([], JSON_THROW_ON_ERROR),
+                'updated_at' => $now,
+                'created_at' => $now,
+            ],
+        );
+
+        $menuId = $connection->table('front_menus')->where('key', $menu['key'])->value('id');
+
+        foreach ($menu['items'] as $index => $item) {
+            $connection->table('front_menu_items')->updateOrInsert(
+                ['front_menu_id' => $menuId, 'href' => $item['href']],
+                [
+                    'label' => $item['label'],
+                    'target' => '_self',
+                    'sort_order' => $index + 1,
+                    'is_active' => true,
+                    'meta' => json_encode(array_filter(['icon' => $item['icon'] ?? null]), JSON_THROW_ON_ERROR),
+                    'updated_at' => $now,
+                    'created_at' => $now,
+                ],
+            );
+        }
+    }
+
+    $this->info('Front menu zones synchronized.');
+
+    return 0;
+})->purpose('Create explicit front header menu zones with default icons without deleting existing menus');
+
 Artisan::command('ticket:production-check', function (): int {
     $failures = 0;
 
@@ -269,18 +367,87 @@ Artisan::command('ticket:production-check', function (): int {
     return 0;
 })->purpose('Validate key production readiness settings without mutating data');
 
+Artisan::command('ticket:microservices-check {--only= : Check one configured microservice name} {--tenant= : Tenant id/header value to send}', function (): int {
+    $registry = app(MicroserviceRegistry::class);
+    $clientFactory = app(MicroserviceClientFactory::class);
+    $only = trim((string) $this->option('only'));
+    $tenantId = trim((string) $this->option('tenant')) ?: null;
+    $failures = 0;
+    $rows = [];
+
+    $services = collect($registry->names())
+        ->when($only !== '', fn ($services) => $services->filter(fn (string $service): bool => $service === $only))
+        ->values();
+
+    if ($only !== '' && $services->isEmpty()) {
+        $this->error(sprintf('Unknown microservice [%s].', $only));
+
+        return 1;
+    }
+
+    foreach ($services as $service) {
+        $enabled = $registry->isEnabled($service);
+        $baseUrl = $registry->baseUrl($service);
+        $status = 'disabled';
+        $details = 'not checked';
+
+        if ($baseUrl === '') {
+            $status = 'missing-url';
+            $details = 'base URL is empty';
+            $failures++;
+        } elseif ($enabled) {
+            try {
+                $response = $clientFactory
+                    ->for($service, $tenantId)
+                    ->get('/health');
+
+                $status = $response->successful() ? 'ok' : 'failed';
+                $details = sprintf('HTTP %d', $response->status());
+
+                if (! $response->successful()) {
+                    $failures++;
+                }
+            } catch (Throwable $exception) {
+                $status = 'failed';
+                $details = $exception->getMessage();
+                $failures++;
+            }
+        }
+
+        $rows[] = [
+            'service' => $service,
+            'enabled' => $enabled ? 'yes' : 'no',
+            'url' => $baseUrl,
+            'health' => $status,
+            'details' => $details,
+        ];
+    }
+
+    $this->table(['Service', 'Enabled', 'Base URL', 'Health', 'Details'], $rows);
+
+    if ($failures > 0) {
+        $this->error(sprintf('Microservices check completed with %d failure(s).', $failures));
+
+        return 1;
+    }
+
+    $this->info('Microservices check completed without failures.');
+
+    return 0;
+})->purpose('Check configured microservice URLs and /health endpoints when enabled');
+
 Artisan::command('ticket:resource-audit', function (): int {
     $resourceFiles = collect(File::allFiles(app_path('Filament')))
-        ->filter(fn (\SplFileInfo $file): bool => str_ends_with($file->getFilename(), 'Resource.php'))
+        ->filter(fn (SplFileInfo $file): bool => str_ends_with($file->getFilename(), 'Resource.php'))
         ->values();
 
     $sourceFiles = collect(array_merge(
         File::allFiles(app_path()),
         File::exists(base_path('packages')) ? File::allFiles(base_path('packages')) : [],
         File::allFiles(base_path('routes')),
-    ))->filter(fn (\SplFileInfo $file): bool => $file->getExtension() === 'php')->values();
+    ))->filter(fn (SplFileInfo $file): bool => $file->getExtension() === 'php')->values();
 
-    $rows = $resourceFiles->map(function (\SplFileInfo $file) use ($sourceFiles): array {
+    $rows = $resourceFiles->map(function (SplFileInfo $file) use ($sourceFiles): array {
         $path = $file->getRealPath();
         $contents = File::get($path);
         $relativePath = str_replace(base_path().DIRECTORY_SEPARATOR, '', $path);
@@ -310,14 +477,14 @@ Artisan::command('ticket:resource-audit', function (): int {
                 $rowCount = Schema::connection($connection)->hasTable($table)
                     ? (string) DB::connection($connection)->table($table)->count()
                     : 'missing';
-            } catch (\Throwable) {
+            } catch (Throwable) {
                 $rowCount = 'error';
             }
 
             $modelShort = class_basename($modelClass);
             $usageCount = $sourceFiles
-                ->reject(fn (\SplFileInfo $sourceFile): bool => $sourceFile->getRealPath() === $path)
-                ->filter(fn (\SplFileInfo $sourceFile): bool => str_contains(File::get($sourceFile->getRealPath()), $modelShort))
+                ->reject(fn (SplFileInfo $sourceFile): bool => $sourceFile->getRealPath() === $path)
+                ->filter(fn (SplFileInfo $sourceFile): bool => str_contains(File::get($sourceFile->getRealPath()), $modelShort))
                 ->count();
         }
 

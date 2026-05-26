@@ -9,14 +9,14 @@ use App\Models\Language;
 use App\Models\PaymentMethodType;
 use App\Models\PublicStatus;
 use App\Models\ResourceType;
-use App\Support\ReferenceData\CityReferenceSearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\ReferenceData\Contracts\CityReferenceSearch;
 
 class ReferenceDataController extends Controller
 {
     public function __construct(
-        private readonly CityReferenceSearchService $cityReferenceSearchService,
+        private readonly CityReferenceSearch $cityReferenceSearchService,
     ) {}
 
     public function countries(): JsonResponse

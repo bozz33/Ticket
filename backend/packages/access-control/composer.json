@@ -1,0 +1,14 @@
+{
+    "name": "ticket/access-control",
+    "type": "library",
+    "description": "Internal access control bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\AccessControl\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

@@ -1,0 +1,14 @@
+{
+    "name": "ticket/content-stands",
+    "type": "library",
+    "description": "Internal stands content bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\ContentStands\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

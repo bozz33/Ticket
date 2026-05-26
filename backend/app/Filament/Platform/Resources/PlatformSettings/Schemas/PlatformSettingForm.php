@@ -2,7 +2,6 @@
 
 namespace App\Filament\Platform\Resources\PlatformSettings\Schemas;
 
-use App\Services\FinancePolicyService;
 use App\Services\PlatformMailSettings;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\KeyValue;
@@ -11,6 +10,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Section;
 use Filament\Schemas\Schema;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 
 class PlatformSettingForm
 {
@@ -164,7 +164,7 @@ class PlatformSettingForm
 
     private static function isFinancePolicy(?string $formKey, ?string $recordKey): bool
     {
-        return ($formKey ?? $recordKey) === FinancePolicyService::SETTING_KEY;
+        return ($formKey ?? $recordKey) === FinancePolicyCatalog::SETTING_KEY;
     }
 
     private static function isMailSetting(?string $formKey, ?string $recordKey): bool

@@ -32,6 +32,25 @@ Les modules actifs sont :
 - `public-catalog` : portail public, pages front CMS et candidatures publiques
 - `notifications` : abstraction d'envoi pour isoler les canaux applicatifs
 
+Les modules cibles scaffoldes pour la suite sont :
+
+- `identity-access` : auth, tokens, RBAC et verification de compte
+- `reference-data` : pays, villes, devises, langues et statuts publics
+- `media-documents` : uploads, documents, PDF et QR assets
+- `cms` : pages front, menus, sections, branding et header/footer
+- `seo` : metadonnees, Open Graph, robots et sitemap
+- `localization` : langues, traductions et fallbacks
+- `engagement` : likes, follows, compteurs et tendances
+- `access-control` : scan QR, check-in et journaux de scan
+- `finance-accounting` : settlements, payouts, exports et reconciliation
+- `support-observability` : support, audit, incidents et KPI snapshots
+- `form-builder` : formulaires dynamiques, champs, validations et submissions
+- `content-events` : evenements, dates, lieux et publication
+- `content-training` : formations, sessions, inscriptions et attestations
+- `content-stands` : stands, salons, zones et reservations
+- `content-calls-for-projects` : appels, candidatures et evaluation
+- `content-crowdfunding` : campagnes, contributions et progression
+
 ## Regles d'architecture
 
 1. Les controleurs, panels Filament et workflows applicatifs consomment des contrats de module.
@@ -160,14 +179,30 @@ Etat actuel : la phase 2 est finalisee pour le monolithe modulaire. Les services
 
 ### Phase 3 - Modules metier specialises
 
-- `ticketing` : offres, commandes, recus, access passes, check-in
+- `identity-access` : auth, tokens, RBAC et verification
+- `reference-data` : referentiels globaux reutilisables
+- `media-documents` : medias, documents, PDF et QR assets
+- `cms` : contenu front administrable
+- `seo` : SEO et metadonnees
+- `localization` : langues et traductions
+- `engagement` : likes, follows et tendances
+- `access-control` : scan QR et check-in
+- `finance-accounting` : reversements, exports et reconciliation
+- `form-builder` : formulaires dynamiques et submissions
+- `support-observability` : support, audit, incidents et KPI
+- `ticketing` : offres, commandes, recus, access passes
 - `tenancy` : lifecycle tenant, provisioning, stockage tenant
 - `public-catalog` : projections publiques, recherche, pages publiques
 - `notifications` : notifications tenant/platform, emails, evenements
-- `training` : inscriptions, presences, certificats
-- `crowdfunding` : campagnes, contributions, progression
-- `calls-for-projects` : formulaires, candidatures, evaluation
-- `stands` : reservations, exposants, salons
+- `content-events` : evenements, dates, lieux et publication
+- `content-training` : formations, inscriptions, presences, certificats
+- `content-crowdfunding` : campagnes, contributions, progression
+- `content-calls-for-projects` : appels, candidatures, evaluation
+- `content-stands` : reservations, exposants, salons
+
+Etat actuel : la phase 3 est operationnelle en monolithe modulaire. Les packages cibles sont scaffoldes, autoloades, enregistres dans `config/modules.php`, exposes par contrats et couverts par tests de frontiere. Les modules `identity-access`, `reference-data`, `cms`, `seo`, `localization`, `media-documents`, `engagement`, `access-control`, `finance-accounting`, `form-builder`, `support-observability` et les verticales `content-*` disposent maintenant de ports applicatifs stables. Les anciens services critiques restent des wrappers de compatibilite.
+
+Les chemins de migrations par package sont decouvrables pour les scopes `central` et `tenant`. L'outbox `notifications` publie des payloads avec enveloppe `_event` versionnee sans casser les consumers existants.
 
 ### Phase 4 - Extraction micro-service possible
 

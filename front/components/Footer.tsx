@@ -3,6 +3,16 @@ import Link from "next/link";
 import { resolveSupportedLocale, translate, translateNavigationLink } from "@/lib/i18n/public-translations";
 import { NavigationLink, PlatformConfiguration } from "@/lib/types";
 
+function FooterIcon({ icon }: { icon?: unknown }) {
+  const name = typeof icon === "string" ? icon : "";
+
+  if (!name) {
+    return null;
+  }
+
+  return <span aria-hidden="true" className="footer-link-icon">{name}</span>;
+}
+
 function ensureVerificationLink(links: NavigationLink[]): NavigationLink[] {
   return links.some((link) => link.href === "/verifier")
     ? links
@@ -16,6 +26,7 @@ function renderFooterLink(link: NavigationLink, key: string) {
   if (isExternal) {
     return (
       <a href={link.href} key={key} rel={target === "_blank" ? "noreferrer" : undefined} target={target}>
+        <FooterIcon icon={link.meta?.icon} />
         {link.label}
       </a>
     );
@@ -23,6 +34,7 @@ function renderFooterLink(link: NavigationLink, key: string) {
 
   return (
     <Link href={link.href} key={key} target={target}>
+      <FooterIcon icon={link.meta?.icon} />
       {link.label}
     </Link>
   );

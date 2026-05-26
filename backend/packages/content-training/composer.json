@@ -1,0 +1,14 @@
+{
+    "name": "ticket/content-training",
+    "type": "library",
+    "description": "Internal training content bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\ContentTraining\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

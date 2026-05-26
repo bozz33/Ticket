@@ -7,10 +7,13 @@ Le module `notifications` isole l'envoi de notifications applicatives et la publ
 - `NotificationDispatcher`
 - `DomainEventPublisher`
 - `OutboxDispatcher`
+- `DomainEventEnvelope`
 
 ## Outbox
 
 Les evenements metier sont persistés dans la table centrale `domain_outbox_messages`.
+
+Le vocabulaire officiel des evenements est declare dans `Ticket\Notifications\Domain\DomainEventNames`.
 
 Commande de dispatch :
 

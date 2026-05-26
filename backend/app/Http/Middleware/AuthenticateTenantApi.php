@@ -2,15 +2,15 @@
 
 namespace App\Http\Middleware;
 
-use App\Services\Auth\TenantTokenService;
 use Closure;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 
 class AuthenticateTenantApi
 {
-    public function __construct(private readonly TenantTokenService $tokenService) {}
+    public function __construct(private readonly TenantTokenIssuer $tokenService) {}
 
     public function handle(Request $request, Closure $next): Response
     {

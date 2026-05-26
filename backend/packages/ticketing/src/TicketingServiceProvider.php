@@ -7,7 +7,6 @@ use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Infrastructure\Laravel\OfferCheckoutItemResolver;
 use Ticket\Tenancy\Application\TenantPublicProfileService;
 use Ticket\Ticketing\Application\DocumentService;
-use Ticket\Ticketing\Application\EventService;
 use Ticket\Ticketing\Application\EventTicketInventoryService;
 use Ticket\Ticketing\Application\EventTicketOfferBridgeService;
 use Ticket\Ticketing\Contracts\AccessPassCatalog;
@@ -39,10 +38,6 @@ class TicketingServiceProvider extends ServiceProvider
         $this->app->singleton(DocumentService::class, fn (): DocumentService => new DocumentService(
             $this->app->make(TenantPublicProfileService::class),
         ));
-        $this->app->singleton(EventService::class, fn (): EventService => new EventService(
-            $this->app->make(TenantPublicProfileService::class),
-        ));
-
         $this->app->bind(EventCatalog::class, LaravelEventCatalog::class);
         $this->app->bind(EventTicketInventory::class, EventTicketInventoryService::class);
         $this->app->bind(EventTicketOfferBridge::class, EventTicketOfferBridgeService::class);

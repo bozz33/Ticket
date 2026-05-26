@@ -2,6 +2,8 @@
 
 namespace Ticket\Notifications\Contracts;
 
+use Ticket\Notifications\Domain\DomainEventEnvelope;
+
 interface DomainEventPublisher
 {
     public function publish(
@@ -11,4 +13,6 @@ interface DomainEventPublisher
         ?string $aggregateId = null,
         array $metadata = [],
     ): string;
+
+    public function publishEnvelope(DomainEventEnvelope $event): string;
 }

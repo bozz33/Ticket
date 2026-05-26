@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Services\Forms\DynamicFormValidator;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
+use Ticket\FormBuilder\Application\DynamicFormValidator;
 
 class DynamicFormValidatorTest extends TestCase
 {
@@ -84,6 +84,6 @@ class DynamicFormValidatorTest extends TestCase
 
     private function validator(): DynamicFormValidator
     {
-        return new DynamicFormValidator();
+        return new DynamicFormValidator;
     }
 }

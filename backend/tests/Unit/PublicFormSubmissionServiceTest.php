@@ -4,8 +4,6 @@ namespace Tests\Unit;
 
 use App\Models\FormDefinition;
 use App\Models\FormSubmission;
-use App\Services\Forms\DynamicFormValidator;
-use App\Services\Forms\PublicFormSubmissionService;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Http\UploadedFile;
@@ -14,6 +12,8 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
+use Ticket\FormBuilder\Application\DynamicFormValidator;
+use Ticket\FormBuilder\Application\PublicFormSubmissionService;
 
 class PublicFormSubmissionServiceTest extends TestCase
 {

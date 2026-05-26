@@ -9,10 +9,10 @@ use App\Models\Language;
 use App\Models\PaymentMethodType;
 use App\Models\PublicStatus;
 use App\Models\ResourceType;
-use App\Support\ReferenceData\CityReferenceSearchService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Ticket\ReferenceData\Contracts\CityReferenceSearch;
 
 class PublicReferenceDataController extends Controller
 {
@@ -21,7 +21,7 @@ class PublicReferenceDataController extends Controller
     private const CITIES_TTL = 300;
 
     public function __construct(
-        private readonly CityReferenceSearchService $cityReferenceSearchService,
+        private readonly CityReferenceSearch $cityReferenceSearchService,
     ) {}
 
     public function countries(): JsonResponse

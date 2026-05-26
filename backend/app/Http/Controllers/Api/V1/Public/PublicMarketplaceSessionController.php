@@ -6,15 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\MarketplaceSessionExchangeRequest;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Services\Auth\TenantTokenService;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 
 class PublicMarketplaceSessionController extends Controller
 {
-    public function __construct(private readonly TenantTokenService $tokenService) {}
+    public function __construct(private readonly TenantTokenIssuer $tokenService) {}
 
     public function exchange(MarketplaceSessionExchangeRequest $request): JsonResponse
     {

@@ -7,3 +7,7 @@ tmp/
 **/edge-headless*/
 front/tsconfig.tsbuildinfo
 front/.next-dev*.log
+services/*/node_modules/
+services/*/dist/
+services/*/coverage/
+services/*/.env

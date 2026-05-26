@@ -8,7 +8,6 @@ use App\Filament\Platform\Resources\PlatformSettings\Pages\ListPlatformSettings;
 use App\Filament\Platform\Resources\PlatformSettings\Schemas\PlatformSettingForm;
 use App\Filament\Platform\Resources\PlatformSettings\Tables\PlatformSettingsTable;
 use App\Models\PlatformSetting;
-use App\Services\FinancePolicyService;
 use App\Services\PlatformMailSettings;
 use App\Support\Filament\Concerns\HasPanelPermission;
 use BackedEnum;
@@ -16,6 +15,7 @@ use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 use UnitEnum;
 
 class PlatformSettingResource extends Resource
@@ -67,7 +67,7 @@ class PlatformSettingResource extends Resource
                 ->whereNull('group')
                 ->orWhere('group', '!=', 'seo'))
             ->whereNotIn('key', [
-                FinancePolicyService::SETTING_KEY,
+                FinancePolicyCatalog::SETTING_KEY,
                 PlatformMailSettings::SETTING_KEY,
                 'mobile_money_providers',
                 'default_currency',

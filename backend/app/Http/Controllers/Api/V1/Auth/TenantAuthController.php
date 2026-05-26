@@ -12,7 +12,6 @@ use App\Http\Requests\Api\V1\Auth\TenantRegisterRequest;
 use App\Http\Requests\Api\V1\Auth\TenantResetPasswordRequest;
 use App\Models\User;
 use App\Notifications\BuyerAccountActivityNotification;
-use App\Services\Auth\TenantTokenService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Auth\Events\PasswordReset;
@@ -29,11 +28,12 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpFoundation\Response;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 
 class TenantAuthController extends Controller
 {
     public function __construct(
-        private readonly TenantTokenService $tokenService,
+        private readonly TenantTokenIssuer $tokenService,
         private readonly TenantContext $tenantContext,
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}

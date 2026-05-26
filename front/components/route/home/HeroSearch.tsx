@@ -1,18 +1,22 @@
 import Link from "next/link";
 
-export function HeroSearch({ categories }: { categories: string[] }) {
+import type { PlatformConfiguration } from "@/lib/types";
+import { translate } from "@/lib/i18n/public-translations";
+
+export function HeroSearch({ categories, locale, platform }: { categories: string[]; locale: string; platform: PlatformConfiguration }) {
+  const t = (key: string, fallback: string) => translate(platform, locale, key, fallback);
   const quickLinks = [
-    { href: "/formations", label: "Formations" },
-    { href: "/stands", label: "Stands" },
-    { href: "/appels-a-projets", label: "Appels a projets" },
-    { href: "/crowdfunding", label: "Crowdfunding" },
+    { href: "/formations", label: t("content_card.module.formations", "Formations") },
+    { href: "/stands", label: t("content_card.module.stands", "Stands") },
+    { href: "/appels-a-projets", label: t("content_card.module.appels_a_projets", "Appels à projets") },
+    { href: "/crowdfunding", label: t("content_card.module.crowdfunding", "Crowdfunding") },
   ];
 
   return (
     <aside className="hero-search">
       <div className="hero-search__head">
-        <p>Marketplace public</p>
-        <h2>Trouvez rapidement un contenu</h2>
+        <p>{t("home.search.eyebrow", "Marketplace public")}</p>
+        <h2>{t("home.search.title", "Trouvez rapidement un contenu")}</h2>
       </div>
 
       <div className="hero-search__tabs">
@@ -32,9 +36,9 @@ export function HeroSearch({ categories }: { categories: string[] }) {
                 <path d="m20 20-3.5-3.5" />
               </svg>
             </span>
-            Rechercher
+            {t("home.search.query_label", "Rechercher")}
           </label>
-          <input id="hero-search-q" name="q" placeholder="Evenement, formation, stand..." type="search" />
+          <input id="hero-search-q" name="q" placeholder={t("home.search.query_placeholder", "Événement, formation, stand...")} type="search" />
         </div>
 
         <div className="hero-search__field-stack">
@@ -46,10 +50,10 @@ export function HeroSearch({ categories }: { categories: string[] }) {
                 <path d="M10 17h4" />
               </svg>
             </span>
-            Categorie
+            {t("home.search.category_label", "Catégorie")}
           </label>
           <select defaultValue="" id="hero-search-category" name="category">
-            <option value="">Toutes les categories</option>
+            <option value="">{t("home.search.all_categories", "Toutes les catégories")}</option>
             {categories.map((category) => (
               <option key={category} value={category}>
                 {category}
@@ -59,7 +63,7 @@ export function HeroSearch({ categories }: { categories: string[] }) {
         </div>
 
         <button className="button" type="submit">
-          Explorer
+          {t("home.search.submit", "Explorer")}
         </button>
       </form>
     </aside>

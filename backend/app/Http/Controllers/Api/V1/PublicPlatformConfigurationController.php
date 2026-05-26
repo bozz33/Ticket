@@ -4,23 +4,27 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\TenantStatus;
 use App\Http\Controllers\Controller;
+use App\Models\FrontMenu;
 use App\Models\PlatformTransaction;
 use App\Models\Tenant;
-use App\Models\Language;
-use App\Models\TranslationEntry;
 use App\Services\FeatureFlagService;
 use App\Services\PlatformSettingsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Ticket\Localization\Contracts\PublicLocalizationCatalog;
 use Ticket\Payments\Domain\PaymentStatuses;
 use Ticket\PublicCatalog\Contracts\FrontContent;
+use Ticket\Seo\Contracts\SeoMetadataCatalog;
 
 class PublicPlatformConfigurationController extends Controller
 {
     private const DEFAULT_MENUS = [
+        'header_top_left' => [],
+        'header_top_right' => [],
         'header_primary' => [],
         'header_utility' => [],
+        'header_actions' => [],
         'footer_explore' => [],
         'footer_platform' => [],
         'footer_bottom' => [],
@@ -30,17 +34,22 @@ class PublicPlatformConfigurationController extends Controller
         PlatformSettingsService $platformSettingsService,
         FeatureFlagService $featureFlagService,
         FrontContent $frontContent,
+        PublicLocalizationCatalog $localization,
+        SeoMetadataCatalog $seoMetadata,
     ): JsonResponse {
-        return $this->__invoke($platformSettingsService, $featureFlagService, $frontContent);
+        return $this->__invoke($platformSettingsService, $featureFlagService, $frontContent, $localization, $seoMetadata);
     }
 
     public function __invoke(
         PlatformSettingsService $platformSettingsService,
         FeatureFlagService $featureFlagService,
         FrontContent $frontContent,
+        PublicLocalizationCatalog $localization,
+        SeoMetadataCatalog $seoMetadata,
     ): JsonResponse {
         $settings = $platformSettingsService->grouped(publicOnly: true);
         $menus = array_replace($frontContent->defaultMenus(), $frontContent->publicMenus());
+        $menuSettings = $this->publicMenuSettings();
         $featureFlags = $featureFlagService->publicFlags();
         $publicUsersCount = (int) PlatformTransaction::query()
             ->whereIn('type', ['public_checkout', 'gateway_charge'])
@@ -55,21 +64,24 @@ class PublicPlatformConfigurationController extends Controller
             ->orderBy('id')
             ->first(['public_id', 'name', 'slug']);
 
-        $languages = $this->publicLanguages();
+        $languages = $localization->publicLanguages();
         $normalized = $this->normalizedConfiguration(
             $settings,
             $menus,
+            $menuSettings,
             $featureFlags->pluck('code')->values()->all(),
             $publicUsersCount,
             $defaultTenant?->only(['public_id', 'name', 'slug']),
             $languages,
-            $this->publicTranslations(),
+            $localization->publicTranslations(),
+            $seoMetadata->publicSettings(),
         );
 
         $payload = [
             'data' => $normalized,
             'settings' => $settings,
             'menus' => $menus,
+            'menu_settings' => $menuSettings,
             'feature_flags' => $featureFlags,
             'stats' => [
                 'users_count' => $publicUsersCount,
@@ -85,25 +97,27 @@ class PublicPlatformConfigurationController extends Controller
     private function normalizedConfiguration(
         array $settings,
         array $menus,
+        array $menuSettings,
         array $featureFlags,
         int $usersCount,
         ?array $defaultTenant,
         array $languages,
         array $translations,
-    ): array
-    {
+        array $seoSettings,
+    ): array {
         $branding = $settings['branding'] ?? [];
         $support = $settings['support'] ?? [];
         $payments = $settings['payments'] ?? [];
         $navigation = $settings['navigation'] ?? [];
         $footer = $settings['footer'] ?? [];
-        $seo = $settings['seo'] ?? [];
+        $seo = $seoSettings !== [] ? $seoSettings : ($settings['seo'] ?? []);
         $seoDefaults = (array) ($seo['seo.defaults'] ?? []);
         $seoOpenGraph = (array) ($seo['seo.open_graph'] ?? $seo['open_graph'] ?? []);
         $seoTwitter = (array) ($seo['seo.twitter'] ?? $seo['twitter'] ?? []);
         $seoRobots = (array) ($seo['seo.robots'] ?? $seo['robots'] ?? []);
         $seoStructuredData = (array) ($seo['seo.structured_data'] ?? []);
         $seoSitemap = (array) ($seo['seo.sitemap'] ?? []);
+        $headerUtilitySettings = (array) ($menuSettings['header_utility'] ?? []);
 
         $seoSocialLinks = $this->firstArray([
             data_get($seo['seo.social_links'] ?? [], 'social_links'),
@@ -125,13 +139,28 @@ class PublicPlatformConfigurationController extends Controller
                 'Catalogue public unifie pour decouvrir, comparer et convertir sur plusieurs modules metier.',
             ]),
             'supportEmail' => $this->firstString([
+                data_get($headerUtilitySettings, 'support_email'),
                 $this->groupValue($support, 'email', ['public_contacts', 'contact', 'public_support']),
                 'support@ticket.africa',
             ]),
             'supportPhone' => $this->firstString([
+                data_get($headerUtilitySettings, 'support_phone'),
                 $this->groupValue($support, 'phone', ['public_contacts', 'contact', 'public_support']),
                 '+225 27 22 40 11 00',
             ]),
+            'headerUtility' => [
+                'availabilityLabel' => $this->firstString([
+                    data_get($headerUtilitySettings, 'availability_label'),
+                    'Disponible 24h/24',
+                ]),
+                'securePaymentLabel' => $this->firstString([
+                    data_get($headerUtilitySettings, 'secure_payment_label'),
+                    'Paiement sécurisé',
+                ]),
+                'showContacts' => ! array_key_exists('show_contacts', $headerUtilitySettings) || (bool) $headerUtilitySettings['show_contacts'],
+                'showAvailability' => ! array_key_exists('show_availability', $headerUtilitySettings) || (bool) $headerUtilitySettings['show_availability'],
+                'showSecurePayment' => ! array_key_exists('show_secure_payment', $headerUtilitySettings) || (bool) $headerUtilitySettings['show_secure_payment'],
+            ],
             'currencyCode' => $this->firstString([
                 $this->groupValue($payments, 'currency', ['public_catalog', 'catalog', 'checkout']),
                 'XOF',
@@ -210,6 +239,17 @@ class PublicPlatformConfigurationController extends Controller
         ];
     }
 
+    private function publicMenuSettings(): array
+    {
+        return FrontMenu::query()
+            ->where('is_active', true)
+            ->get(['location', 'settings'])
+            ->mapWithKeys(fn (FrontMenu $menu): array => [
+                $menu->location?->value ?? (string) $menu->getAttribute('location') => $menu->settings ?? [],
+            ])
+            ->all();
+    }
+
     private function groupValue(array $group, string $key, array $containers): mixed
     {
         if (array_key_exists($key, $group)) {
@@ -283,43 +323,6 @@ class PublicPlatformConfigurationController extends Controller
         }
 
         return [];
-    }
-
-    private function publicLanguages(): array
-    {
-        return Language::query()
-            ->where('is_active', true)
-            ->orderBy('sort_order')
-            ->orderBy('name')
-            ->get(['id', 'code', 'locale', 'name', 'native_name', 'meta'])
-            ->map(fn (Language $language): array => [
-                'code' => (string) $language->code,
-                'locale' => (string) ($language->locale ?: $language->code),
-                'name' => (string) $language->name,
-                'native_name' => (string) ($language->native_name ?: $language->name),
-                'is_default' => (bool) data_get($language->meta ?? [], 'is_default', false),
-            ])
-            ->values()
-            ->all();
-    }
-
-    private function publicTranslations(): array
-    {
-        return TranslationEntry::query()
-            ->with('language:id,code,locale')
-            ->where('is_active', true)
-            ->orderBy('group')
-            ->orderBy('key')
-            ->get()
-            ->groupBy(fn (TranslationEntry $entry): string => (string) ($entry->language?->code ?: ''))
-            ->filter(fn ($entries, string $locale): bool => $locale !== '')
-            ->map(fn ($entries): array => $entries
-                ->mapWithKeys(fn (TranslationEntry $entry): array => [
-                    trim((string) $entry->key) => (string) $entry->value,
-                ])
-                ->filter(fn (string $value, string $key): bool => $key !== '' && $value !== '')
-                ->all())
-            ->all();
     }
 
     private function socialLinks(mixed $value): array

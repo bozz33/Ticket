@@ -4,13 +4,13 @@ namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
 use App\Models\FormDefinition;
-use App\Services\Forms\PublicFormSubmissionService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\FormBuilder\Contracts\FormSubmissionWriter;
 
 class PublicFormSubmissionController extends Controller
 {
-    public function __construct(private readonly PublicFormSubmissionService $submissions) {}
+    public function __construct(private readonly FormSubmissionWriter $submissions) {}
 
     public function show(string $tenant, string $formDefinition): JsonResponse
     {

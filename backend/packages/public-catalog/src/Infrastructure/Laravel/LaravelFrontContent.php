@@ -3,12 +3,12 @@
 namespace Ticket\PublicCatalog\Infrastructure\Laravel;
 
 use App\Models\FrontPage;
-use App\Services\FrontCmsService;
+use Ticket\Cms\Contracts\FrontCmsContent;
 use Ticket\PublicCatalog\Contracts\FrontContent;
 
 class LaravelFrontContent implements FrontContent
 {
-    public function __construct(private readonly FrontCmsService $front) {}
+    public function __construct(private readonly FrontCmsContent $front) {}
 
     public function publicMenus(): array
     {

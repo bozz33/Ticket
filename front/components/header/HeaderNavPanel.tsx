@@ -7,6 +7,7 @@ import { HeaderLink } from "./HeaderLink";
 import { LanguageSwitcher, usePublicLocale } from "./LanguageSwitcher";
 
 type HeaderNavPanelProps = {
+  actionLinks: NavigationLink[];
   isMenuOpen: boolean;
   locale?: string;
   platform: PlatformConfiguration;
@@ -14,8 +15,9 @@ type HeaderNavPanelProps = {
   onNavigate: () => void;
 };
 
-export function HeaderNavPanel({ isMenuOpen, locale: initialLocale, platform, primaryLinks, onNavigate }: HeaderNavPanelProps) {
-  const { locale, setLocale, t } = usePublicLocale(platform, initialLocale);
+export function HeaderNavPanel({ actionLinks, isMenuOpen, locale: initialLocale, platform, primaryLinks, onNavigate }: HeaderNavPanelProps) {
+  const { locale, setLocale } = usePublicLocale(platform, initialLocale);
+  const translatedActionLinks = actionLinks.map((link) => translateNavigationLink(platform, locale, link));
   const translatedPrimaryLinks = primaryLinks.map((link) => translateNavigationLink(platform, locale, link));
 
   return (
@@ -28,12 +30,15 @@ export function HeaderNavPanel({ isMenuOpen, locale: initialLocale, platform, pr
 
       <div className="nav__actions">
         <LanguageSwitcher initialLocale={initialLocale} locale={locale} onLocaleChange={setLocale} platform={platform} />
-        <Link className="button button--ghost button--ghost-on-dark" href="/compte" onClick={onNavigate}>
-          {t("nav.account", "Mon compte")}
-        </Link>
-        <Link className="button" href="/devenir-organisateur" onClick={onNavigate}>
-          {t("nav.organizer", "Devenir organisateur")}
-        </Link>
+        {translatedActionLinks.map((link, index) => {
+          const variant = typeof link.meta?.variant === "string" ? link.meta.variant : index === 0 ? "ghost" : "primary";
+
+          return (
+            <Link className={variant === "ghost" ? "button button--ghost button--ghost-on-dark" : "button"} href={link.href} key={`header-action-${link.href}-${index}`} onClick={onNavigate}>
+              {link.label}
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

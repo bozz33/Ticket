@@ -12,13 +12,13 @@ use App\Models\PlatformSetting;
 use App\Models\PlatformTransaction;
 use App\Models\Settlement;
 use App\Models\Tenant;
-use App\Services\FinancePolicyService;
 use App\Services\Payments\PayoutPolicyService;
 use App\Services\Payments\PricingRuleEngine;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 
 class PricingRuleEngineTest extends TestCase
 {
@@ -61,8 +61,8 @@ class PricingRuleEngineTest extends TestCase
         ]);
 
         PlatformSetting::query()->create([
-            'group' => FinancePolicyService::SETTING_GROUP,
-            'key' => FinancePolicyService::SETTING_KEY,
+            'group' => FinancePolicyCatalog::SETTING_GROUP,
+            'key' => FinancePolicyCatalog::SETTING_KEY,
             'value' => [
                 'commission_rate' => 10,
                 'card_fee_per_ticket' => 500,

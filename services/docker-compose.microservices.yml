@@ -1,0 +1,136 @@
+services:
+  api-gateway:
+    build: ./api-gateway-service
+    environment:
+      PORT: 4000
+      CATALOG_SERVICE_URL: http://catalog-search-service:4030/v1
+      MEDIA_SERVICE_URL: http://media-service:4020/v1
+      ANALYTICS_SERVICE_URL: http://analytics-service:4040/v1
+      CHECKIN_SERVICE_URL: http://access-checkin-service:4050/v1
+      NOTIFICATIONS_SERVICE_URL: http://notifications-service:4010/v1
+      INTERNAL_SERVICE_TOKEN: ${MICROSERVICES_INTERNAL_TOKEN:-}
+    ports:
+      - "4000:4000"
+    depends_on:
+      - catalog-search-service
+      - media-service
+      - analytics-service
+      - access-checkin-service
+      - notifications-service
+
+  notifications-service:
+    build: ./notifications-service
+    environment:
+      PORT: 4010
+      OUTBOX_POLL_ENABLED: "true"
+      OUTBOX_DATABASE_URL: postgres://postgres:postgres@host.docker.internal:5432/ticket_central
+      NOTIFICATIONS_DATABASE_URL: postgres://postgres:postgres@notifications-db:5432/ticket_notifications
+      INTERNAL_SERVICE_TOKEN: ${MICROSERVICES_INTERNAL_TOKEN:-}
+    ports:
+      - "4010:4010"
+    depends_on:
+      - notifications-db
+
+  media-service:
+    build: ./media-service
+    environment:
+      PORT: 4020
+      MEDIA_DATABASE_URL: postgres://postgres:postgres@media-db:5432/ticket_media
+      MEDIA_PUBLIC_BASE_URL: http://127.0.0.1:4020
+      MEDIA_SIGNING_SECRET: local-media-secret
+      INTERNAL_SERVICE_TOKEN: ${MICROSERVICES_INTERNAL_TOKEN:-}
+    ports:
+      - "4020:4020"
+    depends_on:
+      - media-db
+
+  catalog-search-service:
+    build: ./catalog-search-service
+    environment:
+      PORT: 4030
+      CATALOG_DATABASE_URL: postgres://postgres:postgres@catalog-db:5432/ticket_catalog
+      CATALOG_PUBLIC_BASE_URL: http://localhost:3000
+      INTERNAL_SERVICE_TOKEN: ${MICROSERVICES_INTERNAL_TOKEN:-}
+    ports:
+      - "4030:4030"
+    depends_on:
+      - catalog-db
+
+  analytics-service:
+    build: ./analytics-service
+    environment:
+      PORT: 4040
+      ANALYTICS_DATABASE_URL: postgres://postgres:postgres@analytics-db:5432/ticket_analytics
+      INTERNAL_SERVICE_TOKEN: ${MICROSERVICES_INTERNAL_TOKEN:-}
+    ports:
+      - "4040:4040"
+    depends_on:
+      - analytics-db
+
+  access-checkin-service:
+    build: ./access-checkin-service
+    environment:
+      PORT: 4050
+      CHECKIN_DATABASE_URL: postgres://postgres:postgres@checkin-db:5432/ticket_checkin
+      INTERNAL_SERVICE_TOKEN: ${MICROSERVICES_INTERNAL_TOKEN:-}
+    ports:
+      - "4050:4050"
+    depends_on:
+      - checkin-db
+
+  notifications-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ticket_notifications
+    volumes:
+      - notifications-db-data:/var/lib/postgresql/data
+      - ./notifications-service/database/migrations:/docker-entrypoint-initdb.d:ro
+
+  media-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ticket_media
+    volumes:
+      - media-db-data:/var/lib/postgresql/data
+      - ./media-service/database/migrations:/docker-entrypoint-initdb.d:ro
+
+  catalog-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ticket_catalog
+    volumes:
+      - catalog-db-data:/var/lib/postgresql/data
+      - ./catalog-search-service/database/migrations:/docker-entrypoint-initdb.d:ro
+
+  analytics-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ticket_analytics
+    volumes:
+      - analytics-db-data:/var/lib/postgresql/data
+      - ./analytics-service/database/migrations:/docker-entrypoint-initdb.d:ro
+
+  checkin-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ticket_checkin
+    volumes:
+      - checkin-db-data:/var/lib/postgresql/data
+      - ./access-checkin-service/database/migrations:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  notifications-db-data:
+  media-db-data:
+  catalog-db-data:
+  analytics-db-data:
+  checkin-db-data:

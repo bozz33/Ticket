@@ -1,0 +1,14 @@
+{
+    "name": "ticket/finance-accounting",
+    "type": "library",
+    "description": "Internal finance accounting bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\FinanceAccounting\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

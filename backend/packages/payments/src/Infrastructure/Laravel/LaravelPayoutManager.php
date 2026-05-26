@@ -4,13 +4,13 @@ namespace Ticket\Payments\Infrastructure\Laravel;
 
 use App\Models\PayoutPolicy;
 use App\Models\Tenant;
-use Ticket\Payments\Application\PayoutPolicyService;
+use Ticket\FinanceAccounting\Contracts\PayoutPolicyCatalog;
 use Ticket\Payments\Contracts\PayoutManager;
 
 class LaravelPayoutManager implements PayoutManager
 {
     public function __construct(
-        private readonly PayoutPolicyService $payouts,
+        private readonly PayoutPolicyCatalog $payouts,
     ) {}
 
     public function resolvePolicy(Tenant $tenant, ?string $currencyCode = null): ?PayoutPolicy

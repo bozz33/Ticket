@@ -6,6 +6,23 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use SplFileInfo;
 use Tests\TestCase;
+use Ticket\AccessControl\Contracts\AccessPassCheckinWorkflow;
+use Ticket\Cms\Contracts\FrontCmsContent;
+use Ticket\ContentCallsForProjects\Contracts\CallForProjectContentCatalog;
+use Ticket\ContentCrowdfunding\Contracts\CrowdfundingContentCatalog;
+use Ticket\ContentEvents\Contracts\EventContentCatalog;
+use Ticket\ContentStands\Contracts\StandContentCatalog;
+use Ticket\ContentTraining\Contracts\TrainingContentCatalog;
+use Ticket\Engagement\Contracts\EventEngagementWorkflow;
+use Ticket\Engagement\Contracts\OrganizationAudienceWorkflow;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
+use Ticket\FinanceAccounting\Contracts\PayoutPolicyCatalog;
+use Ticket\FormBuilder\Contracts\FormSchemaValidator;
+use Ticket\FormBuilder\Contracts\FormSubmissionWriter;
+use Ticket\IdentityAccess\Contracts\PlatformTokenIssuer;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
+use Ticket\Localization\Contracts\PublicLocalizationCatalog;
+use Ticket\MediaDocuments\Contracts\QrCodeRenderer;
 use Ticket\Notifications\Contracts\DomainEventPublisher;
 use Ticket\Notifications\Contracts\NotificationDispatcher;
 use Ticket\Notifications\Contracts\OutboxDispatcher;
@@ -21,6 +38,10 @@ use Ticket\PublicCatalog\Contracts\CallForProjectApplications;
 use Ticket\PublicCatalog\Contracts\CallForProjectFormBuilder;
 use Ticket\PublicCatalog\Contracts\FrontContent;
 use Ticket\PublicCatalog\Contracts\PublicContentCatalog;
+use Ticket\ReferenceData\Contracts\CityReferenceSearch;
+use Ticket\ReferenceData\Contracts\CountryReferenceImport;
+use Ticket\Seo\Contracts\SeoMetadataCatalog;
+use Ticket\SupportObservability\Contracts\AuditLogger;
 use Ticket\Tenancy\Contracts\TenantDestroyer;
 use Ticket\Tenancy\Contracts\TenantLifecycleManager;
 use Ticket\Tenancy\Contracts\TenantProfileManager;
@@ -77,6 +98,7 @@ class ModularArchitectureBoundaryTest extends TestCase
                 'App\\Services\\Payments\\',
                 'App\\Services\\Public\\',
                 'App\\Services\\Tenancy\\',
+                'App\\Services\\FrontCmsService',
             ] as $forbiddenNamespace) {
                 if (str_contains($contents, $forbiddenNamespace)) {
                     $violations[] = sprintf('%s imports %s', $file->getPathname(), $forbiddenNamespace);
@@ -116,8 +138,12 @@ class ModularArchitectureBoundaryTest extends TestCase
 
         $this->assertContains(base_path('packages/public-catalog/database/migrations/central'), $centralDirectories);
         $this->assertContains(base_path('packages/notifications/database/migrations/central'), $centralDirectories);
+        $this->assertContains(base_path('packages/seo/database/migrations/central'), $centralDirectories);
+        $this->assertContains(base_path('packages/finance-accounting/database/migrations/central'), $centralDirectories);
         $this->assertContains(base_path('packages/tenancy/database/migrations/tenant'), $tenantDirectories);
         $this->assertContains(base_path('packages/ticketing/database/migrations/tenant'), $tenantDirectories);
+        $this->assertContains(base_path('packages/content-events/database/migrations/tenant'), $tenantDirectories);
+        $this->assertContains(base_path('packages/form-builder/database/migrations/tenant'), $tenantDirectories);
         $this->assertFileExists(base_path('packages/notifications/tests/Unit/NotificationsOutboxTest.php'));
         $this->assertFileExists(base_path('packages/public-catalog/tests/Unit/PublicCatalogProjectionReaderTest.php'));
     }
@@ -128,6 +154,27 @@ class ModularArchitectureBoundaryTest extends TestCase
     private function moduleContracts(): array
     {
         return [
+            PlatformTokenIssuer::class,
+            TenantTokenIssuer::class,
+            CountryReferenceImport::class,
+            CityReferenceSearch::class,
+            FrontCmsContent::class,
+            SeoMetadataCatalog::class,
+            PublicLocalizationCatalog::class,
+            QrCodeRenderer::class,
+            FormSchemaValidator::class,
+            FormSubmissionWriter::class,
+            FinancePolicyCatalog::class,
+            PayoutPolicyCatalog::class,
+            AuditLogger::class,
+            EventContentCatalog::class,
+            TrainingContentCatalog::class,
+            StandContentCatalog::class,
+            CallForProjectContentCatalog::class,
+            CrowdfundingContentCatalog::class,
+            EventEngagementWorkflow::class,
+            OrganizationAudienceWorkflow::class,
+            AccessPassCheckinWorkflow::class,
             CheckoutItemResolver::class,
             CheckoutManager::class,
             PaymentWebhookReceiver::class,
@@ -176,6 +223,8 @@ class ModularArchitectureBoundaryTest extends TestCase
             'App\\Services\\Payments\\PayoutPolicyService',
             'App\\Services\\Payments\\SettlementWorkflowService',
             'App\\Services\\Payments\\TenantRefundService',
+            'App\\Services\\Auth\\PlatformTokenService',
+            'App\\Services\\Auth\\TenantTokenService',
             'App\\Services\\Tenancy\\ProvisionTenant',
             'App\\Services\\Tenancy\\ManageTenantLifecycle',
             'App\\Services\\Tenancy\\DeleteTenant',

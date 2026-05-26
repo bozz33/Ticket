@@ -6,8 +6,6 @@ use App\Http\Middleware\InitializeTenancyByRouteParameter;
 use App\Models\PlatformUser;
 use App\Models\Tenant;
 use App\Models\User;
-use App\Services\Auth\PlatformTokenService;
-use App\Services\Auth\TenantTokenService;
 use App\Support\Tenancy\RouteTenantResolver;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\WithFaker;
@@ -18,6 +16,8 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Stancl\Tenancy\Tenancy;
 use Tests\TestCase;
+use Ticket\IdentityAccess\Contracts\PlatformTokenIssuer;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 
 class ApiSecurityHardeningTest extends TestCase
 {
@@ -215,7 +215,7 @@ class ApiSecurityHardeningTest extends TestCase
             'is_active' => true,
         ]);
 
-        $plainToken = app(TenantTokenService::class)->createToken($user, 'panel');
+        $plainToken = app(TenantTokenIssuer::class)->createToken($user, 'panel');
 
         $this->assertNotEmpty($plainToken);
 
@@ -237,7 +237,7 @@ class ApiSecurityHardeningTest extends TestCase
             'is_super_admin' => true,
         ]);
 
-        $plainToken = app(PlatformTokenService::class)->createToken($user, 'platform');
+        $plainToken = app(PlatformTokenIssuer::class)->createToken($user, 'platform');
 
         $this->assertNotEmpty($plainToken);
 

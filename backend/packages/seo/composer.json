@@ -1,0 +1,14 @@
+{
+    "name": "ticket/seo",
+    "type": "library",
+    "description": "Internal SEO bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Seo\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

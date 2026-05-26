@@ -1,0 +1,14 @@
+{
+    "name": "ticket/identity-access",
+    "type": "library",
+    "description": "Internal identity and access bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\IdentityAccess\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

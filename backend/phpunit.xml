@@ -8,6 +8,22 @@
         <testsuite name="Unit">
             <directory>tests/Unit</directory>
             <directory>packages/payments/tests/Unit</directory>
+            <directory>packages/identity-access/tests/Unit</directory>
+            <directory>packages/reference-data/tests/Unit</directory>
+            <directory>packages/cms/tests/Unit</directory>
+            <directory>packages/content-calls-for-projects/tests/Unit</directory>
+            <directory>packages/content-crowdfunding/tests/Unit</directory>
+            <directory>packages/content-events/tests/Unit</directory>
+            <directory>packages/content-stands/tests/Unit</directory>
+            <directory>packages/content-training/tests/Unit</directory>
+            <directory>packages/form-builder/tests/Unit</directory>
+            <directory>packages/access-control/tests/Unit</directory>
+            <directory>packages/engagement/tests/Unit</directory>
+            <directory>packages/finance-accounting/tests/Unit</directory>
+            <directory>packages/localization/tests/Unit</directory>
+            <directory>packages/media-documents/tests/Unit</directory>
+            <directory>packages/seo/tests/Unit</directory>
+            <directory>packages/support-observability/tests/Unit</directory>
             <directory>packages/notifications/tests/Unit</directory>
             <directory>packages/public-catalog/tests/Unit</directory>
             <directory>packages/tenancy/tests/Unit</directory>

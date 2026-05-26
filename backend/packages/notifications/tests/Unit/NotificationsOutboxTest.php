@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
+use Ticket\Notifications\Domain\DomainEventEnvelope;
 use Ticket\Notifications\Events\DomainOutboxMessagePublished;
 use Ticket\Notifications\Infrastructure\Laravel\DomainOutboxMessage;
 use Ticket\Notifications\Infrastructure\Laravel\LaravelDomainEventPublisher;
@@ -64,5 +65,54 @@ class NotificationsOutboxTest extends TestCase
         $this->assertSame('published', DomainOutboxMessage::query()->first()?->status);
 
         Event::assertDispatched(DomainOutboxMessagePublished::class);
+    }
+
+    public function test_domain_event_envelope_is_versioned_in_outbox_payload(): void
+    {
+        $event = DomainEventEnvelope::make(
+            type: 'order.paid',
+            payload: ['order_reference' => 'ORD-2'],
+            aggregateType: 'orders',
+            aggregateId: '2',
+            metadata: ['tenant_id' => 'tenant-demo'],
+            version: 2,
+        );
+
+        $eventId = (new LaravelDomainEventPublisher)->publishEnvelope($event);
+        $message = DomainOutboxMessage::query()->where('event_id', $eventId)->firstOrFail();
+
+        $this->assertSame(2, data_get($message->payload, '_event.version'));
+        $this->assertSame('ORD-2', data_get($message->payload, 'order_reference'));
+        $this->assertSame(2, data_get($message->metadata, 'event_version'));
+        $this->assertSame('tenant-demo', data_get($message->metadata, 'tenant_id'));
+    }
+
+    public function test_failed_outbox_messages_can_be_retried_and_counted(): void
+    {
+        DomainOutboxMessage::query()->create([
+            'event_id' => '00000000-0000-0000-0000-000000000001',
+            'type' => 'notification.email.failed',
+            'payload' => ['email' => 'user@example.test'],
+            'metadata' => [],
+            'status' => 'failed',
+            'attempts' => 2,
+            'available_at' => now(),
+            'last_error' => 'timeout',
+        ]);
+
+        $dispatcher = new LaravelOutboxDispatcher;
+
+        $this->assertSame(['failed' => 1], $dispatcher->stats());
+
+        $summary = $dispatcher->retryFailed(10, 30);
+
+        $this->assertSame(['retried' => 1, 'delay_seconds' => 30], $summary);
+        $this->assertSame(['pending' => 1], $dispatcher->stats());
+
+        $message = DomainOutboxMessage::query()->firstOrFail();
+
+        $this->assertSame('pending', $message->status);
+        $this->assertNull($message->last_error);
+        $this->assertTrue($message->available_at->greaterThanOrEqualTo(now()->addSeconds(25)));
     }
 }

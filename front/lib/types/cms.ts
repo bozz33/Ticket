@@ -1,6 +1,9 @@
 export type FrontMenuLocation =
+  | "header_top_left"
+  | "header_top_right"
   | "header_primary"
   | "header_utility"
+  | "header_actions"
   | "footer_explore"
   | "footer_platform"
   | "footer_bottom";

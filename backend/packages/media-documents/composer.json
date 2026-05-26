@@ -1,0 +1,14 @@
+{
+    "name": "ticket/media-documents",
+    "type": "library",
+    "description": "Internal media and documents bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\MediaDocuments\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

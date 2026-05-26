@@ -18,15 +18,15 @@ use App\Models\PlatformFeeRule;
 use App\Models\Stand;
 use App\Models\Tenant;
 use App\Models\Training;
-use App\Services\FinancePolicyService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 use Ticket\Payments\Domain\CheckoutItem;
 
 class PricingRuleEngine
 {
     public function __construct(
-        private readonly FinancePolicyService $financePolicyService,
+        private readonly FinancePolicyCatalog $financePolicyService,
     ) {}
 
     public function quote(

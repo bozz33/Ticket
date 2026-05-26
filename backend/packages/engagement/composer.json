@@ -1,0 +1,14 @@
+{
+    "name": "ticket/engagement",
+    "type": "library",
+    "description": "Internal engagement bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Engagement\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

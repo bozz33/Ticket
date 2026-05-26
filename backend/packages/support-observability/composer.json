@@ -1,0 +1,14 @@
+{
+    "name": "ticket/support-observability",
+    "type": "library",
+    "description": "Internal support and observability bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\SupportObservability\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

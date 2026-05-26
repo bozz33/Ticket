@@ -1,0 +1,14 @@
+{
+    "name": "ticket/content-crowdfunding",
+    "type": "library",
+    "description": "Internal crowdfunding bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\ContentCrowdfunding\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

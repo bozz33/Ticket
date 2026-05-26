@@ -3,9 +3,9 @@
 namespace Ticket\Notifications\Infrastructure\Laravel;
 
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Ticket\Notifications\Application\OutboxStatuses;
 use Ticket\Notifications\Contracts\DomainEventPublisher;
+use Ticket\Notifications\Domain\DomainEventEnvelope;
 
 class LaravelDomainEventPublisher implements DomainEventPublisher
 {
@@ -16,28 +16,34 @@ class LaravelDomainEventPublisher implements DomainEventPublisher
         ?string $aggregateId = null,
         array $metadata = [],
     ): string {
-        $eventId = (string) Str::uuid();
+        return $this->publishEnvelope(DomainEventEnvelope::make(
+            type: $type,
+            payload: $payload,
+            aggregateType: $aggregateType,
+            aggregateId: $aggregateId,
+            metadata: $metadata,
+        ));
+    }
 
+    public function publishEnvelope(DomainEventEnvelope $event): string
+    {
         if (! $this->tableExists()) {
-            return $eventId;
+            return $event->eventId;
         }
 
         DomainOutboxMessage::query()->create([
-            'event_id' => $eventId,
-            'type' => $type,
-            'aggregate_type' => $aggregateType,
-            'aggregate_id' => $aggregateId,
-            'payload' => $payload,
-            'metadata' => array_merge([
-                'source' => config('app.name', 'ticket'),
-                'occurred_at' => now()->toIso8601String(),
-            ], $metadata),
+            'event_id' => $event->eventId,
+            'type' => $event->type,
+            'aggregate_type' => $event->aggregateType,
+            'aggregate_id' => $event->aggregateId,
+            'payload' => $event->payloadWithEnvelope(),
+            'metadata' => $event->metadata,
             'status' => OutboxStatuses::Pending,
             'attempts' => 0,
             'available_at' => now(),
         ]);
 
-        return $eventId;
+        return $event->eventId;
     }
 
     private function tableExists(): bool

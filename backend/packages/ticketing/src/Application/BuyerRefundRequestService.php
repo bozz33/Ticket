@@ -12,11 +12,12 @@ use App\Models\User;
 use App\Notifications\BuyerAccountActivityNotification;
 use App\Notifications\BuyerRefundApprovedPlatformNotification;
 use App\Notifications\BuyerRefundRequestTenantNotification;
+use App\Support\Microservices\DomainEventBridge;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use Ticket\Notifications\Contracts\DomainEventPublisher;
 use Ticket\Notifications\Contracts\NotificationDispatcher;
+use Ticket\Notifications\Domain\DomainEventNames;
 use Ticket\Payments\Contracts\RefundManager;
 use Ticket\Ticketing\Contracts\OrderCatalog;
 
@@ -33,7 +34,7 @@ class BuyerRefundRequestService
         private readonly RefundManager $refundManager,
         private readonly TenantContext $tenantContext,
         private readonly NotificationDispatcher $notifications,
-        private readonly DomainEventPublisher $domainEvents,
+        private readonly DomainEventBridge $domainEvents,
     ) {}
 
     public function request(User $buyer, string $orderIdentifier, array $payload): Order
@@ -143,7 +144,7 @@ class BuyerRefundRequestService
         $updatedOrder = $this->orderCatalog->findByIdentifierForBuyer($buyer, $orderIdentifier) ?? $order;
 
         $this->domainEvents->publish(
-            'ticketing.refund.requested',
+            DomainEventNames::REFUND_REQUESTED,
             [
                 'tenant_id' => $tenant->getKey(),
                 'tenant_public_id' => $tenant->public_id,
@@ -154,7 +155,7 @@ class BuyerRefundRequestService
             ],
             Order::class,
             (string) $updatedOrder->getKey(),
-            ['module' => 'ticketing'],
+            ['module' => 'ticketing', 'tenant_id' => (string) $tenant->getKey()],
         );
 
         return $updatedOrder;
@@ -234,7 +235,7 @@ class BuyerRefundRequestService
             });
 
         $this->domainEvents->publish(
-            'ticketing.refund.approved_by_tenant',
+            DomainEventNames::REFUND_APPROVED,
             [
                 'tenant_id' => $tenant->getKey(),
                 'tenant_public_id' => $tenant->public_id,
@@ -244,7 +245,7 @@ class BuyerRefundRequestService
             ],
             Order::class,
             (string) $freshOrder->getKey(),
-            ['module' => 'ticketing'],
+            ['module' => 'ticketing', 'tenant_id' => (string) $tenant->getKey()],
         );
 
         return $freshOrder;
@@ -300,6 +301,23 @@ class BuyerRefundRequestService
                 ),
             );
         }
+
+        $tenant = $this->tenantContext->get();
+
+        $this->domainEvents->publish(
+            DomainEventNames::ORDER_CANCELLED,
+            [
+                'tenant_id' => $tenant instanceof Tenant ? $tenant->getKey() : null,
+                'tenant_public_id' => $tenant instanceof Tenant ? $tenant->public_id : null,
+                'order_id' => $freshOrder->getKey(),
+                'order_reference' => $freshOrder->reference,
+                'buyer_id' => $freshOrder->buyer_user_id,
+                'reason' => $reason,
+            ],
+            Order::class,
+            (string) $freshOrder->getKey(),
+            ['module' => 'ticketing', 'tenant_id' => $tenant instanceof Tenant ? (string) $tenant->getKey() : null],
+        );
 
         return $freshOrder;
     }

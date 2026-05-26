@@ -6,13 +6,13 @@ use App\Exceptions\BuyerAccountActionBlockedException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\PublicPaymentInitializeRequest;
 use App\Models\User;
-use App\Services\Auth\TenantTokenService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 use Ticket\Payments\Contracts\CheckoutManager;
 
 class PublicPaymentController extends Controller
@@ -22,7 +22,7 @@ class PublicPaymentController extends Controller
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly CheckoutManager $checkoutManager,
-        private readonly TenantTokenService $tenantTokenService,
+        private readonly TenantTokenIssuer $tenantTokenService,
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}
 

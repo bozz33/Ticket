@@ -6,16 +6,16 @@ use App\Exceptions\BuyerAccountActionBlockedException;
 use App\Http\Controllers\Controller;
 use App\Models\CallForProject;
 use App\Models\User;
-use App\Services\Auth\TenantTokenService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 use Ticket\PublicCatalog\Contracts\CallForProjectApplications;
 
 class PublicCallForProjectSubmissionController extends Controller
 {
     public function __construct(
-        private readonly TenantTokenService $tenantTokenService,
+        private readonly TenantTokenIssuer $tenantTokenService,
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}
 

@@ -1,0 +1,14 @@
+{
+    "name": "ticket/localization",
+    "type": "library",
+    "description": "Internal localization bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\Localization\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

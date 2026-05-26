@@ -11,11 +11,11 @@ use App\Models\PlatformTransaction;
 use App\Models\PlatformUser;
 use App\Models\Refund;
 use App\Models\Tenant;
-use App\Services\FinancePolicyService;
 use App\Support\Payments\GatewayAmountConverter;
 use App\Support\References\ReferenceGenerator;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Carbon;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 use Ticket\Payments\Domain\PaymentStatuses;
 
 class RefundService
@@ -26,7 +26,7 @@ class RefundService
         private readonly PaymentGatewayHttpClientFactory $httpClientFactory,
         private readonly GatewayAmountConverter $amountConverter,
         private readonly ReferenceGenerator $referenceGenerator,
-        private readonly FinancePolicyService $financePolicyService,
+        private readonly FinancePolicyCatalog $financePolicyService,
     ) {}
 
     public function quote(PlatformTransaction $transaction, ?string $reasonCode = null): array
@@ -429,7 +429,7 @@ class RefundService
     {
         return (string) ($pricingSnapshot['finance_policy_version'] ?? '') !== ''
             || array_key_exists('card_fee_total', $pricingSnapshot)
-            || data_get($pricingSnapshot, 'refund_policy.card_fee') === FinancePolicyService::CARD_FEE_REFUND_POLICY;
+            || data_get($pricingSnapshot, 'refund_policy.card_fee') === FinancePolicyCatalog::CARD_FEE_REFUND_POLICY;
     }
 
     private function quoteFromGlobalFinancePolicy(PlatformTransaction $transaction, array $pricingSnapshot, ?string $reasonCode): array
@@ -491,7 +491,7 @@ class RefundService
                     'refund_behavior' => $cardFeeRefunded > 0 ? RefundFeeBehavior::Refundable->value : RefundFeeBehavior::NonRefundable->value,
                     'is_refundable' => $cardFeeRefunded > 0,
                     'rule' => [
-                        'refund_policy' => FinancePolicyService::CARD_FEE_REFUND_POLICY,
+                        'refund_policy' => FinancePolicyCatalog::CARD_FEE_REFUND_POLICY,
                         'reason_code' => $reasonCode,
                     ],
                 ],

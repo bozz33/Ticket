@@ -7,11 +7,11 @@ use App\Models\IncidentLog;
 use App\Models\PaymentGateway;
 use App\Models\PaymentIncident;
 use App\Models\PlatformTransaction;
-use App\Services\FinancePolicyService;
 use App\Support\Payments\GatewayAmountConverter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 use Ticket\Payments\Domain\PaymentStatuses;
 
 class PaymentWebhookService
@@ -19,7 +19,7 @@ class PaymentWebhookService
     public function __construct(
         private readonly OrderFulfillmentService $orderFulfillmentService,
         private readonly PaymentGatewayCredentialResolver $credentialResolver,
-        private readonly FinancePolicyService $financePolicyService,
+        private readonly FinancePolicyCatalog $financePolicyService,
         private readonly GatewayAmountConverter $amountConverter,
     ) {}
 

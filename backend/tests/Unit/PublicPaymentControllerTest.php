@@ -7,12 +7,12 @@ use App\Http\Requests\Api\V1\Public\PublicPaymentInitializeRequest;
 use App\Models\Tenant;
 use App\Models\User;
 use App\Models\UserApiToken;
-use App\Services\Auth\TenantTokenService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\Request;
 use Mockery;
 use Tests\TestCase;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 use Ticket\Payments\Contracts\CheckoutManager;
 
 class PublicPaymentControllerTest extends TestCase
@@ -53,7 +53,7 @@ class PublicPaymentControllerTest extends TestCase
         $checkoutManager = Mockery::mock(CheckoutManager::class);
         $checkoutManager->shouldNotReceive('initialize');
 
-        $tokenService = Mockery::mock(TenantTokenService::class);
+        $tokenService = Mockery::mock(TenantTokenIssuer::class);
         $apiToken = Mockery::mock(UserApiToken::class)->makePartial();
         $apiToken->setRelation('user', $buyer);
         $apiToken->shouldReceive('touchLastUsed')->once();
@@ -134,7 +134,7 @@ class PublicPaymentControllerTest extends TestCase
                 'authorization_url' => 'https://paystack.test/redirect',
             ]);
 
-        $tokenService = Mockery::mock(TenantTokenService::class);
+        $tokenService = Mockery::mock(TenantTokenIssuer::class);
         $apiToken = Mockery::mock(UserApiToken::class)->makePartial();
         $apiToken->setRelation('user', $buyer);
         $apiToken->shouldReceive('touchLastUsed')->once();
@@ -217,7 +217,7 @@ class PublicPaymentControllerTest extends TestCase
                 'authorization_url' => 'https://paystack.test/crowdfunding',
             ]);
 
-        $tokenService = Mockery::mock(TenantTokenService::class);
+        $tokenService = Mockery::mock(TenantTokenIssuer::class);
         $apiToken = Mockery::mock(UserApiToken::class)->makePartial();
         $apiToken->setRelation('user', $buyer);
         $apiToken->shouldReceive('touchLastUsed')->once();

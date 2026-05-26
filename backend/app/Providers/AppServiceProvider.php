@@ -23,11 +23,11 @@ use App\Models\ReconciliationLog;
 use App\Models\Settlement;
 use App\Models\Tenant;
 use App\Observers\PlatformAuditObserver;
-use App\Services\AuditService;
 use App\Services\FeatureFlagService;
-use App\Services\FinancePolicyService;
 use App\Services\PlatformMailSettings;
 use App\Services\PlatformSettingsService;
+use App\Support\Microservices\MicroserviceClientFactory;
+use App\Support\Microservices\MicroserviceRegistry;
 use App\Support\Tenancy\TenantContext;
 use Filament\Auth\Http\Responses\Contracts\LoginResponse;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -50,11 +50,11 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->bind(LoginResponse::class, FilamentLoginResponse::class);
 
-        $this->app->singleton(AuditService::class, fn (): AuditService => new AuditService);
         $this->app->singleton(FeatureFlagService::class, fn (): FeatureFlagService => new FeatureFlagService);
-        $this->app->singleton(FinancePolicyService::class, fn (): FinancePolicyService => new FinancePolicyService);
         $this->app->singleton(PlatformSettingsService::class, fn (): PlatformSettingsService => new PlatformSettingsService);
         $this->app->singleton(TenantContext::class, fn (): TenantContext => new TenantContext);
+        $this->app->singleton(MicroserviceRegistry::class, fn (): MicroserviceRegistry => new MicroserviceRegistry);
+        $this->app->singleton(MicroserviceClientFactory::class);
     }
 
     /**

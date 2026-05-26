@@ -2,9 +2,9 @@
 
 namespace Ticket\Payments;
 
-use App\Services\FinancePolicyService;
 use App\Support\Payments\GatewayAmountConverter;
 use Illuminate\Support\ServiceProvider;
+use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 use Ticket\Payments\Application\OrderFulfillmentService;
 use Ticket\Payments\Application\PaymentGatewayCredentialResolver;
 use Ticket\Payments\Application\PaymentWebhookService;
@@ -33,7 +33,7 @@ class PaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(PaymentWebhookService::class, fn (): PaymentWebhookService => new PaymentWebhookService(
             $this->app->make(OrderFulfillmentService::class),
             $this->app->make(PaymentGatewayCredentialResolver::class),
-            $this->app->make(FinancePolicyService::class),
+            $this->app->make(FinancePolicyCatalog::class),
             $this->app->make(GatewayAmountConverter::class),
         ));
 

@@ -1,0 +1,14 @@
+{
+    "name": "ticket/form-builder",
+    "type": "library",
+    "description": "Internal dynamic form builder bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\FormBuilder\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

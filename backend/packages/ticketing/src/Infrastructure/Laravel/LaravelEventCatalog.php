@@ -3,12 +3,12 @@
 namespace Ticket\Ticketing\Infrastructure\Laravel;
 
 use App\Models\Event;
-use Ticket\Ticketing\Application\EventService;
+use Ticket\ContentEvents\Contracts\EventContentCatalog;
 use Ticket\Ticketing\Contracts\EventCatalog;
 
 class LaravelEventCatalog implements EventCatalog
 {
-    public function __construct(private readonly EventService $events) {}
+    public function __construct(private readonly EventContentCatalog $events) {}
 
     public function list(?string $status = null): mixed
     {

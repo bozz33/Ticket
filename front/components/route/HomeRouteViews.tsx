@@ -96,7 +96,7 @@ export async function HomeView({
             </div>
           </div>
 
-          <HeroSearch categories={categories} />
+          <HeroSearch categories={categories} locale={locale} platform={platform} />
         </div>
       </section>
 

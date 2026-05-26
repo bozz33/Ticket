@@ -1,0 +1,14 @@
+{
+    "name": "ticket/content-calls-for-projects",
+    "type": "library",
+    "description": "Internal calls for projects bounded context for Ticket.",
+    "license": "proprietary",
+    "autoload": {
+        "psr-4": {
+            "Ticket\\ContentCallsForProjects\\": "src/"
+        }
+    },
+    "require": {
+        "php": "^8.2"
+    }
+}

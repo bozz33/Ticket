@@ -7,13 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\V1\Public\PublicTicketReservationStoreRequest;
 use App\Models\TicketReservation;
 use App\Models\User;
-use App\Services\Auth\TenantTokenService;
 use App\Support\Buyers\BuyerAccountReadiness;
 use App\Support\Tenancy\TenantContext;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use RuntimeException;
+use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Domain\CheckoutReservation;
 
@@ -22,7 +22,7 @@ class PublicTicketReservationController extends Controller
     public function __construct(
         private readonly TenantContext $tenantContext,
         private readonly CheckoutItemResolver $checkoutItems,
-        private readonly TenantTokenService $tenantTokenService,
+        private readonly TenantTokenIssuer $tenantTokenService,
         private readonly BuyerAccountReadiness $buyerAccountReadiness,
     ) {}
 

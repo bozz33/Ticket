@@ -3,8 +3,8 @@
 namespace App\Observers;
 
 use App\Models\PlatformAuditLog;
-use App\Services\AuditService;
 use Illuminate\Database\Eloquent\Model;
+use Ticket\SupportObservability\Contracts\AuditLogger;
 
 class PlatformAuditObserver
 {
@@ -43,6 +43,6 @@ class PlatformAuditObserver
             return;
         }
 
-        app(AuditService::class)->log($event, $model, $context);
+        app(AuditLogger::class)->log($event, $model, $context);
     }
 }
