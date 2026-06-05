@@ -26,29 +26,38 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
     }
 
     /**
-     * Consume a pass (mark as used). Idempotent on already-used passes.
+     * Consume a pass (mark as used) with a row-level lock to prevent double-validation
+     * under concurrent scan requests from multiple terminals.
+     *
+     * The pass is re-fetched inside the transaction with SELECT FOR UPDATE so that
+     * two concurrent requests reading the same active pass cannot both succeed.
      */
     public function consume(AccessPass $pass, Request $request): array
     {
-        if (! $pass->isConsumable()) {
-            $result = $this->resolveReadResult($pass);
-            $this->recordScan($pass, 'consume', $result, $request);
-
-            return $this->buildResponse($pass, $result);
-        }
-
         $connectionName = config('ticket.tenant_connection', 'tenant');
 
-        DB::connection($connectionName)->transaction(function () use ($pass, $request): void {
-            $pass->forceFill([
+        return DB::connection($connectionName)->transaction(function () use ($pass, $request, $connectionName): array {
+            $locked = AccessPass::on($connectionName)
+                ->whereKey($pass->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! $locked->isConsumable()) {
+                $result = $this->resolveReadResult($locked);
+                $this->recordScan($locked, 'consume', $result, $request);
+
+                return $this->buildResponse($locked, $result);
+            }
+
+            $locked->forceFill([
                 'status' => AccessPassStatus::Used,
                 'used_at' => now(),
             ])->save();
 
-            $this->recordScan($pass, 'consume', ScanResult::Granted, $request);
-        });
+            $this->recordScan($locked, 'consume', ScanResult::Granted, $request);
 
-        return $this->buildResponse($pass->fresh(), ScanResult::Granted);
+            return $this->buildResponse($locked->fresh(), ScanResult::Granted);
+        });
     }
 
     /**
@@ -122,7 +131,7 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
         return $this->buildResponse($pass->fresh(), ScanResult::Granted);
     }
 
-    private function resolveReadResult(AccessPass $pass): ScanResult
+    protected function resolveReadResult(AccessPass $pass): ScanResult
     {
         return match ($pass->status) {
             AccessPassStatus::Active => ($pass->expires_at !== null && $pass->expires_at->isPast())
@@ -134,7 +143,7 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
         };
     }
 
-    private function recordScan(
+    protected function recordScan(
         AccessPass $pass,
         string $action,
         ScanResult $result,
@@ -153,7 +162,7 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
         ]);
     }
 
-    private function buildResponse(AccessPass $pass, ScanResult $result, string $message = ''): array
+    protected function buildResponse(AccessPass $pass, ScanResult $result, string $message = ''): array
     {
         return [
             'result' => $result->value,

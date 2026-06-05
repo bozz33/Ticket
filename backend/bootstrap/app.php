@@ -32,6 +32,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.platform.api' => AuthenticatePlatformApi::class,
             'auth.tenant.api' => AuthenticateTenantApi::class,
+            'ability' => \App\Http\Middleware\CheckTokenAbility::class,
             'initialize.tenant.route' => InitializeTenancyByRouteParameter::class,
             'tenant.categories.synced' => EnsureTenantCategoriesAreSynced::class,
             'signed' => ValidateSignature::class,

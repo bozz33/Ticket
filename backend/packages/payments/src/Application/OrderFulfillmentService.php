@@ -323,12 +323,39 @@ class OrderFulfillmentService
         }
     }
 
-    private function ensureAccessPasses(Order $order, ?Offer $offer, string $offerableType, array $checkout): array
+    protected function ensureAccessPasses(Order $order, ?Offer $offer, string $offerableType, array $checkout): array
     {
         $existingCount = $order->accessPasses()->count();
 
         if ($existingCount >= $order->quantity) {
             return [];
+        }
+
+        // Lock the offer row and verify available stock before creating passes to prevent
+        // overselling under concurrent payment confirmations for the same offer.
+        if ($offer instanceof Offer) {
+            $connectionName = config('ticket.tenant_connection', 'tenant');
+            $offer = Offer::on($connectionName)->whereKey($offer->getKey())->lockForUpdate()->first();
+
+            if ($offer === null) {
+                throw new \RuntimeException('Offre introuvable lors du traitement de la commande.');
+            }
+
+            $maxQty = $offer->quantity_total ?? null;
+
+            if ($maxQty !== null && $maxQty > 0) {
+                $needed = max(0, $order->quantity - $existingCount);
+                $alreadySold = (int) ($offer->quantity_sold ?? 0);
+
+                if ($needed > 0 && ($alreadySold + $needed) > $maxQty) {
+                    throw new \RuntimeException(sprintf(
+                        'Stock insuffisant pour l\'offre #%d : %d unité(s) demandée(s), %d disponible(s).',
+                        $offer->getKey(),
+                        $needed,
+                        max(0, $maxQty - $alreadySold),
+                    ));
+                }
+            }
         }
 
         $passType = $offer !== null

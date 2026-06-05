@@ -26,10 +26,16 @@ class AuthenticateTenantApi
             return $this->unauthorized('Token invalide ou expiré.');
         }
 
+        $user = $apiToken->user;
+
+        if ($user === null || ! $user->is_active) {
+            return $this->unauthorized('Compte désactivé ou introuvable.');
+        }
+
         $apiToken->touchLastUsed();
 
         $request->attributes->set('tenant_api_token', $apiToken);
-        $request->attributes->set('tenant_user', $apiToken->user);
+        $request->attributes->set('tenant_user', $user);
 
         return $next($request);
     }

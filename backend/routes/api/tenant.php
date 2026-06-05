@@ -92,15 +92,18 @@ Route::middleware(['initialize.tenant.route', 'auth.tenant.api'])->prefix('tenan
     Route::get('/access-passes/{accessPass}', [TenantAccessPassController::class, 'show']);
 
     Route::prefix('access-passes/{accessPass}/checkin')->group(function (): void {
+        // Preview requires the passes.scan ability (scanner or admin tokens only).
         Route::get('/preview', [TenantAccessPassCheckinController::class, 'preview'])
-            ->middleware('throttle:tenant-checkin');
+            ->middleware(['throttle:tenant-checkin', 'ability:passes.scan']);
+        // Consume requires the passes.scan ability to prevent buyers from self-validating.
         Route::post('/consume', [TenantAccessPassCheckinController::class, 'consume'])
-            ->middleware('throttle:tenant-checkin');
+            ->middleware(['throttle:tenant-checkin', 'ability:passes.scan']);
+        // Administrative actions require passes.manage (admin/owner tokens only).
         Route::post('/reset', [TenantAccessPassCheckinController::class, 'reset'])
-            ->middleware('throttle:tenant-checkin');
+            ->middleware(['throttle:tenant-checkin', 'ability:passes.manage']);
         Route::post('/revoke', [TenantAccessPassCheckinController::class, 'revoke'])
-            ->middleware('throttle:tenant-checkin');
+            ->middleware(['throttle:tenant-checkin', 'ability:passes.manage']);
         Route::post('/reactivate', [TenantAccessPassCheckinController::class, 'reactivate'])
-            ->middleware('throttle:tenant-checkin');
+            ->middleware(['throttle:tenant-checkin', 'ability:passes.manage']);
     });
 });

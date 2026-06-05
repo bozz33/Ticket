@@ -32,6 +32,32 @@ use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 
 class TenantAuthController extends Controller
 {
+    /**
+     * Abilities granted to authenticated buyers (standard account holders).
+     * Intentionally excludes pass scanning and administrative actions.
+     */
+    private const BUYER_ABILITIES = [
+        'profile.read',
+        'profile.write',
+        'orders.read',
+        'receipts.read',
+        'passes.read',
+        'notifications.read',
+        'notifications.write',
+        'engage.write',
+        'settings.read',
+        'settings.write',
+        'refunds.write',
+    ];
+
+    /**
+     * Abilities granted to scanner accounts (event staff performing check-in).
+     */
+    private const SCANNER_ABILITIES = [
+        'passes.read',
+        'passes.scan',
+    ];
+
     public function __construct(
         private readonly TenantTokenIssuer $tokenService,
         private readonly TenantContext $tenantContext,
@@ -57,7 +83,7 @@ class TenantAuthController extends Controller
         $token = $this->tokenService->createToken(
             $user,
             $validated['token_name'] ?? 'api',
-            ['*'],
+            $this->resolveAbilitiesForUser($user),
         );
 
         $user->forceFill(['last_login_at' => now()])->saveQuietly();
@@ -93,7 +119,7 @@ class TenantAuthController extends Controller
         $token = $this->tokenService->createToken(
             $user,
             $validated['token_name'] ?? 'panel_acheteur',
-            ['*'],
+            self::BUYER_ABILITIES,
         );
 
         return response()->json([
@@ -493,5 +519,23 @@ class TenantAuthController extends Controller
     private function notificationsTableExists(): bool
     {
         return Schema::connection('tenant')->hasTable('notifications');
+    }
+
+    /**
+     * Resolve the token abilities to assign based on the authenticated user's role.
+     * Owners and admins receive wildcard access. Scanners receive scan-only access.
+     * All other users (buyers) receive buyer-scoped abilities.
+     */
+    private function resolveAbilitiesForUser(User $user): array
+    {
+        if ($user->hasAnyRole(['owner', 'admin', 'organizer'])) {
+            return ['*'];
+        }
+
+        if ($user->hasRole('scanner')) {
+            return self::SCANNER_ABILITIES;
+        }
+
+        return self::BUYER_ABILITIES;
     }
 }

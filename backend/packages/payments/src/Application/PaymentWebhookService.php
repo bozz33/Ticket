@@ -210,7 +210,10 @@ class PaymentWebhookService
     protected function buildFulfillmentPayload(PlatformTransaction $transaction, array $payload): array
     {
         $checkout = (array) data_get($transaction->meta ?? [], 'checkout', []);
-        $metadata = array_replace($checkout, (array) Arr::get($payload, 'data.metadata', []));
+        // Server-side checkout data takes precedence over webhook-supplied metadata to
+        // prevent metadata injection: an attacker cannot override offer_id, quantity, or
+        // buyer_email by crafting a malicious webhook payload, even with a valid signature.
+        $metadata = array_replace((array) Arr::get($payload, 'data.metadata', []), $checkout);
 
         return [
             'data' => [

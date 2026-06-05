@@ -35,6 +35,9 @@ export function useAccountPanelSession(pathname: string) {
 
         if (response.status === 401) {
           lastSessionCheckRef.current = 0;
+          // Clear server-side cookies before redirecting so the middleware does not
+          // repeatedly serve protected pages on the next navigation.
+          await fetch("/api/account/logout", { method: "POST" }).catch(() => {});
           router.push(`/compte/connexion?redirect=${encodeURIComponent(pathname)}`);
           return;
         }
