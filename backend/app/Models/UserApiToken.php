@@ -43,7 +43,17 @@ class UserApiToken extends Model
             return true;
         }
 
-        return in_array('*', $this->abilities, true) || in_array($ability, $this->abilities, true);
+        if (in_array('*', $this->abilities, true) || in_array($ability, $this->abilities, true)) {
+            return true;
+        }
+
+        // Support prefix wildcards: "notifications.*" covers "notifications.read", "notifications.write", etc.
+        $prefix = strstr($ability, '.', true);
+        if ($prefix !== false && in_array($prefix.'.*', $this->abilities, true)) {
+            return true;
+        }
+
+        return false;
     }
 
     public function touchLastUsed(): void

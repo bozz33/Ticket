@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Middleware\AuthenticatePlatformApi;
 use App\Http\Middleware\AuthenticateTenantApi;
+use App\Http\Middleware\CheckTokenAbility;
 use App\Http\Middleware\EnsureTenantCategoriesAreSynced;
 use App\Http\Middleware\InitializeTenancyByRouteParameter;
 use App\Http\Responses\ApiResponse;
@@ -32,7 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'auth.platform.api' => AuthenticatePlatformApi::class,
             'auth.tenant.api' => AuthenticateTenantApi::class,
-            'ability' => \App\Http\Middleware\CheckTokenAbility::class,
+            'ability' => CheckTokenAbility::class,
             'initialize.tenant.route' => InitializeTenancyByRouteParameter::class,
             'tenant.categories.synced' => EnsureTenantCategoriesAreSynced::class,
             'signed' => ValidateSignature::class,

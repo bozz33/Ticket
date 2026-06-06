@@ -30,11 +30,11 @@ class CentralTagResource extends Resource
     protected static ?string $pluralModelLabel = 'Tags centraux';
 
     protected static ?string $recordTitleAttribute = 'name';
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
-
 
     public static function form(Schema $schema): Schema
     {

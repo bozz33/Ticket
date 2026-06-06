@@ -16,8 +16,8 @@ use App\Support\References\ReferenceGenerator;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
-use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Notifications\Domain\DomainEventNames;
+use Ticket\Payments\Contracts\CheckoutItemResolver;
 
 class OrderFulfillmentService
 {
@@ -186,8 +186,7 @@ class OrderFulfillmentService
         string $contributorDisplayName,
         bool $contributorIsAnonymous,
         bool $isNewOrder
-    ): void
-    {
+    ): void {
         if (! $isNewOrder || ! $offer instanceof Offer || $offer->offerable_type !== CrowdfundingCampaign::class) {
             return;
         }

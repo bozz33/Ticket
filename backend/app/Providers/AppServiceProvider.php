@@ -259,6 +259,20 @@ class AppServiceProvider extends ServiceProvider
                 ),
             ];
         });
+
+        RateLimiter::for('tenant-refund', function (Request $request): array {
+            $tenant = (string) $request->route('tenant', 'tenant');
+            $ip = (string) $request->ip();
+            // Use user ID if available to prevent bypassing via IP rotation.
+            $userId = (string) ($request->attributes->get('tenant_user')?->id ?? $ip);
+
+            return [
+                $this->perMinuteLimit(
+                    (int) config('ticket.rate_limits.tenant_refund_per_minute', 5),
+                    sprintf('tenant-refund:%s:%s', $tenant, $userId),
+                ),
+            ];
+        });
     }
 
     private function perMinuteLimit(int $maxAttempts, string $key): Limit

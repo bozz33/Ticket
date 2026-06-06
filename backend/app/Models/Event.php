@@ -47,6 +47,13 @@ class Event extends Model
         ];
     }
 
+    public function city(): BelongsTo
+    {
+        // City lives in the central database; the relation uses PHP-level loading
+        // (two separate queries), not a cross-database JOIN.
+        return $this->belongsTo(City::class);
+    }
+
     public function organizationProfile(): BelongsTo
     {
         return $this->belongsTo(OrganizationProfile::class);

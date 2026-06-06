@@ -208,6 +208,7 @@ class TenantRefundServiceTest extends TestCase
             $table->json('meta')->nullable();
             $table->json('pricing_snapshot')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('tenant')->create('receipts', function (Blueprint $table): void {
@@ -226,6 +227,7 @@ class TenantRefundServiceTest extends TestCase
             $table->timestamp('refunded_at')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('tenant')->create('access_passes', function (Blueprint $table): void {
@@ -243,6 +245,7 @@ class TenantRefundServiceTest extends TestCase
             $table->string('revocation_reason')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 }

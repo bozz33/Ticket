@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Models\City;
 use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\Offer;
@@ -117,9 +116,9 @@ class PublicReceiptVerificationController extends Controller
             return null;
         }
 
-        $event->loadMissing('dates');
+        $event->loadMissing(['dates', 'city']);
         $primaryDate = $event->dates->first();
-        $cityName = $event->city_id ? City::query()->whereKey($event->city_id)->value('name') : null;
+        $cityName = $event->city?->name;
         $startsAt = $primaryDate?->starts_at ?? data_get($event->meta ?? [], 'schedule.starts_at');
         $endsAt = $primaryDate?->ends_at ?? data_get($event->meta ?? [], 'schedule.ends_at');
         $locationParts = array_values(array_filter([

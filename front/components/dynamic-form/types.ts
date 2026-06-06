@@ -19,6 +19,10 @@ export interface DynamicFormField {
   visible_if?: DynamicFormVisibilityCondition | DynamicFormVisibilityCondition[];
   accept?: string[];
   options?: DynamicFormOption[] | Record<string, string>;
+  // rating field
+  max_rating?: number;
+  // hidden field
+  default_value?: string;
 }
 
 export interface DynamicFormSchema {

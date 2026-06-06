@@ -38,11 +38,11 @@ class IncidentLogResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-bug-ant';
 
     protected static ?string $recordTitleAttribute = 'title';
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
-
 
     public static function form(Schema $schema): Schema
     {

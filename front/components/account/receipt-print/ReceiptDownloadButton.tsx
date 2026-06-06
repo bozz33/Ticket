@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import QRCode from "qrcode";
 
 export type ReceiptDownloadPayload = {
@@ -248,16 +249,34 @@ function download(blob: Blob, filename: string) {
 }
 
 export function ReceiptDownloadButton({ payload }: ReceiptDownloadButtonProps) {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleDownload() {
+    if (loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const pdf = await createReceiptPdf(payload);
+      download(pdf, `recu-${payload.receiptReference}.pdf`);
+    } catch {
+      setError("Impossible de générer le PDF. Réessayez ou utilisez l'impression navigateur.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
-    <button
-      className="button"
-      onClick={async () => {
-        const pdf = await createReceiptPdf(payload);
-        download(pdf, `recu-${payload.receiptReference}.pdf`);
-      }}
-      type="button"
-    >
-      Télécharger PDF
-    </button>
+    <div>
+      <button
+        className="button"
+        disabled={loading}
+        onClick={() => { void handleDownload(); }}
+        type="button"
+      >
+        {loading ? "Génération en cours…" : "Télécharger PDF"}
+      </button>
+      {error ? <p style={{ color: "red", fontSize: "0.85em", marginTop: "0.5em" }}>{error}</p> : null}
+    </div>
   );
 }

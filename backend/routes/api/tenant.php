@@ -33,16 +33,24 @@ Route::prefix('tenants/{tenant}/auth')->middleware(['initialize.tenant.route'])-
 
     Route::middleware(['auth.tenant.api'])->group(function (): void {
         Route::post('/logout', [TenantAuthController::class, 'logout']);
-        Route::get('/me', [TenantAuthController::class, 'me']);
-        Route::put('/me', [TenantAuthController::class, 'updateMe']);
+        Route::get('/me', [TenantAuthController::class, 'me'])
+            ->middleware('ability:profile.read');
+        Route::put('/me', [TenantAuthController::class, 'updateMe'])
+            ->middleware('ability:profile.write');
         Route::post('/email/verification-notification', [TenantAuthController::class, 'sendVerificationNotification'])
             ->middleware('throttle:tenant-auth');
-        Route::get('/avatar', [TenantAuthController::class, 'avatar']);
-        Route::post('/avatar', [TenantAuthController::class, 'updateAvatar']);
-        Route::put('/password', [TenantAuthController::class, 'updatePassword']);
-        Route::get('/notifications', [TenantAuthController::class, 'notifications']);
-        Route::patch('/notifications/read-all', [TenantAuthController::class, 'markAllNotificationsAsRead']);
-        Route::patch('/notifications/{notification}/read', [TenantAuthController::class, 'markNotificationAsRead']);
+        Route::get('/avatar', [TenantAuthController::class, 'avatar'])
+            ->middleware('ability:profile.read');
+        Route::post('/avatar', [TenantAuthController::class, 'updateAvatar'])
+            ->middleware('ability:profile.write');
+        Route::put('/password', [TenantAuthController::class, 'updatePassword'])
+            ->middleware('ability:profile.write');
+        Route::get('/notifications', [TenantAuthController::class, 'notifications'])
+            ->middleware('ability:notifications.read');
+        Route::patch('/notifications/read-all', [TenantAuthController::class, 'markAllNotificationsAsRead'])
+            ->middleware('ability:notifications.write');
+        Route::patch('/notifications/{notification}/read', [TenantAuthController::class, 'markNotificationAsRead'])
+            ->middleware('ability:notifications.write');
     });
 });
 
@@ -81,15 +89,22 @@ Route::middleware(['initialize.tenant.route', 'auth.tenant.api'])->prefix('tenan
     Route::delete('/content/{module}/{content}/like', [TenantContentLikeController::class, 'destroy'])
         ->middleware('throttle:tenant-engagement');
 
-    Route::get('/orders', [TenantOrderController::class, 'index']);
-    Route::get('/orders/{order}', [TenantOrderController::class, 'show']);
-    Route::post('/refund-requests', [TenantRefundRequestController::class, 'store']);
+    Route::get('/orders', [TenantOrderController::class, 'index'])
+        ->middleware('ability:orders.read');
+    Route::get('/orders/{order}', [TenantOrderController::class, 'show'])
+        ->middleware('ability:orders.read');
+    Route::post('/refund-requests', [TenantRefundRequestController::class, 'store'])
+        ->middleware(['throttle:tenant-refund', 'ability:refunds.write']);
 
-    Route::get('/receipts', [TenantReceiptController::class, 'index']);
-    Route::get('/receipts/{receipt}', [TenantReceiptController::class, 'show']);
+    Route::get('/receipts', [TenantReceiptController::class, 'index'])
+        ->middleware('ability:receipts.read');
+    Route::get('/receipts/{receipt}', [TenantReceiptController::class, 'show'])
+        ->middleware('ability:receipts.read');
 
-    Route::get('/access-passes', [TenantAccessPassController::class, 'index']);
-    Route::get('/access-passes/{accessPass}', [TenantAccessPassController::class, 'show']);
+    Route::get('/access-passes', [TenantAccessPassController::class, 'index'])
+        ->middleware('ability:passes.read');
+    Route::get('/access-passes/{accessPass}', [TenantAccessPassController::class, 'show'])
+        ->middleware('ability:passes.read');
 
     Route::prefix('access-passes/{accessPass}/checkin')->group(function (): void {
         // Preview requires the passes.scan ability (scanner or admin tokens only).

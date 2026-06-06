@@ -26,7 +26,7 @@ class TenantOrderController extends Controller
             'data' => $this->orderCatalog->listForBuyer(
                 $user,
                 $request->query('status'),
-                (int) $request->query('limit', 100),
+                min(100, max(1, (int) $request->query('limit', 20))),
             ),
         ]);
     }

@@ -117,12 +117,12 @@ class CallForProjectResource extends Resource
                 ->description('Bloc optionnel pour enrichir la fiche publique: avantages, critères, documents et galerie.')
                 ->collapsed()
                 ->schema([
-                TagsInput::make('meta.highlights')->label('Points forts'),
-                TagsInput::make('meta.badges')->label('Badges'),
-                TagsInput::make('meta.conditions')->label('Conditions de participation')->columnSpanFull(),
-                TagsInput::make('meta.requiredDocuments')->label('Documents requis')->columnSpanFull(),
-                TagsInput::make('meta.gallery')->label('Galerie (URLs)')->columnSpanFull(),
-            ])->columns(2),
+                    TagsInput::make('meta.highlights')->label('Points forts'),
+                    TagsInput::make('meta.badges')->label('Badges'),
+                    TagsInput::make('meta.conditions')->label('Conditions de participation')->columnSpanFull(),
+                    TagsInput::make('meta.requiredDocuments')->label('Documents requis')->columnSpanFull(),
+                    TagsInput::make('meta.gallery')->label('Galerie (URLs)')->columnSpanFull(),
+                ])->columns(2),
         ]);
     }
 

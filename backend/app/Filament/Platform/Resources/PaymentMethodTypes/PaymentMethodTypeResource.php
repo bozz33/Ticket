@@ -26,11 +26,11 @@ class PaymentMethodTypeResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-credit-card';
 
     protected static ?string $recordTitleAttribute = 'name';
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
-
 
     public static function form(Schema $schema): Schema
     {

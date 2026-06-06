@@ -10,4 +10,5 @@ Route::prefix('v1')->group(function (): void {
     require __DIR__.'/api/webhooks.php';
     require __DIR__.'/api/platform.php';
     require __DIR__.'/api/tenant.php';
+    require __DIR__.'/api/mobile.php';
 });

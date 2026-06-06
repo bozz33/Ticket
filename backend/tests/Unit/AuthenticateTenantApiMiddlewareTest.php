@@ -18,6 +18,7 @@ use Ticket\IdentityAccess\Contracts\TenantTokenIssuer;
 class AuthenticateTenantApiMiddlewareTest extends TestCase
 {
     private TenantTokenIssuer|MockInterface $tokenService;
+
     private AuthenticateTenantApi $middleware;
 
     protected function setUp(): void
@@ -35,7 +36,7 @@ class AuthenticateTenantApiMiddlewareTest extends TestCase
 
     public function test_missing_bearer_returns_401(): void
     {
-        $request = new Request();
+        $request = new Request;
         $response = $this->middleware->handle($request, fn () => new JsonResponse(['ok' => true]));
 
         $this->assertSame(401, $response->getStatusCode());
@@ -55,10 +56,10 @@ class AuthenticateTenantApiMiddlewareTest extends TestCase
 
     public function test_inactive_user_is_rejected_with_401(): void
     {
-        $user = new User();
+        $user = new User;
         $user->forceFill(['is_active' => false]);
 
-        $token = new UserApiToken();
+        $token = new UserApiToken;
         $token->setRelation('user', $user);
 
         $this->tokenService->shouldReceive('findToken')->once()->andReturn($token);
@@ -73,7 +74,7 @@ class AuthenticateTenantApiMiddlewareTest extends TestCase
 
     public function test_null_user_is_rejected_with_401(): void
     {
-        $token = new UserApiToken();
+        $token = new UserApiToken;
         $token->setRelation('user', null);
 
         $this->tokenService->shouldReceive('findToken')->once()->andReturn($token);
@@ -86,7 +87,7 @@ class AuthenticateTenantApiMiddlewareTest extends TestCase
 
     public function test_active_user_sets_request_attributes_and_passes_through(): void
     {
-        $user = new User();
+        $user = new User;
         $user->forceFill(['is_active' => true]);
 
         // Use a partial mock so touchLastUsed() can be intercepted without a DB call.
@@ -106,8 +107,9 @@ class AuthenticateTenantApiMiddlewareTest extends TestCase
 
     private function requestWithBearer(string $token): Request
     {
-        $request = new Request();
+        $request = new Request;
         $request->headers->set('Authorization', "Bearer {$token}");
+
         return $request;
     }
 }

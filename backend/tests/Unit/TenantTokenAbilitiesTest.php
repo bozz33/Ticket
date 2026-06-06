@@ -79,6 +79,7 @@ class TenantTokenAbilitiesTest extends TestCase
     private function getBuyerAbilities(): array
     {
         $reflection = new ReflectionClass(TenantAuthController::class);
+
         return $reflection->getConstant('BUYER_ABILITIES');
     }
 }

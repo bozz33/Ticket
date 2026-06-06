@@ -55,6 +55,16 @@ class CallForProjectFormBuilderSchema
                 TagsInput::make('accept')->label('Types MIME acceptés')->placeholder('application/pdf'),
                 TextInput::make('max_size_mb')->label('Taille max (MB)')->numeric()->minValue(1)->default(10),
             ])),
+            Builder\Block::make('time')->label('Heure')->schema(static::commonFieldSchema()),
+            Builder\Block::make('datetime')->label('Date et heure')->schema(static::commonFieldSchema()),
+            Builder\Block::make('date_range')->label('Période (date début / fin)')->schema(static::commonFieldSchema()),
+            Builder\Block::make('rating')->label('Évaluation (étoiles)')->schema(array_merge(static::commonFieldSchema(), [
+                TextInput::make('max_rating')->label('Note maximale')->numeric()->minValue(1)->maxValue(10)->default(5),
+            ])),
+            Builder\Block::make('hidden')->label('Champ caché')->schema([
+                TextInput::make('key')->label('Clé')->required()->maxLength(80),
+                TextInput::make('default_value')->label('Valeur par défaut')->maxLength(5000),
+            ]),
             Builder\Block::make('section')->label('Section informative')->schema([
                 TextInput::make('key')->label('Clé')->required()->maxLength(80),
                 TextInput::make('label')->label('Titre')->required()->maxLength(255),
@@ -155,6 +165,11 @@ class CallForProjectFormBuilderSchema
             'email',
             'number',
             'date',
+            'time',
+            'datetime',
+            'date_range',
+            'rating',
+            'hidden',
             'country',
             'city',
             'phone',

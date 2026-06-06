@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Api\V1\Public;
 
 use App\Http\Controllers\Controller;
-use App\Models\City;
 use App\Models\Event;
 use App\Models\EventTicket;
 use App\Models\Offer;
@@ -27,8 +26,10 @@ class PublicAccessPassController extends Controller
         }
 
         $pass->loadMissing([
-            'offer.offerable',
-            'order.offer.offerable',
+            'offer.offerable.dates',
+            'offer.offerable.city',
+            'order.offer.offerable.dates',
+            'order.offer.offerable.city',
             'order.orderable',
             'passable',
         ]);
@@ -60,7 +61,7 @@ class PublicAccessPassController extends Controller
             return null;
         }
 
-        $offer->loadMissing('offerable');
+        $offer->loadMissing(['offerable.dates', 'offerable.city']);
 
         return $this->eventFromSubject($offer->offerable);
     }
@@ -72,7 +73,7 @@ class PublicAccessPassController extends Controller
         }
 
         if ($subject instanceof EventTicket) {
-            $subject->loadMissing('event');
+            $subject->loadMissing(['event.dates', 'event.city']);
 
             return $subject->event;
         }
@@ -90,9 +91,10 @@ class PublicAccessPassController extends Controller
             return null;
         }
 
-        $event->loadMissing('dates');
+        $event->loadMissing(['dates', 'city']);
         $primaryDate = $event->dates->first();
-        $cityName = $event->city_id ? City::query()->whereKey($event->city_id)->value('name') : null;
+        // Use the eager-loaded relation to avoid a separate query per request.
+        $cityName = $event->city?->name;
         $startsAt = $primaryDate?->starts_at ?? data_get($event->meta ?? [], 'schedule.starts_at');
         $endsAt = $primaryDate?->ends_at ?? data_get($event->meta ?? [], 'schedule.ends_at');
         $locationParts = array_values(array_filter([

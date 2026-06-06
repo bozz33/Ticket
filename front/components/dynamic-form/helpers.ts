@@ -46,5 +46,48 @@ function evaluateVisibilityCondition(condition: DynamicFormVisibilityCondition, 
 }
 
 export function resolveInputType(type: string) {
-  return type === "email" || type === "number" || type === "date" || type === "url" ? type : "text";
+  switch (type) {
+    case "email": return "email";
+    case "number": return "number";
+    case "date": return "date";
+    case "time": return "time";
+    case "datetime": return "datetime-local";
+    case "url": return "url";
+    default: return "text";
+  }
+}
+
+export function validateField(field: { type: string; required?: boolean; max_rating?: number }, value: unknown): string | null {
+  if (field.required && (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0))) {
+    return "Ce champ est requis.";
+  }
+
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+
+  if (field.type === "email" && typeof value === "string" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+    return "Veuillez saisir une adresse e-mail valide.";
+  }
+
+  if (field.type === "url" && typeof value === "string" && !/^https?:\/\/.+/.test(value)) {
+    return "Veuillez saisir une URL valide (ex: https://...).";
+  }
+
+  if (field.type === "rating") {
+    const max = field.max_rating ?? 5;
+    const num = Number(value);
+    if (!Number.isInteger(num) || num < 0 || num > max) {
+      return `La note doit être comprise entre 0 et ${max}.`;
+    }
+  }
+
+  if (field.type === "date_range" && typeof value === "object" && value !== null) {
+    const range = value as Record<string, unknown>;
+    if (range.start && range.end && String(range.start) > String(range.end)) {
+      return "La date de début doit être antérieure à la date de fin.";
+    }
+  }
+
+  return null;
 }

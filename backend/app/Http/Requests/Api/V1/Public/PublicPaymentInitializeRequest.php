@@ -27,7 +27,34 @@ class PublicPaymentInitializeRequest extends FormRequest
             'content_slug' => ['nullable', 'string', 'max:255'],
             'contributor_display_name' => ['nullable', 'string', 'max:255'],
             'contributor_is_anonymous' => ['nullable', 'boolean'],
-            'callback_url' => ['required', 'url', 'max:2048'],
+            'callback_url' => ['required', 'url', 'max:2048', $this->callbackUrlRule()],
         ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'callback_url.starts_with' => 'L\'URL de retour doit pointer vers le frontend de la plateforme.',
+        ];
+    }
+
+    /**
+     * Restrict callback_url to the configured public frontend origin.
+     * This prevents open-redirect attacks where an attacker substitutes a
+     * malicious URL in the callback to intercept payment confirmation tokens.
+     */
+    private function callbackUrlRule(): \Closure
+    {
+        $allowedOrigin = rtrim((string) config('ticket.public_frontend_url', ''), '/');
+
+        return function (string $attribute, mixed $value, \Closure $fail) use ($allowedOrigin): void {
+            if ($allowedOrigin === '') {
+                return;
+            }
+
+            if (! str_starts_with((string) $value, $allowedOrigin)) {
+                $fail('L\'URL de retour doit pointer vers le frontend de la plateforme.');
+            }
+        };
     }
 }

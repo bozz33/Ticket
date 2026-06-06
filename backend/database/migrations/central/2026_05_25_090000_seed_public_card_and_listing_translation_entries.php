@@ -1,6 +1,8 @@
 <?php
 
+use Illuminate\Database\ConnectionInterface;
 use Illuminate\Database\Migrations\Migration;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -47,7 +49,7 @@ return new class extends Migration
         }
     }
 
-    private function replaceLegacyPublicTenantCopy(\Illuminate\Database\ConnectionInterface $connection, \Illuminate\Support\Carbon $now): void
+    private function replaceLegacyPublicTenantCopy(ConnectionInterface $connection, Carbon $now): void
     {
         if (Schema::connection('central')->hasTable('front_pages')) {
             $connection->table('front_pages')

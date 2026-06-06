@@ -68,5 +68,4 @@ class FormDefinitionRelationManager extends RelationManager
                 CreateAction::make(),
             ]);
     }
-
 }

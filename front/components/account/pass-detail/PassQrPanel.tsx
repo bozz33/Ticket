@@ -1,4 +1,9 @@
-import { QrCode } from "@/components/QrCode";
+import dynamic from "next/dynamic";
+
+const QrCode = dynamic(() => import("@/components/QrCode").then((m) => m.QrCode), {
+  ssr: false,
+  loading: () => <div className="ac-qr-wrap ac-qr-wrap--loading" aria-hidden="true" />,
+});
 import type { AccountAccessPass } from "@/lib/types";
 
 import { PASS_STATUS_LABELS, formatPassDate } from "./helpers";

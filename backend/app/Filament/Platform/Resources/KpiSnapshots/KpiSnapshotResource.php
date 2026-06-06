@@ -35,11 +35,11 @@ class KpiSnapshotResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-chart-bar';
 
     protected static ?string $recordTitleAttribute = 'scope';
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
-
 
     public static function form(Schema $schema): Schema
     {

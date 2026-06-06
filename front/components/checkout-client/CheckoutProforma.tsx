@@ -410,8 +410,9 @@ export function CheckoutProforma({
           ) : (
             <div className="checkout-proforma__quantity-row">
               <span>Quantité</span>
-              <div className="checkout-proforma__quantity">
+              <div className="checkout-proforma__quantity" role="group" aria-label="Sélection de la quantité">
                 <button
+                  aria-label="Réduire la quantité"
                   disabled={loadingPricing || quantity <= quantityBounds.min}
                   onClick={() => {
                     const nextQuantity = Math.max(quantityBounds.min, quantity - 1);
@@ -425,8 +426,9 @@ export function CheckoutProforma({
                 >
                   -
                 </button>
-                <strong>{quantity}</strong>
+                <strong aria-live="polite" aria-atomic="true">{quantity}</strong>
                 <button
+                  aria-label="Augmenter la quantité"
                   disabled={loadingPricing || quantity >= quantityBounds.max}
                   onClick={() => {
                     const nextQuantity = Math.min(quantityBounds.max, quantity + 1);
@@ -464,6 +466,7 @@ export function CheckoutProforma({
           <h2>{isCrowdfunding ? "Pour régler cette contribution :" : "Pour régler cette commande :"}</h2>
           <div className="checkout-proforma__methods">
             <button
+              aria-busy={submitting}
               className="checkout-proforma__method"
               disabled={submitting || loadingPricing || (!pricingSynced && !isCrowdfunding)}
               onClick={() => {
@@ -471,8 +474,17 @@ export function CheckoutProforma({
               }}
               type="button"
             >
-              <strong>{pricing.total === 0 && !isCrowdfunding ? "Gratuit" : "Paystack"}</strong>
-              <span>{pricing.total === 0 && !isCrowdfunding ? "Confirmer la réservation" : "Carte bancaire / Mobile money"}</span>
+              {submitting ? (
+                <>
+                  <strong>Traitement…</strong>
+                  <span>Redirection vers le paiement en cours</span>
+                </>
+              ) : (
+                <>
+                  <strong>{pricing.total === 0 && !isCrowdfunding ? "Gratuit" : "Paystack"}</strong>
+                  <span>{pricing.total === 0 && !isCrowdfunding ? "Confirmer la réservation" : "Carte bancaire / Mobile money"}</span>
+                </>
+              )}
             </button>
           </div>
           <ReservationCountdown expiresAt={reservationExpiresAt} />

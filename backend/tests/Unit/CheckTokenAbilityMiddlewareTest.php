@@ -18,12 +18,12 @@ class CheckTokenAbilityMiddlewareTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
-        $this->middleware = new CheckTokenAbility();
+        $this->middleware = new CheckTokenAbility;
     }
 
     public function test_request_without_token_attribute_returns_401(): void
     {
-        $request = new Request();
+        $request = new Request;
         $response = $this->middleware->handle($request, fn () => new JsonResponse(['ok' => true]), 'passes.scan');
 
         $this->assertSame(401, $response->getStatusCode());
@@ -32,7 +32,7 @@ class CheckTokenAbilityMiddlewareTest extends TestCase
     public function test_token_without_required_ability_returns_403(): void
     {
         $token = new UserApiToken(['abilities' => ['profile.read', 'orders.read']]);
-        $request = new Request();
+        $request = new Request;
         $request->attributes->set('tenant_api_token', $token);
 
         $response = $this->middleware->handle($request, fn () => new JsonResponse(['ok' => true]), 'passes.scan');
@@ -45,7 +45,7 @@ class CheckTokenAbilityMiddlewareTest extends TestCase
     public function test_token_with_required_ability_passes_through(): void
     {
         $token = new UserApiToken(['abilities' => ['passes.scan', 'passes.read']]);
-        $request = new Request();
+        $request = new Request;
         $request->attributes->set('tenant_api_token', $token);
 
         $response = $this->middleware->handle(
@@ -60,7 +60,7 @@ class CheckTokenAbilityMiddlewareTest extends TestCase
     public function test_wildcard_token_passes_any_ability(): void
     {
         $token = new UserApiToken(['abilities' => ['*']]);
-        $request = new Request();
+        $request = new Request;
         $request->attributes->set('tenant_api_token', $token);
 
         $response = $this->middleware->handle(
@@ -75,7 +75,7 @@ class CheckTokenAbilityMiddlewareTest extends TestCase
     public function test_multiple_abilities_all_required(): void
     {
         $token = new UserApiToken(['abilities' => ['passes.scan']]);
-        $request = new Request();
+        $request = new Request;
         $request->attributes->set('tenant_api_token', $token);
 
         // Token has passes.scan but not passes.manage - should fail.

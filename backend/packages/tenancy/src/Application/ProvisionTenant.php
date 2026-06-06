@@ -139,5 +139,4 @@ class ProvisionTenant
             'login_url' => url(sprintf('/tenants/%s/admin/login', $tenant->slug)),
         ];
     }
-
 }

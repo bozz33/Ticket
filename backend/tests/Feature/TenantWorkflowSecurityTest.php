@@ -243,6 +243,7 @@ class TenantWorkflowSecurityTest extends TestCase
             $table->string('buyer_phone')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('tenant')->create('receipts', function (Blueprint $table): void {
@@ -259,6 +260,7 @@ class TenantWorkflowSecurityTest extends TestCase
             $table->timestamp('issued_at')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('tenant')->create('access_passes', function (Blueprint $table): void {
@@ -277,6 +279,7 @@ class TenantWorkflowSecurityTest extends TestCase
             $table->string('revocation_reason')->nullable();
             $table->json('meta')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('tenant')->create('access_pass_scans', function (Blueprint $table): void {

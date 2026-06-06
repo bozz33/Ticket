@@ -73,6 +73,7 @@ return [
         'public_pass_lookup_per_minute' => (int) env('RATE_LIMIT_PUBLIC_PASS_LOOKUP_PER_MINUTE', 30),
         'payment_webhooks_per_minute' => (int) env('RATE_LIMIT_PAYMENT_WEBHOOKS_PER_MINUTE', 120),
         'tenant_checkin_per_minute' => (int) env('RATE_LIMIT_TENANT_CHECKIN_PER_MINUTE', 60),
+        'tenant_refund_per_minute' => (int) env('RATE_LIMIT_TENANT_REFUND_PER_MINUTE', 5),
     ],
     'logging' => [
         'payments_channel' => env('PAYMENTS_LOG_CHANNEL', 'payments'),

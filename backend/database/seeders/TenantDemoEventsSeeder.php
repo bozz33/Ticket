@@ -7,7 +7,6 @@ use App\Models\CallForProject;
 use App\Models\City;
 use App\Models\CrowdfundingCampaign;
 use App\Models\Event;
-use App\Models\EventTicket;
 use App\Models\Offer;
 use App\Models\OrganizationProfile;
 use App\Models\Stand;

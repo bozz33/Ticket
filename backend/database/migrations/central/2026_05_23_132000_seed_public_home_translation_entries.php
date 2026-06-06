@@ -77,7 +77,7 @@ return new class extends Migration
                 'home.hero.primary_cta' => 'Vérifier un ticket',
                 'home.hero.secondary_cta' => 'Publier sur la plateforme',
                 'home.hero.title' => 'Des expériences à réserver, soutenir ou rejoindre.',
-                'home.organizers.description' => "Chaque organisateur peut être valorisé comme une vraie page publique.",
+                'home.organizers.description' => 'Chaque organisateur peut être valorisé comme une vraie page publique.',
                 'home.organizers.eyebrow' => 'Organisateurs',
                 'home.organizers.title' => 'Profils publics mis en avant',
                 'home.popular.description' => "Les contenus qui ont reçu le plus de mentions j'aime cette semaine.",

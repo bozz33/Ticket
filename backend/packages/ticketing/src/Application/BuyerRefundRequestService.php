@@ -82,7 +82,7 @@ class BuyerRefundRequestService
         $reason = trim((string) ($payload['reason'] ?? ''));
         $quote = $this->refundManager->quote($transaction, $reasonCode);
 
-        DB::connection(config('ticket.tenant_connection', 'tenant'))->transaction(function () use ($buyer, $order, $tenant, $reasonCode, $reason, $quote): void {
+        DB::connection(config('ticket.tenant_connection', 'tenant'))->transaction(function () use ($buyer, $order, $reasonCode, $reason, $quote): void {
             $freshOrder = Order::query()
                 ->with('receipt')
                 ->findOrFail($order->getKey());

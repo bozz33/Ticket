@@ -34,5 +34,4 @@ class CommercialPolicy extends Model
             'meta' => 'array',
         ];
     }
-
 }

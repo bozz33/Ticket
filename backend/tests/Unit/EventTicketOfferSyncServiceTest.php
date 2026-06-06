@@ -210,6 +210,7 @@ class EventTicketOfferSyncServiceTest extends TestCase
         Schema::connection('tenant')->create('orders', function (Blueprint $table): void {
             $table->id();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('tenant')->create('events', function (Blueprint $table): void {
@@ -283,6 +284,7 @@ class EventTicketOfferSyncServiceTest extends TestCase
             $table->unsignedInteger('sort_order')->default(0);
             $table->json('meta')->nullable();
             $table->timestamps();
+            $table->softDeletes();
         });
 
         Schema::connection('tenant')->create('ticket_reservations', function (Blueprint $table): void {

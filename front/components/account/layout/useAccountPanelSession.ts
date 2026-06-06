@@ -7,12 +7,15 @@ import type { AccountUser } from "@/lib/types";
 
 const ACCOUNT_IDLE_TIMEOUT_MS = 30 * 60 * 1000;
 const ACCOUNT_SESSION_REFRESH_MS = 60 * 1000;
+const ACCOUNT_IDLE_WARN_MS = ACCOUNT_IDLE_TIMEOUT_MS - 5 * 60 * 1000;
 
 export function useAccountPanelSession(pathname: string) {
   const router = useRouter();
   const [user, setUser] = useState<AccountUser | null>(null);
   const [sessionError, setSessionError] = useState<string | null>(null);
+  const [sessionExpiresSoon, setSessionExpiresSoon] = useState(false);
   const idleTimeoutRef = useRef<number | null>(null);
+  const idleWarnTimeoutRef = useRef<number | null>(null);
   const lastSessionCheckRef = useRef(0);
   const logoutStartedRef = useRef(false);
   const userRef = useRef<AccountUser | null>(null);
@@ -115,6 +118,16 @@ export function useAccountPanelSession(pathname: string) {
         window.clearTimeout(idleTimeoutRef.current);
       }
 
+      if (idleWarnTimeoutRef.current !== null) {
+        window.clearTimeout(idleWarnTimeoutRef.current);
+      }
+
+      setSessionExpiresSoon(false);
+
+      idleWarnTimeoutRef.current = window.setTimeout(() => {
+        setSessionExpiresSoon(true);
+      }, ACCOUNT_IDLE_WARN_MS);
+
       idleTimeoutRef.current = window.setTimeout(() => {
         void handleLogout("/compte/connexion?reason=idle");
       }, ACCOUNT_IDLE_TIMEOUT_MS);
@@ -141,6 +154,10 @@ export function useAccountPanelSession(pathname: string) {
         window.clearTimeout(idleTimeoutRef.current);
       }
 
+      if (idleWarnTimeoutRef.current !== null) {
+        window.clearTimeout(idleWarnTimeoutRef.current);
+      }
+
       for (const eventName of activityEvents) {
         window.removeEventListener(eventName, resetIdleTimer);
       }
@@ -152,6 +169,7 @@ export function useAccountPanelSession(pathname: string) {
   return {
     handleLogout,
     sessionError,
+    sessionExpiresSoon,
     user,
   };
 }

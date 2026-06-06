@@ -98,25 +98,25 @@ class EventForm
                 Section::make('Billetterie')
                     ->description('Les dates de vente contrôlent uniquement la période d’achat du ticket. Elles ne remplacent pas les dates de l’événement.')
                     ->schema([
-                    Repeater::make('tickets')
-                        ->label('Tickets')
-                        ->relationship('tickets')
-                        ->schema([
-                            Hidden::make('ticket_type')->default('standard')->dehydrated(),
-                            Hidden::make('currency_code')->default(fn ($get): ?string => $get('../../currency_code') ?: 'XOF')->dehydrated(),
-                            TextInput::make('name')->label('Nom')->required()->maxLength(255),
-                            TextInput::make('price_amount')->label('Prix')->numeric()->required()->minValue(0)->default(0),
-                            TextInput::make('quantity_total')->label('Nombre de tickets disponibles')->numeric()->required()->minValue(1),
-                            TextInput::make('min_per_order')->label('Minimum par commande')->numeric()->minValue(1)->default(1),
-                            TextInput::make('max_per_order')->label('Maximum par commande')->numeric()->minValue(1),
-                            DateTimePicker::make('sales_start_at')->label('Début des ventes')->helperText('Date à partir de laquelle ce ticket peut être acheté.')->maxDate(fn ($get): mixed => $get('../../meta.schedule.starts_at')),
-                            DateTimePicker::make('sales_end_at')->label('Fin des ventes')->helperText('Date limite d’achat de ce ticket. Elle doit rester avant la date de l’événement.')->maxDate(fn ($get): mixed => $get('../../meta.schedule.starts_at')),
-                            Toggle::make('is_active')->label('Actif')->default(true),
-                            Hidden::make('sort_order')->default(0)->dehydrated(),
-                        ])
-                        ->columns(2)
-                        ->columnSpanFull(),
-                ]),
+                        Repeater::make('tickets')
+                            ->label('Tickets')
+                            ->relationship('tickets')
+                            ->schema([
+                                Hidden::make('ticket_type')->default('standard')->dehydrated(),
+                                Hidden::make('currency_code')->default(fn ($get): ?string => $get('../../currency_code') ?: 'XOF')->dehydrated(),
+                                TextInput::make('name')->label('Nom')->required()->maxLength(255),
+                                TextInput::make('price_amount')->label('Prix')->numeric()->required()->minValue(0)->default(0),
+                                TextInput::make('quantity_total')->label('Nombre de tickets disponibles')->numeric()->required()->minValue(1),
+                                TextInput::make('min_per_order')->label('Minimum par commande')->numeric()->minValue(1)->default(1),
+                                TextInput::make('max_per_order')->label('Maximum par commande')->numeric()->minValue(1),
+                                DateTimePicker::make('sales_start_at')->label('Début des ventes')->helperText('Date à partir de laquelle ce ticket peut être acheté.')->maxDate(fn ($get): mixed => $get('../../meta.schedule.starts_at')),
+                                DateTimePicker::make('sales_end_at')->label('Fin des ventes')->helperText('Date limite d’achat de ce ticket. Elle doit rester avant la date de l’événement.')->maxDate(fn ($get): mixed => $get('../../meta.schedule.starts_at')),
+                                Toggle::make('is_active')->label('Actif')->default(true),
+                                Hidden::make('sort_order')->default(0)->dehydrated(),
+                            ])
+                            ->columns(2)
+                            ->columnSpanFull(),
+                    ]),
             ]);
     }
 }

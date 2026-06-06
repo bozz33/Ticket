@@ -34,11 +34,11 @@ class CommercialPolicyResource extends Resource
     protected static ?string $pluralModelLabel = 'Tarification & commissions';
 
     protected static ?string $recordTitleAttribute = 'module';
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
-
 
     public static function form(Schema $schema): Schema
     {

@@ -12,6 +12,7 @@ use Ticket\PublicCatalog\Domain\PublicCatalogModules;
 class PublicCatalogProjectionReader
 {
     private ?bool $ready = null;
+
     private ?bool $hasEngagementColumns = null;
 
     public function __construct(

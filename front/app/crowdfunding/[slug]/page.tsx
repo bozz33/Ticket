@@ -1,3 +1,4 @@
+import type { PublicContent } from "@/lib/types";
 import { ModuleDetailView } from "@/components/route/DetailRouteViews";
 import { getContentDetail, getRelatedContent } from "@/lib/data/public";
 import { createMetadata } from "@/lib/metadata";
@@ -24,6 +25,36 @@ export async function generateMetadata({
   });
 }
 
+function buildCrowdfundingJsonLd(item: PublicContent, slug: string): Record<string, unknown> {
+  const jsonLd: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "CreativeWork",
+    name: item.title,
+    description: item.summary,
+    url: `/crowdfunding/${slug}`,
+    image: item.coverImageUrl || undefined,
+  };
+
+  if (item.organizers.length > 0) {
+    jsonLd.author = {
+      "@type": "Organization",
+      name: item.organizers[0].name,
+    };
+  }
+
+  if (item.progressTarget) {
+    jsonLd.funding = {
+      "@type": "MonetaryAmount",
+      value: item.progressTarget,
+      currency: item.currency ?? "XOF",
+    };
+  }
+
+  if (item.deadlineAt) jsonLd.expires = item.deadlineAt;
+
+  return jsonLd;
+}
+
 export default async function CrowdfundingDetailPage({
   params,
   searchParams,
@@ -37,5 +68,15 @@ export default async function CrowdfundingDetailPage({
   const item = await getContentDetail("crowdfunding", slug, tenant);
   const related = item ? await getRelatedContent(item) : [];
 
-  return <ModuleDetailView item={item} related={related} />;
+  return (
+    <>
+      {item ? (
+        <script
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(buildCrowdfundingJsonLd(item, slug)) }}
+          type="application/ld+json"
+        />
+      ) : null}
+      <ModuleDetailView item={item} related={related} />
+    </>
+  );
 }

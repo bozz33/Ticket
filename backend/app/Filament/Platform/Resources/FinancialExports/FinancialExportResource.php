@@ -36,11 +36,11 @@ class FinancialExportResource extends Resource
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-arrow-down-tray';
 
     protected static ?string $recordTitleAttribute = 'export_type';
+
     public static function shouldRegisterNavigation(): bool
     {
         return false;
     }
-
 
     public static function form(Schema $schema): Schema
     {

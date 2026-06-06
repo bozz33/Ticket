@@ -48,7 +48,7 @@ class PublicPaymentController extends Controller
             $data = $tenantModel->run(fn () => $this->checkoutManager->options(
                 $tenantModel,
                 $checkoutItemIdentifier,
-                max(1, (int) $request->query('quantity', 1)),
+                min(100, max(1, (int) $request->query('quantity', 1))),
                 $paymentMethod !== '' ? $paymentMethod : null,
                 $checkoutItemType,
                 $request->query('custom_amount') !== null ? max(1, (int) $request->query('custom_amount')) : null,

@@ -110,7 +110,7 @@ class TenantContentLikeController extends Controller
     }
 
     /**
-     * @param array<int, array{module: string, slug: string}> $pairs
+     * @param  array<int, array{module: string, slug: string}>  $pairs
      * @return array<string, array{liked: bool, likes: int}>
      */
     private function summaries(?User $user, array $pairs): array

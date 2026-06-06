@@ -7,6 +7,7 @@ use App\Support\Microservices\MicroserviceClientFactory;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 use Ticket\Notifications\Contracts\DomainEventPublisher;
+use Ticket\Notifications\Domain\DomainEventEnvelope;
 use Ticket\Notifications\Domain\DomainEventNames;
 
 class DomainEventBridgeTest extends TestCase
@@ -20,13 +21,14 @@ class DomainEventBridgeTest extends TestCase
             'analytics.test/v1/events' => Http::response(['status' => 'accepted'], 202),
         ]);
 
-        $publisher = new class implements DomainEventPublisher {
+        $publisher = new class implements DomainEventPublisher
+        {
             public function publish(string $type, array $payload = [], ?string $aggregateType = null, ?string $aggregateId = null, array $metadata = []): string
             {
                 return 'event-1';
             }
 
-            public function publishEnvelope(\Ticket\Notifications\Domain\DomainEventEnvelope $event): string
+            public function publishEnvelope(DomainEventEnvelope $event): string
             {
                 return $event->eventId;
             }
@@ -54,13 +56,14 @@ class DomainEventBridgeTest extends TestCase
             'checkin.test/v1/projections/passes/upsert' => Http::response(['status' => 'ok']),
         ]);
 
-        $publisher = new class implements DomainEventPublisher {
+        $publisher = new class implements DomainEventPublisher
+        {
             public function publish(string $type, array $payload = [], ?string $aggregateType = null, ?string $aggregateId = null, array $metadata = []): string
             {
                 return 'event-2';
             }
 
-            public function publishEnvelope(\Ticket\Notifications\Domain\DomainEventEnvelope $event): string
+            public function publishEnvelope(DomainEventEnvelope $event): string
             {
                 return $event->eventId;
             }
@@ -69,14 +72,14 @@ class DomainEventBridgeTest extends TestCase
         $bridge = new DomainEventBridge($publisher, app(MicroserviceClientFactory::class));
 
         $bridge->publish(DomainEventNames::ACCESS_PASS_ISSUED, [
-                'access_pass_id' => 10,
-                'access_code' => 'ABC123',
-                'holder_email' => 'buyer@example.test',
-                'holder_name' => 'Buyer',
-                'order_reference' => 'ORD-2',
-                'status' => 'active',
-                'meta' => ['event_ticket_public_id' => 'evt-1', 'event_ticket_title' => 'Concert'],
-            ], 'access_passes', '10', ['tenant_id' => 'tenant-demo']);
+            'access_pass_id' => 10,
+            'access_code' => 'ABC123',
+            'holder_email' => 'buyer@example.test',
+            'holder_name' => 'Buyer',
+            'order_reference' => 'ORD-2',
+            'status' => 'active',
+            'meta' => ['event_ticket_public_id' => 'evt-1', 'event_ticket_title' => 'Concert'],
+        ], 'access_passes', '10', ['tenant_id' => 'tenant-demo']);
 
         Http::assertSent(fn ($request): bool => $request->url() === 'http://checkin.test/v1/projections/passes/upsert'
             && $request['tenant_id'] === 'tenant-demo'
@@ -95,13 +98,14 @@ class DomainEventBridgeTest extends TestCase
             'catalog.test/v1/projections/catalog-items/upsert' => Http::response(['status' => 'ok']),
         ]);
 
-        $publisher = new class implements DomainEventPublisher {
+        $publisher = new class implements DomainEventPublisher
+        {
             public function publish(string $type, array $payload = [], ?string $aggregateType = null, ?string $aggregateId = null, array $metadata = []): string
             {
                 return 'event-3';
             }
 
-            public function publishEnvelope(\Ticket\Notifications\Domain\DomainEventEnvelope $event): string
+            public function publishEnvelope(DomainEventEnvelope $event): string
             {
                 return $event->eventId;
             }
