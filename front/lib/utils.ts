@@ -17,6 +17,24 @@ export function getStaticPageHeroImage(page: StaticPageHeroKey): string {
   return staticPageHeroImages[page];
 }
 
+/**
+ * Return the first non-empty (trimmed) image candidate, or undefined.
+ * Passing undefined to an <img> src omits the attribute, whereas an empty string
+ * triggers a React warning and a full-page re-download. Use this for any dynamic
+ * image source that may be missing.
+ */
+export function resolveImageSrc(...candidates: Array<string | null | undefined>): string | undefined {
+  for (const candidate of candidates) {
+    const trimmed = candidate?.trim();
+
+    if (trimmed) {
+      return trimmed;
+    }
+  }
+
+  return undefined;
+}
+
 export function formatMoney(amount: number, currency: string): string {
   return new Intl.NumberFormat("fr-FR", {
     style: "currency",

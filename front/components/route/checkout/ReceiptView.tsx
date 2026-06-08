@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PrintButton } from "@/components/PrintButton";
 import { QrCode } from "@/components/QrCode";
 import type { CheckoutVerificationResult, PlatformConfiguration, PublicContent } from "@/lib/types";
-import { buildPublicUrl, formatDateLabel, formatMoney } from "@/lib/utils";
+import { buildPublicUrl, formatDateLabel, formatMoney, resolveImageSrc } from "@/lib/utils";
 
 import { buildPaymentQuery, buildPaymentReference, normalizePaidAt } from "./helpers";
 
@@ -30,7 +30,7 @@ export function ReceiptView({
   }
 
   const organizerName = item.organizers[0]?.name ?? "Organisateur";
-  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerImage = resolveImageSrc(item.organizers[0]?.imageUrl, item.coverImageUrl);
   const subtotal = verification?.amounts.net ?? (selectedOffer?.price ?? item.priceFrom);
   const serviceFee = verification?.amounts.fees ?? 0;
   const total = verification?.amounts.gross ?? subtotal + serviceFee;
@@ -129,7 +129,7 @@ export function ReceiptView({
             </div>
 
             <div className="receipt-card__publisher">
-              <img alt={organizerName} src={organizerImage} />
+              {organizerImage ? <img alt={organizerName} src={organizerImage} /> : null}
               <div>
                 <small>Organisateur</small>
                 <strong>{organizerName}</strong>

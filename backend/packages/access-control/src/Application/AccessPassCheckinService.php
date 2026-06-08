@@ -37,10 +37,7 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
         $connectionName = config('ticket.tenant_connection', 'tenant');
 
         return DB::connection($connectionName)->transaction(function () use ($pass, $request, $connectionName): array {
-            $locked = AccessPass::on($connectionName)
-                ->whereKey($pass->getKey())
-                ->lockForUpdate()
-                ->firstOrFail();
+            $locked = $this->lockPass($pass, $connectionName);
 
             if (! $locked->isConsumable()) {
                 $result = $this->resolveReadResult($locked);
@@ -62,25 +59,31 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
 
     /**
      * Reset a used pass back to active.
+     *
+     * The pass is re-fetched with SELECT FOR UPDATE inside the transaction so the
+     * state check and write operate on the committed row, not a stale route-bound
+     * model, preventing TOCTOU races with concurrent administrative actions.
      */
     public function reset(AccessPass $pass, Request $request): array
     {
-        if ($pass->status !== AccessPassStatus::Used) {
-            return $this->buildResponse($pass, ScanResult::Denied, 'Le pass n\'est pas dans l\'état "utilisé".');
-        }
-
         $connectionName = config('ticket.tenant_connection', 'tenant');
 
-        DB::connection($connectionName)->transaction(function () use ($pass, $request): void {
-            $pass->forceFill([
+        return DB::connection($connectionName)->transaction(function () use ($pass, $request, $connectionName): array {
+            $locked = $this->lockPass($pass, $connectionName);
+
+            if ($locked->status !== AccessPassStatus::Used) {
+                return $this->buildResponse($locked, ScanResult::Denied, 'Le pass n\'est pas dans l\'état "utilisé".');
+            }
+
+            $locked->forceFill([
                 'status' => AccessPassStatus::Active,
                 'used_at' => null,
             ])->save();
 
-            $this->recordScan($pass, 'reset', ScanResult::Granted, $request);
-        });
+            $this->recordScan($locked, 'reset', ScanResult::Granted, $request);
 
-        return $this->buildResponse($pass->fresh(), ScanResult::Granted);
+            return $this->buildResponse($locked->fresh(), ScanResult::Granted);
+        });
     }
 
     /**
@@ -88,23 +91,25 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
      */
     public function revoke(AccessPass $pass, Request $request, string $reason = ''): array
     {
-        if ($pass->status === AccessPassStatus::Revoked) {
-            return $this->buildResponse($pass, ScanResult::Denied, 'Le pass est déjà révoqué.');
-        }
-
         $connectionName = config('ticket.tenant_connection', 'tenant');
 
-        DB::connection($connectionName)->transaction(function () use ($pass, $request, $reason): void {
-            $pass->forceFill([
+        return DB::connection($connectionName)->transaction(function () use ($pass, $request, $reason, $connectionName): array {
+            $locked = $this->lockPass($pass, $connectionName);
+
+            if ($locked->status === AccessPassStatus::Revoked) {
+                return $this->buildResponse($locked, ScanResult::Denied, 'Le pass est déjà révoqué.');
+            }
+
+            $locked->forceFill([
                 'status' => AccessPassStatus::Revoked,
                 'revoked_at' => now(),
                 'revocation_reason' => $reason ?: null,
             ])->save();
 
-            $this->recordScan($pass, 'revoke', ScanResult::Granted, $request, ['reason' => $reason]);
-        });
+            $this->recordScan($locked, 'revoke', ScanResult::Granted, $request, ['reason' => $reason]);
 
-        return $this->buildResponse($pass->fresh(), ScanResult::Granted);
+            return $this->buildResponse($locked->fresh(), ScanResult::Granted);
+        });
     }
 
     /**
@@ -112,23 +117,36 @@ class AccessPassCheckinService implements AccessPassCheckinWorkflow
      */
     public function reactivate(AccessPass $pass, Request $request): array
     {
-        if ($pass->status !== AccessPassStatus::Revoked) {
-            return $this->buildResponse($pass, ScanResult::Denied, 'Seul un pass révoqué peut être réactivé.');
-        }
-
         $connectionName = config('ticket.tenant_connection', 'tenant');
 
-        DB::connection($connectionName)->transaction(function () use ($pass, $request): void {
-            $pass->forceFill([
+        return DB::connection($connectionName)->transaction(function () use ($pass, $request, $connectionName): array {
+            $locked = $this->lockPass($pass, $connectionName);
+
+            if ($locked->status !== AccessPassStatus::Revoked) {
+                return $this->buildResponse($locked, ScanResult::Denied, 'Seul un pass révoqué peut être réactivé.');
+            }
+
+            $locked->forceFill([
                 'status' => AccessPassStatus::Active,
                 'revoked_at' => null,
                 'revocation_reason' => null,
             ])->save();
 
-            $this->recordScan($pass, 'reactivate', ScanResult::Granted, $request);
-        });
+            $this->recordScan($locked, 'reactivate', ScanResult::Granted, $request);
 
-        return $this->buildResponse($pass->fresh(), ScanResult::Granted);
+            return $this->buildResponse($locked->fresh(), ScanResult::Granted);
+        });
+    }
+
+    /**
+     * Re-fetch the pass with a row-level lock inside an open transaction.
+     */
+    protected function lockPass(AccessPass $pass, string $connectionName): AccessPass
+    {
+        return AccessPass::on($connectionName)
+            ->whereKey($pass->getKey())
+            ->lockForUpdate()
+            ->firstOrFail();
     }
 
     protected function resolveReadResult(AccessPass $pass): ScanResult

@@ -47,9 +47,14 @@ class PublicFormSubmissionController extends Controller
 
     private function resolveFormDefinition(string $formDefinition): FormDefinition
     {
-        return FormDefinition::query()
-            ->where('public_id', $formDefinition)
-            ->orWhere('id', $formDefinition)
-            ->firstOrFail();
+        $query = FormDefinition::query()->where('public_id', $formDefinition);
+
+        // id is a bigint column; only compare it when the value is numeric, otherwise
+        // PostgreSQL raises a 22P02 invalid-text-representation error for UUID lookups.
+        if (ctype_digit($formDefinition)) {
+            $query->orWhere('id', $formDefinition);
+        }
+
+        return $query->firstOrFail();
     }
 }

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { EventLikeButton } from "@/components/EventLikeButton";
 import { TicketCtaButton } from "@/features/ticketing";
 import type { PublicContent } from "@/lib/types";
-import { formatDateRange, formatMoney } from "@/lib/utils";
+import { formatDateRange, formatMoney, resolveImageSrc } from "@/lib/utils";
 
 import { ShareLinks } from "./ShareLinks";
 
@@ -20,7 +20,7 @@ export function StickySummary({
   initialLikes?: number;
   item: PublicContent;
 }) {
-  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerImage = resolveImageSrc(item.organizers[0]?.imageUrl, item.coverImageUrl);
   const organizerName = item.organizers[0]?.name ?? "Equipe organisatrice";
   const applicationHref = item.module === "appels-a-projets" && item.applicationForm
     ? `/appels-a-projets/${item.slug}/postuler`
@@ -34,7 +34,7 @@ export function StickySummary({
   return (
     <aside className="sticky-panel">
       <Link className="publisher-pill publisher-pill--card" href={`/organisateurs/${item.organizerSlug}`}>
-        <img alt={organizerName} src={organizerImage} />
+        {organizerImage ? <img alt={organizerName} src={organizerImage} /> : null}
         <span>
           <small>Publie par</small>
           <strong>{organizerName}</strong>

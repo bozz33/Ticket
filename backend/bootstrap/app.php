@@ -2,12 +2,14 @@
 
 declare(strict_types=1);
 
+use App\Http\Middleware\AssignRequestId;
 use App\Http\Middleware\AuthenticatePlatformApi;
 use App\Http\Middleware\AuthenticateTenantApi;
 use App\Http\Middleware\CheckTokenAbility;
 use App\Http\Middleware\EnsureTenantCategoriesAreSynced;
 use App\Http\Middleware\InitializeTenancyByRouteParameter;
 use App\Http\Responses\ApiResponse;
+use App\Support\Observability\ErrorLogWriter;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Console\Scheduling\Schedule;
@@ -38,6 +40,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant.categories.synced' => EnsureTenantCategoriesAreSynced::class,
             'signed' => ValidateSignature::class,
         ]);
+
+        // Correlate every request (and its logs / error_logs rows) with an id.
+        $middleware->append(AssignRequestId::class);
     })
     ->withSchedule(function (Schedule $schedule): void {
         $schedule->command('ticket:release-expired-ticket-reservations --all-tenants --minutes=20 --limit=250')
@@ -47,6 +52,14 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request, Throwable $exception): bool => $request->is('api/*') || $request->expectsJson(),
         );
+
+        // Observability module: enrich file logs with correlation context and persist
+        // every reportable exception to the queryable central error_logs table.
+        $exceptions->context(static fn (): array => ErrorLogWriter::context());
+
+        $exceptions->report(static function (Throwable $exception): void {
+            ErrorLogWriter::fromException($exception);
+        });
 
         $exceptions->render(function (ValidationException $exception, Request $request) {
             if (! $request->is('api/*')) {

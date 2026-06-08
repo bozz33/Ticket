@@ -29,14 +29,10 @@ class ApiSecurityHardeningTest extends TestCase
     {
         parent::setUp();
 
-        $this->tenantDatabasePath = ':memory:';
-
-        config()->set('database.connections.tenant.driver', 'sqlite');
-        config()->set('database.connections.tenant.database', $this->tenantDatabasePath);
-        config()->set('database.connections.tenant.foreign_key_constraints', true);
-        config()->set('database.connections.tenant_template.driver', 'sqlite');
-        config()->set('database.connections.tenant_template.database', $this->tenantDatabasePath);
-        config()->set('database.connections.tenant_template.foreign_key_constraints', true);
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml). The
+        // tenant database name points at the same testing database so tenancy
+        // initialization resolves the schema built in prepareTenantSchema().
+        $this->tenantDatabasePath = (string) config('database.connections.tenant.database');
 
         DB::purge('tenant');
         DB::purge('tenant_template');

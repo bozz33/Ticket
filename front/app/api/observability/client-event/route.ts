@@ -5,6 +5,7 @@ import { readJsonRecord, stringField } from "@/lib/server/request";
 
 const OBSERVABILITY_ENDPOINT = process.env.OBSERVABILITY_ENDPOINT?.trim() ?? "";
 const OBSERVABILITY_TOKEN = process.env.OBSERVABILITY_TOKEN?.trim() ?? "";
+const BACKEND_BASE = process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ?? (process.env.NODE_ENV === "development" ? "http://127.0.0.1:8000" : "");
 const allowedTypes = new Set(["web-vital", "client-error", "unhandled-rejection"]);
 
 function numberField(value: unknown): number | undefined {
@@ -45,9 +46,29 @@ export async function POST(request: NextRequest) {
     path: stringField(parsed.data, "path").slice(0, 300),
     rating: stringField(parsed.data, "rating").slice(0, 40),
     value: numberField(parsed.data.value),
+    stack: stringField(parsed.data, "stack").slice(0, 8000),
     timestamp: new Date().toISOString(),
     userAgent: request.headers.get("user-agent")?.slice(0, 300) ?? "",
   };
+
+  // Default sink: persist to the backend observability module so client errors are never
+  // dropped (the external endpoint below stays optional).
+  if (BACKEND_BASE) {
+    await fetch(`${BACKEND_BASE}/api/v1/observability/client-events`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      body: JSON.stringify({
+        type: event.type,
+        name: event.name,
+        message: event.message,
+        path: event.path,
+        rating: event.rating,
+        value: event.value,
+        stack: event.stack,
+      }),
+      cache: "no-store",
+    }).catch(() => null);
+  }
 
   if (OBSERVABILITY_ENDPOINT) {
     await fetch(OBSERVABILITY_ENDPOINT, {

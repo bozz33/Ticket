@@ -2,6 +2,12 @@ tmp/
 *.tmp
 *.log
 *.dmp
+*.cpuprofile*
+*.tsbuildinfo
+.DS_Store
+front/.next-dev-codex/
+front/playwright-report/
+front/test-results/
 **/Crashpad/
 **/chrome-headless*/
 **/edge-headless*/

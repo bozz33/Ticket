@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --webpack",
-    "build": "next build",
+    "build": "next build --webpack",
     "build:ci": "npm run typecheck && next build --webpack",
     "build:restricted": "npm run typecheck && node scripts/front-restricted-build.mjs",
     "start": "next start",

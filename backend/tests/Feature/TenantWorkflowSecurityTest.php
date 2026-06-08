@@ -22,19 +22,13 @@ use Tests\TestCase;
 
 class TenantWorkflowSecurityTest extends TestCase
 {
-    private string $tenantDatabasePath;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->tenantDatabasePath = (string) tempnam(sys_get_temp_dir(), 'ticket-tenant-workflow-');
-
-        config()->set('database.connections.tenant.driver', 'sqlite');
-        config()->set('database.connections.tenant.database', $this->tenantDatabasePath);
-        config()->set('database.connections.tenant.foreign_key_constraints', true);
         config()->set('ticket.tenant_connection', 'tenant');
 
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml).
         DB::purge('tenant');
 
         $this->prepareTenantSchema();
@@ -43,10 +37,6 @@ class TenantWorkflowSecurityTest extends TestCase
     protected function tearDown(): void
     {
         DB::disconnect('tenant');
-
-        if (isset($this->tenantDatabasePath) && is_file($this->tenantDatabasePath)) {
-            @unlink($this->tenantDatabasePath);
-        }
 
         parent::tearDown();
     }
@@ -232,6 +222,7 @@ class TenantWorkflowSecurityTest extends TestCase
             $table->uuid('public_id')->unique();
             $table->string('reference')->unique();
             $table->string('transaction_reference')->unique();
+            $table->foreignId('buyer_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->foreignId('offer_id')->nullable()->constrained('offers')->nullOnDelete();
             $table->string('status');
             $table->unsignedInteger('quantity')->default(1);
@@ -251,6 +242,7 @@ class TenantWorkflowSecurityTest extends TestCase
             $table->uuid('public_id')->unique();
             $table->string('reference')->unique();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
+            $table->foreignId('buyer_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('status');
             $table->bigInteger('total_amount')->default(0);
             $table->string('currency_code', 3)->default('XOF');
@@ -269,6 +261,7 @@ class TenantWorkflowSecurityTest extends TestCase
             $table->string('access_code')->unique();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->foreignId('offer_id')->nullable()->constrained('offers')->nullOnDelete();
+            $table->foreignId('holder_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('type');
             $table->string('status');
             $table->string('holder_name')->nullable();

@@ -9,6 +9,7 @@ use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Ticket\Ticketing\Contracts\EventTicketInventory;
 
 class EventTicketInventoryService implements EventTicketInventory
@@ -154,7 +155,7 @@ class EventTicketInventoryService implements EventTicketInventory
             ->where(function ($query) use ($offer, $ticketPublicId): void {
                 $query->where('offer_id', $offer->getKey());
 
-                if (is_string($ticketPublicId) && $ticketPublicId !== '') {
+                if (is_string($ticketPublicId) && $ticketPublicId !== '' && Str::isUuid($ticketPublicId)) {
                     $query->orWhere('public_id', $ticketPublicId);
                 }
             })

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SectionHeader } from "@/components/route/SectionHeader";
 import { TicketTierList } from "@/features/ticketing";
 import type { PublicContent } from "@/lib/types";
-import { formatMoney } from "@/lib/utils";
+import { formatMoney, resolveImageSrc } from "@/lib/utils";
 
 import { getModuleDefaultDetailContent } from "./default-content";
 
@@ -96,7 +96,9 @@ export function DetailBlocks({ item }: { item: PublicContent }) {
           <div className="people-grid">
             {item.speakers.map((speaker) => (
               <article className="person-card" key={speaker.name}>
-                <img alt={speaker.name} decoding="async" loading="lazy" src={speaker.imageUrl} />
+                {resolveImageSrc(speaker.imageUrl) ? (
+                  <img alt={speaker.name} decoding="async" loading="lazy" src={resolveImageSrc(speaker.imageUrl)} />
+                ) : null}
                 <h3>{speaker.name}</h3>
                 <p>{speaker.role}</p>
               </article>

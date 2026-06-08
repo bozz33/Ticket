@@ -19,11 +19,10 @@ class NotificationsOutboxTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('database.connections.central.driver', 'sqlite');
-        config()->set('database.connections.central.database', ':memory:');
-
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml).
         DB::purge('central');
 
+        Schema::connection('central')->dropAllTables();
         Schema::connection('central')->create('domain_outbox_messages', function (Blueprint $table): void {
             $table->id();
             $table->uuid('event_id')->unique();

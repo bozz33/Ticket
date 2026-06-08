@@ -18,19 +18,13 @@ use Ticket\Payments\Domain\CheckoutReservation;
 
 class OrderFulfillmentIdempotencyTest extends TestCase
 {
-    private string $tenantDatabasePath;
-
     protected function setUp(): void
     {
         parent::setUp();
 
-        $this->tenantDatabasePath = (string) tempnam(sys_get_temp_dir(), 'ticket-tenant-fulfillment-');
-
-        config()->set('database.connections.tenant.driver', 'sqlite');
-        config()->set('database.connections.tenant.database', $this->tenantDatabasePath);
-        config()->set('database.connections.tenant.foreign_key_constraints', true);
         config()->set('ticket.tenant_connection', 'tenant');
 
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml).
         DB::purge('tenant');
 
         $this->prepareTenantSchema();
@@ -39,10 +33,6 @@ class OrderFulfillmentIdempotencyTest extends TestCase
     protected function tearDown(): void
     {
         DB::disconnect('tenant');
-
-        if (isset($this->tenantDatabasePath) && is_file($this->tenantDatabasePath)) {
-            @unlink($this->tenantDatabasePath);
-        }
 
         parent::tearDown();
     }

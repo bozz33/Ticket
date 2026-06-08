@@ -26,10 +26,8 @@ class PricingRuleEngineTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('database.connections.central.driver', 'sqlite');
-        config()->set('database.connections.central.database', ':memory:');
-        config()->set('database.connections.central.foreign_key_constraints', true);
-
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml) so type
+        // strictness matches production.
         DB::purge('central');
 
         $this->prepareCentralSchema();

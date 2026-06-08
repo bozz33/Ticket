@@ -16,9 +16,7 @@ class PublicCatalogProjectionReaderTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('database.connections.central.driver', 'sqlite');
-        config()->set('database.connections.central.database', ':memory:');
-
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml).
         DB::purge('central');
 
         $this->createProjectionTable();
@@ -94,6 +92,7 @@ class PublicCatalogProjectionReaderTest extends TestCase
 
     private function createProjectionTable(): void
     {
+        Schema::connection('central')->dropAllTables();
         Schema::connection('central')->create('public_catalog_items', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('tenant_id');

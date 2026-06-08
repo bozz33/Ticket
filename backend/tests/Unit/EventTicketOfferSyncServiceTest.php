@@ -22,10 +22,8 @@ class EventTicketOfferSyncServiceTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('database.connections.tenant.driver', 'sqlite');
-        config()->set('database.connections.tenant.database', ':memory:');
-        config()->set('database.connections.tenant.foreign_key_constraints', true);
-
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml) so type
+        // strictness matches production.
         DB::purge('tenant');
 
         $this->prepareTenantSchema();
@@ -221,6 +219,20 @@ class EventTicketOfferSyncServiceTest extends TestCase
             $table->string('currency_code', 3)->nullable();
             $table->boolean('is_active')->default(true);
             $table->timestamp('published_at')->nullable();
+            $table->json('meta')->nullable();
+            $table->timestamps();
+        });
+
+        // The EventTicket "saving" model hook reads $ticket->event->dates(); this table
+        // must exist or PostgreSQL aborts the surrounding transaction.
+        Schema::connection('tenant')->create('event_dates', function (Blueprint $table): void {
+            $table->id();
+            $table->foreignId('event_id')->constrained('events')->cascadeOnDelete();
+            $table->timestamp('starts_at')->index();
+            $table->timestamp('ends_at')->nullable();
+            $table->string('timezone', 100)->nullable();
+            $table->boolean('is_all_day')->default(false);
+            $table->unsignedInteger('sort_order')->default(0);
             $table->json('meta')->nullable();
             $table->timestamps();
         });

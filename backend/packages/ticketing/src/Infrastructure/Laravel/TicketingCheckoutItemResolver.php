@@ -6,6 +6,7 @@ use App\Models\EventTicket;
 use App\Models\TicketReservation;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Domain\CheckoutItem;
 use Ticket\Payments\Domain\CheckoutReservation;
@@ -267,7 +268,9 @@ class TicketingCheckoutItemResolver implements CheckoutItemResolver
                     $query->whereKey($reservationId);
                 }
 
-                if ($reservationPublicId !== '') {
+                // public_id is a UUID column; guard against non-UUID values so PostgreSQL
+                // does not raise a 22P02 invalid-text-representation error.
+                if ($reservationPublicId !== '' && Str::isUuid($reservationPublicId)) {
                     $query->orWhere('public_id', $reservationPublicId);
                 }
             })

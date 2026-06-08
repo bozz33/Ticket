@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 use Stancl\Tenancy\Contracts\TenantWithDatabase;
 use Stancl\Tenancy\Database\Concerns\InvalidatesResolverCache;
 use Stancl\Tenancy\Database\Concerns\TenantRun;
@@ -195,9 +196,15 @@ class Tenant extends Model implements TenantWithDatabase
 
     public function resolveRouteBinding($value, $field = null): ?Model
     {
-        return $this->newQuery()
-            ->where($field ?? 'slug', $value)
-            ->orWhere('public_id', $value)
-            ->first();
+        $resolvedField = $field ?? 'slug';
+        $query = $this->newQuery()->where($resolvedField, $value);
+
+        // public_id is a UUID column; only compare it when the value is a valid UUID,
+        // otherwise PostgreSQL raises a 22P02 invalid-text-representation error.
+        if ($resolvedField !== 'public_id' && Str::isUuid((string) $value)) {
+            $query->orWhere('public_id', $value);
+        }
+
+        return $query->first();
     }
 }

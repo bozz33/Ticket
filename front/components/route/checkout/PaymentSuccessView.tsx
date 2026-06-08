@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import type { CheckoutVerificationResult, PlatformConfiguration, PublicContent } from "@/lib/types";
-import { formatDateLabel, formatDateRange, formatMoney } from "@/lib/utils";
+import { formatDateLabel, formatDateRange, formatMoney, resolveImageSrc } from "@/lib/utils";
 
 import { buildPaymentQuery, buildPaymentReference, normalizePaidAt } from "./helpers";
 import { LockIcon } from "./LockIcon";
@@ -29,7 +29,7 @@ export function PaymentSuccessView({
   }
 
   const organizerName = item.organizers[0]?.name ?? "Organisateur";
-  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const organizerImage = resolveImageSrc(item.organizers[0]?.imageUrl, item.coverImageUrl);
   const subtotal = verification?.amounts.net ?? (selectedOffer?.price ?? item.priceFrom);
   const serviceFee = verification?.amounts.fees ?? 0;
   const total = verification?.amounts.gross ?? subtotal + serviceFee;
@@ -122,7 +122,7 @@ export function PaymentSuccessView({
           <aside className="success-side">
             <div className="success-side__panel">
               <Link className="publisher-pill publisher-pill--card" href={`/organisateurs/${item.organizerSlug}`}>
-                <img alt={organizerName} src={organizerImage} />
+                {organizerImage ? <img alt={organizerName} src={organizerImage} /> : null}
                 <span>
                   <small>Publie par</small>
                   <strong>{organizerName}</strong>

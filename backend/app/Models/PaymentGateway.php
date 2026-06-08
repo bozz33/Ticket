@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Model as EloquentModel;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
 
 class PaymentGateway extends Model
 {
@@ -71,9 +72,15 @@ class PaymentGateway extends Model
 
     public function resolveRouteBinding($value, $field = null): ?EloquentModel
     {
-        return $this->newQuery()
-            ->where($field ?? 'code', $value)
-            ->orWhere('public_id', $value)
-            ->first();
+        $resolvedField = $field ?? 'code';
+        $query = $this->newQuery()->where($resolvedField, $value);
+
+        // public_id is a UUID column; only compare it when the value is a valid UUID,
+        // otherwise PostgreSQL raises a 22P02 invalid-text-representation error.
+        if ($resolvedField !== 'public_id' && Str::isUuid((string) $value)) {
+            $query->orWhere('public_id', $value);
+        }
+
+        return $query->first();
     }
 }

@@ -6,7 +6,7 @@ import { getLikeRenderingContext } from "@/components/route/content-engagement";
 import { SectionHeader } from "@/components/route/SectionHeader";
 import { contentEngagementKey, organizerFollowKey } from "@/lib/engagement";
 import type { PublicContent } from "@/lib/types";
-import { formatDateRange } from "@/lib/utils";
+import { formatDateRange, resolveImageSrc } from "@/lib/utils";
 
 import { DetailBlocks } from "./detail/DetailBlocks";
 import { StickySummary } from "./detail/StickySummary";
@@ -22,7 +22,8 @@ export async function ModuleDetailView({
     notFound();
   }
 
-  const organizerImage = item.organizers[0]?.imageUrl ?? item.coverImageUrl;
+  const coverImage = resolveImageSrc(item.coverImageUrl);
+  const organizerImage = resolveImageSrc(item.organizers[0]?.imageUrl, item.coverImageUrl);
   const organizerName = item.organizers[0]?.name ?? "Organisateur";
   const {
     accountAuthenticated,
@@ -35,7 +36,7 @@ export async function ModuleDetailView({
   return (
     <>
       <section className="detail-hero">
-        <img alt={item.title} className="detail-hero__image" src={item.coverImageUrl} />
+        {coverImage ? <img alt={item.title} className="detail-hero__image" src={coverImage} /> : null}
         <div className="shell detail-hero__content">
           <div className="detail-hero__copy">
             <div className="content-card__badges">
@@ -59,7 +60,7 @@ export async function ModuleDetailView({
               className="publisher-pill publisher-pill--dark"
               href={`/organisateurs/${item.organizerSlug}`}
             >
-              <img alt={organizerName} src={organizerImage} />
+              {organizerImage ? <img alt={organizerName} src={organizerImage} /> : null}
               <span>
                 <small>Organisateur</small>
                 <strong>{organizerName}</strong>
@@ -69,14 +70,17 @@ export async function ModuleDetailView({
         </div>
       </section>
 
-      {item.gallery.length > 0 ? (
+      {item.gallery.filter((image) => image?.trim()).length > 0 ? (
         <section className="section section--light section--tight">
           <div className="shell gallery-strip">
-            {item.gallery.slice(0, 3).map((image) => (
-              <article className="gallery-strip__item" key={image}>
-                <img alt={item.title} decoding="async" loading="lazy" src={image} />
-              </article>
-            ))}
+            {item.gallery
+              .filter((image) => image?.trim())
+              .slice(0, 3)
+              .map((image) => (
+                <article className="gallery-strip__item" key={image}>
+                  <img alt={item.title} decoding="async" loading="lazy" src={image} />
+                </article>
+              ))}
           </div>
         </section>
       ) : null}

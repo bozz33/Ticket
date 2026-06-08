@@ -86,10 +86,23 @@ class PaymentWebhookService
 
     protected function verifySignature(PaymentGateway $gateway, Request $request): void
     {
-        if ($gateway->code !== 'paystack') {
+        if ($gateway->code === 'paystack') {
+            $this->verifyPaystackSignature($gateway, $request);
+
             return;
         }
 
+        // Fail closed: never accept a webhook from a gateway whose signature scheme is
+        // unknown. Silently skipping verification would let a forged payload trigger
+        // order fulfillment. Adding a new gateway must include an explicit verifier.
+        throw new \RuntimeException(sprintf(
+            'Vérification de signature non supportée pour la passerelle "%s".',
+            $gateway->code,
+        ));
+    }
+
+    protected function verifyPaystackSignature(PaymentGateway $gateway, Request $request): void
+    {
         $secret = $this->credentialResolver->webhookSecret($gateway);
         $signature = $request->header('x-paystack-signature');
 

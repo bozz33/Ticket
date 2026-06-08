@@ -21,10 +21,8 @@ class PublicFormSubmissionServiceTest extends TestCase
     {
         parent::setUp();
 
-        config()->set('database.connections.tenant.driver', 'sqlite');
-        config()->set('database.connections.tenant.database', ':memory:');
-        config()->set('database.connections.tenant.foreign_key_constraints', true);
-
+        // Runs against the dedicated PostgreSQL testing database (phpunit.xml) so type
+        // strictness matches production.
         DB::purge('tenant');
 
         $this->prepareTenantSchema();

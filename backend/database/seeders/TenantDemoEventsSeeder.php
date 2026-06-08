@@ -4,9 +4,11 @@ namespace Database\Seeders;
 
 use App\Enums\TenantStatus;
 use App\Models\CallForProject;
+use App\Models\Category;
 use App\Models\City;
 use App\Models\CrowdfundingCampaign;
 use App\Models\Event;
+use App\Models\FormDefinition;
 use App\Models\Offer;
 use App\Models\OrganizationProfile;
 use App\Models\Stand;
@@ -14,12 +16,16 @@ use App\Models\Tenant;
 use App\Models\Training;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Ticket\Ticketing\Contracts\EventTicketOfferBridge;
 
 class TenantDemoEventsSeeder extends Seeder
 {
+    /** @var array<string, array<int, int>> Category ids per module scope, reset per tenant. */
+    private array $categoryCache = [];
+
     public function run(): void
     {
         $tenants = Tenant::query()
@@ -53,6 +59,7 @@ class TenantDemoEventsSeeder extends Seeder
             $tenant->run(function () use ($tenant, $tenantCount, $cities, $index): void {
                 DB::connection('tenant')->transaction(function () use ($tenant, $tenantCount, $cities, $index): void {
                     $this->deleteExistingDemoContent();
+                    $this->categoryCache = [];
                     $profile = $this->organizationProfile($tenant);
 
                     for ($position = 1; $position <= $tenantCount; $position++) {
@@ -64,6 +71,31 @@ class TenantDemoEventsSeeder extends Seeder
                 $this->command?->info(sprintf('%s : %d contenus démo multi-modules créés.', $tenant->slug, $tenantCount));
             });
         }
+
+        // The public site reads from the central catalog projection, so it must be
+        // rebuilt after seeding or the new content (and application forms) stays hidden.
+        Artisan::call('ticket:rebuild-public-catalog');
+        $this->command?->info('Projection catalogue public reconstruite.');
+    }
+
+    /**
+     * Pick a category id of the given module scope for demo content, so catalog filters
+     * are populated. Cached per tenant (reset at the start of each tenant run).
+     */
+    private function categoryIdForScope(string $scope, int $index): ?int
+    {
+        if (! array_key_exists($scope, $this->categoryCache)) {
+            $this->categoryCache[$scope] = Category::query()
+                ->where('module_scope', $scope)
+                ->where('is_active', true)
+                ->orderBy('sort_order')
+                ->pluck('id')
+                ->all();
+        }
+
+        $ids = $this->categoryCache[$scope];
+
+        return $ids === [] ? null : (int) $ids[$index % count($ids)];
     }
 
     private function deleteExistingDemoContent(): void
@@ -81,8 +113,15 @@ class TenantDemoEventsSeeder extends Seeder
                         ->orWhereJsonContains('meta->seeded_demo', true);
                 })
                 ->with('offers')
-                ->chunkById(50, function ($records): void {
+                ->chunkById(50, function ($records) use ($modelClass): void {
                     foreach ($records as $record) {
+                        if ($modelClass === CallForProject::class) {
+                            FormDefinition::query()
+                                ->where('owner_type', CallForProject::class)
+                                ->where('owner_id', $record->getKey())
+                                ->delete();
+                        }
+
                         $record->offers()->delete();
                         $record->delete();
                     }
@@ -151,6 +190,7 @@ class TenantDemoEventsSeeder extends Seeder
         $event = Event::query()->create([
             'public_id' => (string) Str::uuid(),
             'organization_profile_id' => $profile->getKey(),
+            'category_id' => $this->categoryIdForScope('event', $globalIndex),
             'public_status_code' => 'published',
             'title' => sprintf('%s %s', $theme['title'], $position),
             'slug' => $slug,
@@ -206,6 +246,7 @@ class TenantDemoEventsSeeder extends Seeder
         $training = Training::query()->create([
             'public_id' => (string) Str::uuid(),
             'organization_profile_id' => $profile->getKey(),
+            'category_id' => $this->categoryIdForScope('training', $globalIndex),
             'public_status_code' => 'published',
             'title' => sprintf('Formation Demo %s', $position),
             'slug' => Str::slug(sprintf('demo-%s-%03d-formation', $tenant->slug, $position)),
@@ -228,12 +269,14 @@ class TenantDemoEventsSeeder extends Seeder
     {
         $theme = $this->themes()[3];
         $city = $cities->isNotEmpty() ? $cities[($globalIndex - 1) % $cities->count()] : null;
-        $isPaid = $globalIndex % 5 !== 0;
+        // Alternate paid/free so the stands category always exposes both variants.
+        $isPaid = $globalIndex % 2 === 0;
         $price = $isPaid ? [25000, 45000, 75000, 120000][$globalIndex % 4] : 0;
 
         $stand = Stand::query()->create([
             'public_id' => (string) Str::uuid(),
             'organization_profile_id' => $profile->getKey(),
+            'category_id' => $this->categoryIdForScope('stand', $globalIndex),
             'public_status_code' => 'published',
             'name' => sprintf('Stand Demo %s', $position),
             'slug' => Str::slug(sprintf('demo-%s-%03d-stand', $tenant->slug, $position)),
@@ -272,10 +315,69 @@ class TenantDemoEventsSeeder extends Seeder
             'published_at' => now()->subMinutes($globalIndex),
             'meta' => $this->baseMeta($theme, $city, $tenant, $globalIndex) + [
                 'application_mode' => $isPaid ? 'paid' : 'free',
+                'application_payment' => [
+                    'is_paid' => $isPaid,
+                    'requires_receipt' => $isPaid,
+                ],
             ],
         ]);
 
         $this->createOffer($call, $globalIndex, $isPaid ? 'Frais de candidature' : 'Candidature gratuite', $isPaid);
+        $this->createCallForProjectApplicationForm($call, $isPaid);
+    }
+
+    /**
+     * Build the application form from the tenant panel form builder (a published
+     * FormDefinition owned by the call for project), so public applications render and
+     * validate against the panel-built schema rather than the legacy config fallback.
+     */
+    private function createCallForProjectApplicationForm(CallForProject $call, bool $isPaid): void
+    {
+        $fields = [
+            ['key' => 'full_name', 'type' => 'text', 'label' => 'Nom complet', 'required' => true, 'step' => 'identity', 'section' => 'identity', 'column_span' => 1, 'max_length' => 150],
+            ['key' => 'email', 'type' => 'email', 'label' => 'Adresse e-mail', 'required' => true, 'step' => 'identity', 'section' => 'identity', 'column_span' => 1],
+            ['key' => 'country_of_residence', 'type' => 'country', 'label' => 'Pays de résidence', 'required' => true, 'step' => 'identity', 'section' => 'location', 'column_span' => 1],
+            ['key' => 'city_of_residence', 'type' => 'city', 'label' => 'Ville de résidence', 'required' => true, 'step' => 'identity', 'section' => 'location', 'country_field' => 'country_of_residence', 'column_span' => 1],
+            ['key' => 'whatsapp_number', 'type' => 'phone', 'label' => 'Numéro WhatsApp', 'required' => true, 'step' => 'identity', 'section' => 'location', 'country_field' => 'country_of_residence', 'column_span' => 1],
+            ['key' => 'organization_name', 'type' => 'text', 'label' => 'Structure / Organisation', 'required' => false, 'step' => 'project', 'section' => 'project', 'column_span' => 1],
+            ['key' => 'project_title', 'type' => 'text', 'label' => 'Titre du projet', 'required' => true, 'step' => 'project', 'section' => 'project', 'column_span' => 2, 'max_length' => 180],
+            ['key' => 'project_summary', 'type' => 'textarea', 'label' => 'Résumé du projet', 'required' => true, 'step' => 'project', 'section' => 'project', 'column_span' => 2, 'max_length' => 2000],
+            ['key' => 'project_category', 'type' => 'radio', 'label' => 'Catégorie du projet', 'required' => true, 'step' => 'project', 'section' => 'project', 'column_span' => 2, 'options' => [
+                ['value' => 'innovation', 'label' => 'Innovation & Tech'],
+                ['value' => 'social', 'label' => 'Impact social'],
+                ['value' => 'culture', 'label' => 'Culture & Création'],
+            ]],
+            ['key' => 'pitch_deck', 'type' => 'file', 'label' => 'Dossier de présentation (PDF)', 'required' => false, 'step' => 'documents', 'section' => 'documents', 'column_span' => 2, 'accept' => ['application/pdf'], 'max_size_mb' => 10],
+            ['key' => 'payment_receipt', 'type' => 'file', 'label' => 'Justificatif de paiement', 'required' => $isPaid, 'visible' => $isPaid, 'step' => 'payment', 'section' => 'payment', 'column_span' => 2, 'accept' => ['application/pdf', 'image/jpeg', 'image/png'], 'max_size_mb' => 5],
+            ['key' => 'consent', 'type' => 'boolean', 'label' => 'Je certifie l’exactitude des informations fournies.', 'required' => true, 'must_be_true' => true, 'step' => 'payment', 'section' => 'payment', 'column_span' => 2],
+        ];
+
+        FormDefinition::query()->updateOrCreate(
+            [
+                'owner_type' => CallForProject::class,
+                'owner_id' => $call->getKey(),
+            ],
+            [
+                'public_id' => (string) Str::uuid(),
+                'name' => 'call-for-project-application-'.$call->getKey(),
+                'title' => 'Formulaire de candidature',
+                'description' => 'Renseignez les informations demandées pour soumettre votre dossier.',
+                'submit_label' => 'Soumettre ma candidature',
+                'success_message' => 'Votre candidature a bien été enregistrée.',
+                'status' => 'published',
+                'schema' => [
+                    'version' => 1,
+                    'steps' => [
+                        ['key' => 'identity', 'title' => 'Profil', 'description' => 'Vos informations personnelles et coordonnées.'],
+                        ['key' => 'project', 'title' => 'Projet', 'description' => 'Présentez votre projet.'],
+                        ['key' => 'documents', 'title' => 'Documents', 'description' => 'Ajoutez les pièces du dossier.'],
+                        ['key' => 'payment', 'title' => 'Validation', 'description' => 'Finalisez votre candidature.'],
+                    ],
+                    'fields' => $fields,
+                ],
+                'settings' => ['seeded_demo' => true],
+            ],
+        );
     }
 
     private function createDemoCrowdfunding(Tenant $tenant, OrganizationProfile $profile, $cities, int $globalIndex, int $position): void
@@ -358,11 +460,29 @@ class TenantDemoEventsSeeder extends Seeder
             'max_per_order' => 4,
             'max_per_account' => 6,
             'sales_start_at' => now()->subDays(2),
-            'sales_end_at' => now()->addDays(60),
+            'sales_end_at' => $this->offerSalesEnd($record),
             'is_active' => true,
             'sort_order' => 1,
             'meta' => ['seeded_demo' => true, 'ctaLabel' => $price > 0 ? 'Acheter' : 'Réserver'],
         ]);
+    }
+
+    /**
+     * Sales must close no later than the activity deadline (Offer model invariant),
+     * so cap a default 60-day window to the offerable's date when one exists.
+     */
+    private function offerSalesEnd($record): Carbon
+    {
+        $defaultEnd = now()->addDays(60);
+
+        $deadline = match (true) {
+            $record instanceof Training => $record->starts_at,
+            $record instanceof CallForProject => $record->application_closes_at,
+            $record instanceof CrowdfundingCampaign => $record->ends_at,
+            default => null,
+        };
+
+        return $deadline ? Carbon::parse($deadline)->min($defaultEnd) : $defaultEnd;
     }
 
     private function baseMeta(array $theme, ?City $city, Tenant $tenant, int $globalIndex): array
