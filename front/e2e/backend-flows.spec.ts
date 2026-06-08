@@ -2,8 +2,12 @@ import { expect, test } from "@playwright/test";
 
 const fullBackendEnabled = process.env.E2E_FULL_BACKEND === "1";
 const tenant = process.env.E2E_TENANT || "demo-front-buyer";
+// A purchasable item (event/training/stand/crowdfunding) for the checkout flow.
 const moduleName = process.env.E2E_CONTENT_MODULE || "evenements";
 const slug = process.env.E2E_CONTENT_SLUG || "summit-demo-free-2026";
+// A call-for-project for the application flow; calls are not purchasable via checkout,
+// so they must use a separate slug from the checkout item above.
+const callSlug = process.env.E2E_CALL_SLUG || slug;
 const orderReference = process.env.E2E_ORDER_REF || "";
 const receiptReference = process.env.E2E_RECEIPT_REF || "";
 
@@ -14,7 +18,15 @@ test.describe("backend-backed buyer journeys", () => {
     await page.goto(`/checkout/${moduleName}/${slug}?tenant=${tenant}`);
 
     await expect(page.locator("main")).toBeVisible();
-    await expect(page.getByRole("button", { name: /continuer|payer|réserver|réservation|candidater/i })).toBeVisible();
+    // Purchase affordance: any module CTA (Acheter/Réserver/S'inscrire/Contribuer/...)
+    // or the quantity stepper that the checkout proforma always renders.
+    await expect(
+      page
+        .getByRole("button", {
+          name: /continuer|payer|réserver|réservation|candidater|acheter|s'inscrire|inscrire|contribuer|quantité/i,
+        })
+        .first(),
+    ).toBeVisible();
   });
 
   test("opens a seeded receipt verification page", async ({ page }) => {
@@ -36,7 +48,7 @@ test.describe("backend-backed buyer journeys", () => {
   });
 
   test("opens a call-for-project application form", async ({ page }) => {
-    await page.goto(`/appels-a-projets/${slug}/postuler?tenant=${tenant}`);
+    await page.goto(`/appels-a-projets/${callSlug}/postuler?tenant=${tenant}`);
 
     await expect(page.locator("main")).toBeVisible();
     await expect(page.locator("form")).toBeVisible();

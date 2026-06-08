@@ -19,6 +19,19 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,7 +40,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: "8.3"
-          extensions: mbstring, intl, pdo, sqlite, pdo_sqlite
+          extensions: mbstring, intl, pdo, pgsql, pdo_pgsql
           coverage: none
 
       - name: Cache Composer dependencies
@@ -44,6 +57,13 @@ jobs:
         run: |
           cp .env.example .env
           php artisan key:generate --ansi
+
+      - name: Create PostgreSQL test databases
+        run: |
+          psql -h 127.0.0.1 -U postgres -c 'CREATE DATABASE ticket_central_testing;'
+          psql -h 127.0.0.1 -U postgres -c 'CREATE DATABASE ticket_tenant_testing;'
+        env:
+          PGPASSWORD: ""
 
       - name: Coding style
         run: php vendor/bin/pint --test
