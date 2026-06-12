@@ -17,3 +17,24 @@ services/*/node_modules/
 services/*/dist/
 services/*/coverage/
 services/*/.env
+
+# Claude Code — local config and runtime artifacts (keep settings.json + skills/ shareable)
+.claude/settings.local.json
+.claude/.credentials.json
+.claude/history.jsonl
+.claude/.last-*
+.claude/mcp-needs-auth-cache.json
+.claude/projects/
+.claude/sessions/
+.claude/session-env/
+.claude/telemetry/
+.claude/cache/
+.claude/paste-cache/
+.claude/file-history/
+.claude/shell-snapshots/
+.claude/backups/
+.claude/remote/
+.claude/downloads/
+.claude/tasks/
+.claude/ide/
+.claude/plugins/
