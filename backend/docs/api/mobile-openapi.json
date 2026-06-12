@@ -1,0 +1,342 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Ticket Mobile API",
+    "version": "mvp-1",
+    "description": "Tenant-scoped mobile API for the Ticket platform. All paths are served under the /api/v1 base. Authenticated endpoints use a tenant bearer token (UserApiToken) and are scoped to a tenant via the {tenant} path segment."
+  },
+  "servers": [
+    { "url": "/api/v1", "description": "API base path" }
+  ],
+  "security": [
+    { "bearerAuth": [] }
+  ],
+  "tags": [
+    { "name": "bootstrap" },
+    { "name": "account" },
+    { "name": "devices" },
+    { "name": "support" },
+    { "name": "organizer" }
+  ],
+  "paths": {
+    "/mobile/bootstrap": {
+      "get": {
+        "tags": ["bootstrap"],
+        "summary": "Public bootstrap payload for the mobile app",
+        "description": "Unauthenticated. Returns the API version, default tenant, feature capabilities and shared enums the app needs before login.",
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "Bootstrap payload",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["data"],
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/BootstrapData" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/account/dashboard": {
+      "get": {
+        "tags": ["account"],
+        "summary": "Buyer account dashboard",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/account/applications": {
+      "get": {
+        "tags": ["account"],
+        "summary": "Buyer call-for-project applications",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/account/contributions": {
+      "get": {
+        "tags": ["account"],
+        "summary": "Buyer crowdfunding contributions",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/devices": {
+      "post": {
+        "tags": ["devices"],
+        "summary": "Register a push device",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/DeviceRegistration" }
+            }
+          }
+        },
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/devices/{device}": {
+      "delete": {
+        "tags": ["devices"],
+        "summary": "Unregister a push device",
+        "parameters": [
+          { "$ref": "#/components/parameters/Tenant" },
+          {
+            "name": "device",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Device public id"
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/support/requests": {
+      "get": {
+        "tags": ["support"],
+        "summary": "List the buyer's support requests",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      },
+      "post": {
+        "tags": ["support"],
+        "summary": "Open a support request",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SupportRequestInput" }
+            }
+          }
+        },
+        "responses": {
+          "201": { "$ref": "#/components/responses/Envelope" },
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "422": { "$ref": "#/components/responses/ValidationError" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/support/requests/{ticket}": {
+      "get": {
+        "tags": ["support"],
+        "summary": "Show a single support request",
+        "parameters": [
+          { "$ref": "#/components/parameters/Tenant" },
+          {
+            "name": "ticket",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Support ticket public id"
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "404": { "$ref": "#/components/responses/NotFound" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/organizer/dashboard": {
+      "get": {
+        "tags": ["organizer"],
+        "summary": "Organizer dashboard",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/organizer/stats": {
+      "get": {
+        "tags": ["organizer"],
+        "summary": "Organizer sales and engagement stats",
+        "parameters": [{ "$ref": "#/components/parameters/Tenant" }],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    },
+    "/tenants/{tenant}/mobile/organizer/events/{event}/participants": {
+      "get": {
+        "tags": ["organizer"],
+        "summary": "Participants of an organizer event",
+        "parameters": [
+          { "$ref": "#/components/parameters/Tenant" },
+          {
+            "name": "event",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Event public id"
+          }
+        ],
+        "responses": {
+          "200": { "$ref": "#/components/responses/Envelope" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Tenant UserApiToken issued by the tenant auth login endpoint."
+      }
+    },
+    "parameters": {
+      "Tenant": {
+        "name": "tenant",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string" },
+        "description": "Tenant slug or public id."
+      }
+    },
+    "responses": {
+      "Envelope": {
+        "description": "Successful response wrapped in a data envelope.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Envelope" }
+          }
+        }
+      },
+      "Unauthorized": {
+        "description": "Missing, invalid, expired or inactive bearer token.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "NotFound": {
+        "description": "Resource not found or not visible to the caller.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/Error" }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Request payload failed validation.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ValidationError" }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Envelope": {
+        "type": "object",
+        "required": ["data"],
+        "properties": {
+          "data": {
+            "description": "Endpoint-specific payload.",
+            "type": ["object", "array", "null"]
+          },
+          "tenant": { "$ref": "#/components/schemas/TenantRef" }
+        }
+      },
+      "TenantRef": {
+        "type": ["object", "null"],
+        "properties": {
+          "id": { "type": "integer" },
+          "public_id": { "type": "string" },
+          "name": { "type": "string" },
+          "slug": { "type": "string" }
+        }
+      },
+      "BootstrapData": {
+        "type": "object",
+        "required": ["api_version", "mobile_api_version", "capabilities", "enums"],
+        "properties": {
+          "api_version": { "type": "string", "examples": ["v1"] },
+          "mobile_api_version": { "type": "string", "examples": ["mvp-1"] },
+          "default_tenant": { "$ref": "#/components/schemas/TenantRef" },
+          "capabilities": {
+            "type": "object",
+            "additionalProperties": { "type": "boolean" }
+          },
+          "enums": {
+            "type": "object",
+            "properties": {
+              "order_statuses": { "type": "array", "items": { "type": "object" } },
+              "access_pass_statuses": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        }
+      },
+      "DeviceRegistration": {
+        "type": "object",
+        "required": ["token", "platform"],
+        "properties": {
+          "token": { "type": "string", "description": "Push provider device token." },
+          "platform": { "type": "string", "enum": ["ios", "android"] },
+          "name": { "type": "string" }
+        }
+      },
+      "SupportRequestInput": {
+        "type": "object",
+        "required": ["subject", "message"],
+        "properties": {
+          "subject": { "type": "string" },
+          "message": { "type": "string" },
+          "category": { "type": "string" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" }
+        }
+      },
+      "ValidationError": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "errors": {
+            "type": "object",
+            "additionalProperties": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    }
+  }
+}
