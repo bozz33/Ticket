@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Log;
 use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
+use Ticket\Payments\Domain\PaidAmountGuard;
 use Ticket\Payments\Domain\PaymentStatuses;
 
 class PaymentWebhookService
@@ -37,6 +38,11 @@ class PaymentWebhookService
 
         try {
             $this->verifySignature($gateway, $request);
+            // Defence in depth: a validly signed webhook must still pay the amount the
+            // server quoted at checkout. This is checked against the pre-sync transaction
+            // (the pending row created at initialize) before syncTransaction overwrites
+            // gross_amount with the gateway-reported value.
+            $this->assertPaidAmountMatchesExpectation($transaction, $gateway, $payload);
             $status = 'processed';
             $transaction = $this->syncTransaction($gateway, $payload) ?? $transaction;
             $this->fulfillSuccessfulTransaction($transaction, $payload);
@@ -115,6 +121,56 @@ class PaymentWebhookService
         if (! hash_equals($computed, $signature)) {
             throw new \RuntimeException('Signature Paystack invalide.');
         }
+    }
+
+    /**
+     * Reject a successful charge whose paid amount is below the amount the server quoted
+     * when the checkout was initialized. The expected amount lives on the pending
+     * PlatformTransaction (pricing snapshot total / gross amount) and cannot be influenced
+     * by the webhook payload, so this catches underpayment and currency-swap attempts even
+     * when the signature is valid. Only public_checkout transactions fulfill orders, so only
+     * those are verified; an underpayment throws and is recorded as an incident upstream.
+     */
+    protected function assertPaidAmountMatchesExpectation(
+        ?PlatformTransaction $expectedTransaction,
+        PaymentGateway $gateway,
+        array $payload,
+    ): void {
+        if (! $expectedTransaction || $expectedTransaction->type !== 'public_checkout') {
+            return;
+        }
+
+        $payloadStatus = (string) (Arr::get($payload, 'data.status') ?? Arr::get($payload, 'event') ?? '');
+
+        if (! PaymentStatuses::isSuccessful($payloadStatus)) {
+            return;
+        }
+
+        $expectedAmount = (int) data_get(
+            $expectedTransaction->pricing_snapshot ?? [],
+            'total',
+            $expectedTransaction->gross_amount,
+        );
+
+        if ($expectedAmount <= 0) {
+            return;
+        }
+
+        $expectedCurrency = (string) ($expectedTransaction->currency_code ?: 'XOF');
+        $paidCurrency = (string) Arr::get($payload, 'data.currency', $expectedCurrency);
+        $paidAmount = $this->amountConverter->fromGateway(
+            (int) Arr::get($payload, 'data.amount', 0),
+            strtoupper($paidCurrency),
+            $gateway->code,
+        );
+
+        PaidAmountGuard::assertNotUnderpaid(
+            $expectedAmount,
+            $expectedCurrency,
+            $paidAmount,
+            $paidCurrency,
+            (string) $expectedTransaction->transaction_reference,
+        );
     }
 
     protected function syncTransaction(PaymentGateway $gateway, array $payload): ?PlatformTransaction

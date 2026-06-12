@@ -148,6 +148,71 @@ class PaymentWebhookServiceTest extends TestCase
         $this->assertSame($tenant->id, $incidentLog->tenant_id);
     }
 
+    public function test_receive_rejects_underpaid_amount_and_does_not_fulfill(): void
+    {
+        config()->set('services.paystack.webhook_secret', 'env-webhook-secret');
+
+        $tenant = Tenant::withoutEvents(fn () => Tenant::query()->create([
+            'public_id' => (string) fake()->uuid(),
+            'name' => 'Webhook Tenant',
+            'slug' => 'webhook-tenant-3',
+            'status' => 'active',
+            'database_name' => 'ticket_webhook_tenant_3',
+        ]));
+
+        $gateway = PaymentGateway::query()->create([
+            'public_id' => (string) fake()->uuid(),
+            'code' => 'paystack',
+            'name' => 'Paystack',
+            'provider' => 'Paystack',
+            'mode' => 'live',
+            'is_active' => true,
+        ]);
+
+        // Server quoted 5000 XOF at checkout initialization.
+        $transaction = PlatformTransaction::query()->create([
+            'tenant_id' => $tenant->id,
+            'payment_gateway_id' => $gateway->id,
+            'transaction_reference' => 'PAY-REF-003',
+            'type' => 'public_checkout',
+            'direction' => 'credit',
+            'status' => 'pending',
+            'gross_amount' => 5000,
+            'fee_amount' => 0,
+            'net_amount' => 5000,
+            'currency_code' => 'XOF',
+            'occurred_at' => now(),
+            'pricing_snapshot' => ['total' => 5000, 'currency' => 'XOF'],
+        ]);
+
+        // Attacker-crafted but validly signed webhook claiming a 3000 XOF payment.
+        $payload = [
+            'event' => 'charge.success',
+            'data' => [
+                'reference' => 'PAY-REF-003',
+                'id' => 'gw_789',
+                'status' => 'success',
+                'amount' => 3000,
+                'fees' => 0,
+                'currency' => 'XOF',
+            ],
+        ];
+
+        $request = $this->makePaystackRequest($payload, 'env-webhook-secret');
+
+        $log = app(PaymentWebhookService::class)->receive($gateway, $request);
+
+        $incident = PaymentIncident::query()->first();
+
+        $this->assertSame('failed', $log->status);
+        $this->assertNotNull($incident);
+        $this->assertSame('payment_webhook_failed', $incident->incident_code);
+        $this->assertStringContainsString('inférieur au montant attendu', (string) $incident->summary);
+
+        // The transaction was never promoted to success: no fulfillment occurred.
+        $this->assertSame('pending', $transaction->fresh()->status);
+    }
+
     private function makePaystackRequest(array $payload, string $secret): Request
     {
         $content = json_encode($payload, JSON_THROW_ON_ERROR);

@@ -22,6 +22,7 @@ use Ticket\FinanceAccounting\Contracts\FinancePolicyCatalog;
 use Ticket\Payments\Contracts\CheckoutItemResolver;
 use Ticket\Payments\Domain\CheckoutItem;
 use Ticket\Payments\Domain\CheckoutReservation;
+use Ticket\Payments\Domain\PaidAmountGuard;
 use Ticket\Payments\Domain\PaymentStatuses;
 use Ticket\Ticketing\Contracts\OrderCatalog;
 
@@ -446,6 +447,19 @@ class PublicPaymentService
             $currency,
             $gateway->code,
         );
+
+        if (PaymentStatuses::isSuccessful($status)) {
+            // Same integrity guard as the webhook path: a successful charge must cover the
+            // amount the server quoted at checkout before it can be fulfilled into an order.
+            PaidAmountGuard::assertNotUnderpaid(
+                (int) data_get($transaction->pricing_snapshot ?? [], 'total', $transaction->gross_amount),
+                (string) ($transaction->currency_code ?: $currency),
+                $amount,
+                $currency,
+                (string) $transaction->transaction_reference,
+            );
+        }
+
         $gatewayFees = $this->amountConverter->fromGateway(
             (int) data_get($payload, 'data.fees', 0),
             $currency,
