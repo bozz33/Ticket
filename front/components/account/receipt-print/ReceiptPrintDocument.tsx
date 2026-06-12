@@ -69,7 +69,8 @@ export function ReceiptPrintDocument({ platform, receipt, tenantSlug }: ReceiptP
         </header>
 
         <div className="receipt-invoice__number">
-          <strong>REÇU : {receipt.reference}</strong>
+          <strong>REÇU N° {model.receiptNumber}</strong>
+          <span>Référence : {receipt.reference}</span>
         </div>
 
         <section className="receipt-invoice__parties">

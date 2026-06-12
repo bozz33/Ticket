@@ -71,6 +71,10 @@ export function ReceiptDetailView({ receipt }: ReceiptDetailViewProps) {
         <div className="receipt-panel__meta">
           <div>
             <span>N° reçu</span>
+            <strong>{receipt.receipt_number ?? receipt.reference}</strong>
+          </div>
+          <div>
+            <span>Référence</span>
             <strong>{receipt.reference}</strong>
           </div>
           <div>

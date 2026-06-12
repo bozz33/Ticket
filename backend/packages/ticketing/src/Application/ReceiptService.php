@@ -65,6 +65,7 @@ class ReceiptService
     private function applyIdentifierLookup(Builder $query, string $identifier): void
     {
         $query->where('reference', $identifier)
+            ->orWhere('receipt_number', $identifier)
             ->orWhere('meta->transaction_reference', $identifier)
             ->orWhere('meta->gateway_reference', $identifier)
             ->orWhere('meta->gateway_transaction_id', $identifier)

@@ -205,6 +205,7 @@ class TenantRefundServiceTest extends TestCase
             $table->id();
             $table->uuid('public_id')->unique();
             $table->string('reference')->unique();
+            $table->string('receipt_number')->nullable();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('status');
             $table->bigInteger('total_amount')->default(0);

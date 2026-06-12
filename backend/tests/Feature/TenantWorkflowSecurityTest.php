@@ -241,6 +241,7 @@ class TenantWorkflowSecurityTest extends TestCase
             $table->id();
             $table->uuid('public_id')->unique();
             $table->string('reference')->unique();
+            $table->string('receipt_number')->nullable();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->foreignId('buyer_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->string('status');

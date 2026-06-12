@@ -93,6 +93,7 @@ export interface AccountReceipt {
   id: number;
   public_id: string;
   reference: string;
+  receipt_number: string | null;
   status: ReceiptStatus;
   total_amount: number;
   currency_code: string;

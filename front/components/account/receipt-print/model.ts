@@ -10,6 +10,7 @@ export type ReceiptPrintModel = {
   paymentReference: string;
   providerReference: string;
   quantity: number;
+  receiptNumber: string;
   serviceDescription: string;
   unitAmount: number;
   verificationUrl: string;
@@ -38,6 +39,7 @@ export function buildReceiptPrintModel(receipt: AccountReceipt, tenantSlug: stri
     typeof receipt.order?.unit_amount === "number" && quantity > 0
       ? receipt.order.unit_amount
       : Math.round(receipt.total_amount / Math.max(quantity, 1));
+  const receiptNumber = receipt.receipt_number ?? receipt.reference;
   const buyerPhone = receipt.order?.buyer_phone ?? receipt.buyer_phone ?? "—";
   const serviceDescription =
     metaString(receipt, "service_description") ??
@@ -52,6 +54,7 @@ export function buildReceiptPrintModel(receipt: AccountReceipt, tenantSlug: stri
     paymentReference,
     providerReference,
     quantity,
+    receiptNumber,
     serviceDescription,
     unitAmount,
     verificationUrl,
