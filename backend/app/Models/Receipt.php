@@ -18,6 +18,7 @@ class Receipt extends Model
         'public_id',
         'buyer_user_id',
         'reference',
+        'receipt_number',
         'order_id',
         'status',
         'total_amount',

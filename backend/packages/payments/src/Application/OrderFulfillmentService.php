@@ -231,10 +231,14 @@ class OrderFulfillmentService
 
         $orderMeta = (array) ($order->meta ?? []);
 
+        $connectionName = config('ticket.tenant_connection', 'tenant');
+        $receiptNumber = (new ReceiptNumberAllocator)->allocate($connectionName, (int) now()->year);
+
         Receipt::query()->create([
             'order_id' => $order->id,
             'buyer_user_id' => $order->buyer_user_id,
             'reference' => $this->generateReference('RCP', $order->currency_code),
+            'receipt_number' => $receiptNumber,
             'status' => 'issued',
             'total_amount' => $order->total_amount,
             'currency_code' => $order->currency_code,

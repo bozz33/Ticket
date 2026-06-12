@@ -198,6 +198,7 @@ class OrderFulfillmentIdempotencyTest extends TestCase
             $table->foreignId('buyer_user_id')->nullable()->constrained('users')->nullOnDelete();
             $table->uuid('public_id')->unique();
             $table->string('reference')->unique();
+            $table->string('receipt_number')->nullable();
             $table->foreignId('order_id')->constrained('orders')->cascadeOnDelete();
             $table->string('status');
             $table->bigInteger('total_amount')->default(0);
@@ -211,6 +212,13 @@ class OrderFulfillmentIdempotencyTest extends TestCase
             $table->json('meta')->nullable();
             $table->timestamps();
             $table->softDeletes();
+        });
+
+        Schema::connection('tenant')->create('receipt_number_sequences', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedSmallInteger('year')->unique();
+            $table->unsignedBigInteger('last_number')->default(0);
+            $table->timestamps();
         });
 
         Schema::connection('tenant')->create('access_passes', function (Blueprint $table): void {
