@@ -48,27 +48,28 @@ class TenantDemoEventsSeeder extends Seeder
             ->limit(40)
             ->get();
 
-        $remaining = 100;
+        $perType = 10;
 
         foreach ($tenants as $index => $tenant) {
-            $tenantCount = $index === $tenants->count() - 1
-                ? $remaining
-                : (int) floor(100 / $tenants->count());
-            $remaining -= $tenantCount;
-
-            $tenant->run(function () use ($tenant, $tenantCount, $cities, $index): void {
-                DB::connection('tenant')->transaction(function () use ($tenant, $tenantCount, $cities, $index): void {
+            $tenant->run(function () use ($tenant, $cities, $index, $perType): void {
+                DB::connection('tenant')->transaction(function () use ($tenant, $cities, $index, $perType): void {
                     $this->deleteExistingDemoContent();
                     $this->categoryCache = [];
                     $profile = $this->organizationProfile($tenant);
 
-                    for ($position = 1; $position <= $tenantCount; $position++) {
-                        $globalIndex = ($index * 40) + $position;
-                        $this->createDemoContent($tenant, $profile, $cities, $globalIndex, $position);
+                    // Exactly $perType items of every content type, each carrying both a free
+                    // and a paid offer/ticket so every module exposes both variants.
+                    for ($position = 1; $position <= $perType; $position++) {
+                        $base = ($index * 50) + $position;
+                        $this->createDemoEvent($tenant, $profile, $cities, $base, $position);
+                        $this->createDemoTraining($tenant, $profile, $cities, $base + 1000, $position);
+                        $this->createDemoStand($tenant, $profile, $cities, $base + 2000, $position);
+                        $this->createDemoCallForProject($tenant, $profile, $cities, $base + 3000, $position);
+                        $this->createDemoCrowdfunding($tenant, $profile, $cities, $base + 4000, $position);
                     }
                 });
 
-                $this->command?->info(sprintf('%s : %d contenus démo multi-modules créés.', $tenant->slug, $tenantCount));
+                $this->command?->info(sprintf('%s : %d contenus par type (5 types) créés.', $tenant->slug, $perType));
             });
         }
 
@@ -227,12 +228,9 @@ class TenantDemoEventsSeeder extends Seeder
             ],
         );
 
-        $isPaid = $globalIndex % 4 !== 0;
-        $ticketCount = $isPaid ? (($globalIndex % 3) + 1) : 1;
-
-        for ($ticketIndex = 1; $ticketIndex <= $ticketCount; $ticketIndex++) {
-            $this->createTicket($event, $globalIndex, $ticketIndex, $isPaid);
-        }
+        // Every event carries both a paid and a free ticket type.
+        $this->createTicket($event, $globalIndex, 1, true);
+        $this->createTicket($event, $globalIndex, 2, false);
     }
 
     private function createDemoTraining(Tenant $tenant, OrganizationProfile $profile, $cities, int $globalIndex, int $position): void
@@ -241,7 +239,6 @@ class TenantDemoEventsSeeder extends Seeder
         $city = $cities->isNotEmpty() ? $cities[($globalIndex - 1) % $cities->count()] : null;
         $startsAt = Carbon::now()->addDays(10 + $globalIndex)->setTime(9 + ($globalIndex % 6), 0);
         $endsAt = (clone $startsAt)->addHours(4);
-        $isPaid = $globalIndex % 4 !== 0;
 
         $training = Training::query()->create([
             'public_id' => (string) Str::uuid(),
@@ -262,7 +259,9 @@ class TenantDemoEventsSeeder extends Seeder
             'meta' => $this->baseMeta($theme, $city, $tenant, $globalIndex),
         ]);
 
-        $this->createOffer($training, $globalIndex, $isPaid ? 'Inscription formation' : 'Accès formation', $isPaid);
+        // Both a paid and a free enrolment offer.
+        $this->createOffer($training, $globalIndex, 'Inscription formation', true);
+        $this->createOffer($training, $globalIndex, 'Acces formation gratuit', false);
     }
 
     private function createDemoStand(Tenant $tenant, OrganizationProfile $profile, $cities, int $globalIndex, int $position): void
@@ -290,7 +289,9 @@ class TenantDemoEventsSeeder extends Seeder
             'meta' => $this->baseMeta($theme, $city, $tenant, $globalIndex),
         ]);
 
-        $this->createOffer($stand, $globalIndex, $isPaid ? 'Réservation stand' : 'Stand découverte', $isPaid, $price);
+        // Both a paid reservation and a free discovery formula.
+        $this->createOffer($stand, $globalIndex, 'Reservation stand', true, $price ?: 45000);
+        $this->createOffer($stand, $globalIndex, 'Stand decouverte gratuit', false, 0);
     }
 
     private function createDemoCallForProject(Tenant $tenant, OrganizationProfile $profile, $cities, int $globalIndex, int $position): void
@@ -450,7 +451,7 @@ class TenantDemoEventsSeeder extends Seeder
             'public_id' => (string) Str::uuid(),
             'offer_type' => 'standard',
             'name' => $name,
-            'code' => Str::upper(Str::slug(sprintf('DEMO-%s-%d', $record->slug, $globalIndex))),
+            'code' => Str::upper(Str::slug(sprintf('DEMO-%s-%d-%s', $record->slug, $globalIndex, $name))),
             'description' => $price > 0 ? 'Offre payante de démonstration.' : 'Offre gratuite de démonstration.',
             'price_amount' => $price,
             'currency_code' => $record->currency_code ?? 'XOF',
